@@ -26,9 +26,9 @@
             <!-- Login Form -->
             <div class="form login-form" id="loginFormContainer">
                 <h2>Login</h2>
-                <div class="message" id="loginMessage">  <i class="fas fa-info-circle"></i>Lezgooo! Let's start organizing your pandemonium environment!</div>
+                <div class="message" id="loginMessage" style="display: none;"></div>
                 <div class="welkam" id="welkam" style="display: none;">
-                    <p>Welcome back!</p>
+                    <p>Welcome!</p>
                     <p id="welcomeEmail"></p>
                 </div>
                 <form id="loginForm">
@@ -77,10 +77,15 @@
                 </form>
                 <p>Already have an account? <a href="#" id="showLogin">Login</a></p>
             </div>
-
         </div>
     </div>
 
-<script src="../JSFolder/access.js"></script>
+    <div id="floatingWelcome" class="floating-welcome">
+        <i class="fas fa-smile-beam"></i>
+        <span id="welcomeUserText"></span>
+        <span class="close-btn" id="closeWelcome">&times;</span>
+    </div>
+
+    <script src="../JSFolder/access.js?v=1.3"></script>
 </body>
 </html>

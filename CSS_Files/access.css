@@ -1,4 +1,4 @@
-@import url('default.css');
+@import url('./default.css');
 
 body {
     display: flex;
@@ -87,7 +87,7 @@ body {
 .form.hidden {
     opacity: 0;
     transform: translateX(-100%);
-    pointer-events: none; /* Disable interactions when hidden */
+    pointer-events: none; 
 }
 
 .form h2 {
@@ -303,10 +303,6 @@ a:hover {
     color: #06a566;
 }
 
-.hidden{
-    display: none;
-}
-
 .error-border {
     border: 2px solid #ff0000 !important;
 }
@@ -317,4 +313,57 @@ a:hover {
     text-align: left;
     display: flex;
     align-items: center;
+}
+
+/* Floating Welcome Message */
+.floating-welcome {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #06a566;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    transform: translateX(120%);
+    transition: transform 0.5s ease-in-out;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.5;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.floating-welcome.show {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.floating-welcome i {
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+
+.floating-welcome .close-btn {
+    margin-left: 15px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    font-size: 1.3em;
+}
+
+.floating-welcome .close-btn:hover {
+    opacity: 1;
+}
+
+.floating-welcome .highlight-name {
+    font-weight: 700;
+    font-size: 1em;
+    color: white;
+    display: inline;
+    margin: 0 1px;
 }

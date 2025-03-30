@@ -11,7 +11,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rememberMe = isset($_POST['rememberMe']) ? true : false;
 
     if (empty($email) || empty($password)) {
-        echo json_encode(['status' => 'error', 'message' => 'All fields are required.']);
+        echo json_encode([
+            'status' => 'error', 
+            'message' => 'All fields are required.',
+            'errors' => [
+                'email' => empty($email) ? 'Email is required' : null,
+                'password' => empty($password) ? 'Password is required' : null
+            ]
+        ]);
         exit;
     }
 
@@ -19,29 +26,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user && password_verify($password, $user['password'])) {
         $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_name'] = $user['name']; // Store name in session
         
-        // Set cookie if "Remember Me" is checked
         if ($rememberMe) {
             $cookieValue = json_encode([
                 'id' => $user['id'],
                 'email' => $email,
+                'name' => $user['name'], // Include name in cookie
                 'token' => hash('sha256', $user['password'])
             ]);
             setcookie('remember_me', base64_encode($cookieValue), 
-                time() + (30 * 24 * 60 * 60), // 30 days
+                time() + (30 * 24 * 60 * 60), 
                 '/', 
                 '', 
-                true,  // Secure
-                true   // HttpOnly
+                true, 
+                true   
             );
         } else {
-            // Clear cookie if not checked
             setcookie('remember_me', '', time() - 3600, '/');
         }
         
-        echo json_encode(['status' => 'success', 'message' => 'Login successful.']);
+        echo json_encode([
+            'status' => 'success', 
+            'message' => 'Login successful.',
+            'name' => $user['name']
+        ]);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid email or password.']);
+        echo json_encode([
+            'status' => 'error', 
+            'message' => 'Invalid email or password.',
+            'errors' => [
+                'email' => 'Invalid credentials',
+                'password' => 'Invalid credentials'
+            ]
+        ]);
     }
 }
 ?>

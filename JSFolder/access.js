@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Check for remember me cookie and fill email if exists
+    // Check for remember me cookie
     const rememberCookie = document.cookie.split('; ').find(row => row.startsWith('remember_me='));
     if (rememberCookie) {
         try {
@@ -8,14 +8,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (decodedValue.email) {
                 const emailInput = document.getElementById('loginEmail');
                 emailInput.value = decodedValue.email;
-                // Trigger the email validation check
                 emailInput.dispatchEvent(new Event('input'));
-                // Check the remember me checkbox
                 document.getElementById('rememberMe').checked = true;
             }
         } catch (e) {
             console.error('Error parsing remember me cookie:', e);
-            // Clear invalid cookie
             document.cookie = 'remember_me=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         }
     }
@@ -29,36 +26,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginMessage = document.getElementById('loginMessage');
     const welkam = document.getElementById('welkam');
     const welcomeEmail = document.getElementById('welcomeEmail');
+    const floatingWelcome = document.getElementById('floatingWelcome');
+    const welcomeUserText = document.getElementById('welcomeUserText');
+    const closeWelcome = document.getElementById('closeWelcome');
+    const registerMessage = document.getElementById('registerMessage');
 
-    // Form Toggle Functionality
+    // Form Toggle
     showRegister.addEventListener('click', (e) => {
         e.preventDefault();
         loginFormContainer.classList.add('hidden');
         registerFormContainer.classList.remove('hidden');
-        // Clear any existing messages
-        document.getElementById('registerMessage').innerHTML = '';
+        clearLoginMessage();
     });
 
     showLogin.addEventListener('click', (e) => {
         e.preventDefault();
         registerFormContainer.classList.add('hidden');
         loginFormContainer.classList.remove('hidden');
-        // Clear any existing messages
-        document.getElementById('loginMessage').innerHTML = '';
+        clearRegisterMessage();
     });
 
-    // Password Visibility Toggle
+    // Password Toggle
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('toggle-password')) {
             e.preventDefault();
             const inputId = e.target.getAttribute('data-input');
             const passwordInput = document.getElementById(inputId);
-            
             if (passwordInput) {
-                // Toggle input type
                 passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
-                
-                // Toggle icon
                 e.target.classList.toggle('fa-eye-slash');
                 e.target.classList.toggle('fa-eye');
             }
@@ -68,8 +63,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Email Validation
     loginEmailInput.addEventListener('input', async (e) => {
         const email = e.target.value.trim();
-        welkam.style.display = 'none'; 
-        loginMessage.style.display = 'block'; 
+        welkam.style.display = 'none';
+        clearLoginMessage();
 
         if (email) {
             try {
@@ -82,28 +77,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 const result = await response.json();
-
                 if (result.exists) {
-                    loginMessage.style.display = 'none'; 
-                    welkam.style.display = 'block'; 
-                    welcomeEmail.textContent = email; 
-                    clearInputError(loginEmailInput); 
+                    welkam.style.display = 'block';
+                    welcomeEmail.textContent = email;
+                    clearInputError(loginEmailInput);
                 } else {
-                    loginMessage.style.display = 'block'; 
-                    welkam.style.display = 'none';
                     showInputError(loginEmailInput, 'Email/username does not exist.');
                 }
             } catch (error) {
                 console.error('Validation error:', error);
             }
         } else {
-            loginMessage.style.display = 'block'; 
-            welkam.style.display = 'none'; 
             clearInputError(loginEmailInput);
         }
     });
 
-    // Login Form Submission
+    // Login Form 
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
@@ -111,10 +100,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
             const rememberMe = document.getElementById('rememberMe').checked;
-
-            // Clear previous errors
+            
             clearInputError(document.getElementById('loginEmail'));
             clearInputError(document.getElementById('loginPassword'));
+            clearLoginMessage();
 
             try {
                 const response = await fetch('../Controller/login.php', {
@@ -128,13 +117,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    showMessage('loginMessage', 'success', result.message);
                     welkam.style.display = 'block';
                     welcomeEmail.textContent = email;
                     
-                    // Redirect after successful login
+                    // Show login welcome message
+                    if (result.name) {
+                        showLoginWelcome(result.name);
+                    }
+                    
                     setTimeout(() => {
-                        window.location.href = '../View/dashboard.html';
+                        window.location.href = 'facility.php';
                     }, 1500);
                 } else {
                     if (result.errors) {
@@ -145,16 +137,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             showInputError(document.getElementById('loginPassword'), result.errors.password);
                         }
                     }
-                    showMessage('loginMessage', 'error', result.message || 'Login failed');
+                    showLoginMessage('error', result.message || 'Login failed');
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                showMessage('loginMessage', 'error', 'An error occurred during login.');
+                showLoginMessage('error', 'An error occurred during login.');
             }
         });
     }
 
-    // Register Form Submission - FIXED VERSION
+    // Register Form 
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
@@ -165,9 +157,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
 
             clearAllRegisterErrors();
+            clearRegisterMessage();
+            
             let isValid = true;
             
-            // Client-side validation
+            // Validation
             if (!name) {
                 showInputError(document.getElementById('registerName'), 'Full name is required');
                 isValid = false;
@@ -195,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (!isValid) {
-                showMessage('registerMessage', 'error', 'Please fix the errors in the form');
+                showRegisterMessage('error', 'Please fix the errors in the form');
                 return;
             }
 
@@ -216,18 +210,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    showMessage('registerMessage', 'success', result.message);
-                    // Clear form on successful registration
+                    showRegisterMessage('success', 'Registration successful! Welcome to Nexora');
+                    if (result.user && result.user.name) {
+                        showRegisterWelcome(result.user.name);
+                    }
+                    
                     registerForm.reset();
-                    // Switch to login form
-                    registerFormContainer.classList.add('hidden');
-                    loginFormContainer.classList.remove('hidden');
-                    // Auto-fill email in login form
-                    document.getElementById('loginEmail').value = email;
-                    // Focus on password field
-                    document.getElementById('loginPassword').focus();
+                    setTimeout(() => {
+                        registerFormContainer.classList.add('hidden');
+                        loginFormContainer.classList.remove('hidden');
+                        document.getElementById('loginEmail').value = email;
+                        document.getElementById('loginPassword').focus();
+                    }, 1500);
                 } else {
-                    // Show server-side validation errors
                     if (result.errors) {
                         for (const [field, error] of Object.entries(result.errors)) {
                             const inputId = `register${field.charAt(0).toUpperCase() + field.slice(1)}`;
@@ -237,31 +232,62 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         }
                     }
-                    showMessage('registerMessage', 'error', result.message || 'Registration failed');
+                    showRegisterMessage('error', result.message || 'Registration failed');
                 }
             } catch (error) {
                 console.error('Registration error:', error);
-                showMessage('registerMessage', 'error', 'An error occurred during registration.');
+                showRegisterMessage('error', 'An error occurred during registration.');
             }
         });
     }
 
-    // Helper Functions
-    function showMessage(elementId, status, message) {
-        const messageDiv = document.getElementById(elementId);
-        if (!messageDiv) return;
-        
-        messageDiv.className = `message ${status}`;
-        messageDiv.innerHTML = `<i class="fas ${status === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
-        messageDiv.style.display = 'block';
-
+    // Separate Welcome Messages
+    function showLoginWelcome(name) {
+        welcomeUserText.innerHTML = `Welcome back, <span class="highlight-name">${name}</span>!`;
+        floatingWelcome.classList.add('show');
         setTimeout(() => {
-            messageDiv.innerHTML = '';
-            messageDiv.className = 'message';
-            messageDiv.style.display = 'none';
+            floatingWelcome.classList.remove('show');
         }, 5000);
     }
 
+    function showRegisterWelcome(name) {
+        welcomeUserText.innerHTML = `Welcome to Nexora, <span class="highlight-name">${name}</span>! Let's get your work come and easy.`;
+        floatingWelcome.classList.add('show');
+        setTimeout(() => {
+            floatingWelcome.classList.remove('show');
+        }, 5000);
+    }
+
+    closeWelcome.addEventListener('click', () => {
+        floatingWelcome.classList.remove('show');
+    });
+
+    // Message Functions
+    function showLoginMessage(status, message) {
+        loginMessage.className = `message ${status}`;
+        loginMessage.innerHTML = `<i class="fas ${status === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
+        loginMessage.style.display = 'block';
+        setTimeout(() => clearLoginMessage(), 5000);
+    }
+
+    function showRegisterMessage(status, message) {
+        registerMessage.className = `message ${status}`;
+        registerMessage.innerHTML = `<i class="fas ${status === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
+        registerMessage.style.display = 'block';
+        setTimeout(() => clearRegisterMessage(), 5000);
+    }
+
+    function clearLoginMessage() {
+        loginMessage.style.display = 'none';
+        loginMessage.innerHTML = '';
+    }
+
+    function clearRegisterMessage() {
+        registerMessage.style.display = 'none';
+        registerMessage.innerHTML = '';
+    }
+
+    // Input Error Handling
     function showInputError(inputElement, message) {
         clearInputError(inputElement);
         const errorDiv = document.createElement('div');
@@ -273,9 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function clearInputError(inputElement) {
         const errorDiv = inputElement.parentElement.querySelector('.input-error');
-        if (errorDiv) {
-            errorDiv.remove();
-        }
+        if (errorDiv) errorDiv.remove();
         inputElement.classList.remove('error-border');
     }
 
@@ -286,9 +310,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('registerPassword'),
             document.getElementById('registerConfirmPassword')
         ];
-        
-        registerInputs.forEach(input => {
-            if (input) clearInputError(input);
-        });
+        registerInputs.forEach(input => input && clearInputError(input));
     }
 });
