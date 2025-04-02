@@ -31,19 +31,19 @@
                 <div class="nav-section">
                     <div class="nav-title">Nexora Facility</div>
                     <ul class="nav-list">
-                        <li class="nav-item active">
+                        <li class="nav-item active" data-view="dashboard">
                             <div class="nav-item-left">
                                 <i class="fa-solid fa-table-columns"></i>
                                 <span class="nav-item-text">Facility Dashboards</span>
                             </div>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" data-view="members">
                             <div class="nav-item-left">
                                 <i class="fa-solid fa-users"></i>
                                 <span class="nav-item-text">Facility Members</span>
                             </div>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" data-view="settings">
                             <div class="nav-item-left">
                                 <i class="fa-solid fa-gear"></i>
                                 <span class="nav-item-text">Facility Settings</span>
@@ -55,7 +55,7 @@
                 <div class="nav-section">
                     <div class="nav-title">Your Projects <i class="fa-solid fa-plus"></i></div>
                     <ul class="nav-list">
-                        <li class="nav-item">
+                        <li class="nav-item" data-view="project-alpha">
                             <div class="nav-item-left">
                                 <i class="fa-solid fa-diagram-project"></i>
                                 <span class="nav-item-text">Project Alpha</span>
@@ -70,7 +70,7 @@
                 <div class="nav-section bottom-nav">
                     <div class="nav-title">Joined Facility</div>
                     <ul class="nav-list">
-                        <li class="nav-item">
+                        <li class="nav-item" data-view="project-beta">
                             <div class="nav-item-left">
                                 <i class="fa-solid fa-diagram-project"></i>
                                 <span class="nav-item-text">Project Beta</span>
@@ -83,55 +83,14 @@
                 </div>
             </nav>
             
-            <div class="right-dashboard">
-                <div class="dashboard-header">
-                    <h1 class="dashboard-title">Facility Dashboard</h1>
-                    <div class="dashboard-actions">
-                        <button class="btn btn-outline">
-                            <i class="fa-solid fa-download"></i> Export
-                        </button>
-                        <button class="btn btn-primary">
-                            <i class="fa-solid fa-plus"></i> New Project
-                        </button>
-                    </div>
+            <div class="right-dashboard" id="dynamic-content">
+                <div id="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i> Loading Dashboard...
                 </div>
-                
-                <div class="dashboard-content">
-                    <h2>Welcome to Nexora Facility Management</h2>
-                    <p>Here you can manage all your facility projects, members, and settings.</p>
-                    
-                    <!-- Dashboard widgets would go here -->
-                    <div style="margin-top: 24px; padding: 16px; background: var(--primary-light); border-radius: 6px;">
-                        <h3 style="color: var(--primary); margin-bottom: 12px;">Quick Actions</h3>
-                        <div style="display: flex; gap: 16px;">
-                            <button class="btn btn-outline" style="flex: 1;">
-                                <i class="fa-solid fa-user-plus"></i> Add Member
-                            </button>
-                            <button class="btn btn-outline" style="flex: 1;">
-                                <i class="fa-solid fa-file-import"></i> Import Data
-                            </button>
-                            <button class="btn btn-outline" style="flex: 1;">
-                                <i class="fa-solid fa-chart-line"></i> View Reports
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-
-
-
-                <div class="dashboard-footer">
-                    <p>&copy; 2023 Nexora Facility. All rights reserved.</p>
-                </div>
+            </div>
         </main>
     </div>
 
-    <script>
-        // Mobile navigation toggle would go here
-        document.addEventListener('DOMContentLoaded', function() {
-            // This is where you'd add JavaScript for interactive elements
-            console.log('Dashboard loaded');
-        });
-    </script>
+    <script src="../JSFolder/facility.js"></script>
 </body>
 </html>

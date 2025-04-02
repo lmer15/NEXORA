@@ -1,31 +1,62 @@
-// Handle all navigation in the app
-document.addEventListener('DOMContentLoaded', function() {
-    // Highlight active menu item
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    const menuItems = document.querySelectorAll('.nav-item');
+function loadView(viewName) {
+    const contentDiv = document.getElementById('dynamic-content');
+    contentDiv.innerHTML = `<div id="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading...</div>`;
+
+    document.querySelectorAll('link[data-view-css]').forEach(link => link.remove());
+    document.querySelectorAll('script[data-view-js]').forEach(script => script.remove());
     
-    menuItems.forEach(item => {
-        const link = item.querySelector('a');
-        const page = link.getAttribute('href');
-        
-        if (page === currentPage) {
-            item.classList.add('active');
-        }
-        
-        // Prevent default for same-page links (optional)
-        link.addEventListener('click', function(e) {
-            if (page === currentPage) {
-                e.preventDefault();
+    fetch(`${viewName}.php`)
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to load view');
+            return response.text();
+        })
+        .then(html => {
+            contentDiv.innerHTML = html;
+            
+            // Load CSS (relative path from View directory)
+            const cssLink = document.createElement('link');
+            cssLink.rel = 'stylesheet';
+            cssLink.href = `../CSS_files/views/${viewName}.css`;
+            cssLink.setAttribute('data-view-css', 'true');
+            document.head.appendChild(cssLink);
+            
+            // Load JS (relative path from View directory)
+            const jsScript = document.createElement('script');
+            jsScript.src = `../JSfolder/views/${viewName}.js`;
+            jsScript.setAttribute('data-view-js', 'true');
+            document.body.appendChild(jsScript);
+            
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.view === viewName) {
+                    item.classList.add('active');
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            contentDiv.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Error loading content: ${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+// Add event listeners to nav items
+document.addEventListener('DOMContentLoaded', function() {
+    // Load initial view (dashboard)
+    loadView('dashboard');
+    
+    // Set up navigation click handlers
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const viewName = this.dataset.view;
+            if (viewName) {
+                loadView(viewName);
             }
         });
     });
-
-    const menuToggle = document.querySelector('.mobile-menu-toggle');
-    const sidebar = document.querySelector('.left-navigator');
-    
-    if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-        });
-    }
 });

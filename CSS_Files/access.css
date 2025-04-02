@@ -57,11 +57,11 @@ body {
 
 .logo img {
     position: absolute;
-    top: 70px;
+    top: 100px;
     width: 200px;
     height: 200px;
     object-fit: cover;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 4px 8px rgba(255, 251, 251, 0.5));
 }
 
 .form-container {

@@ -32,7 +32,7 @@ body {
 }
 
 .logo-container img {
-    height: 36px;
+    height: 40px;
     width: auto;
 }
 
@@ -68,6 +68,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    cursor: pointer;
 }
 
 .profile-info {
@@ -255,8 +256,7 @@ body {
 .dashboard-content {
     background: var(--white);
     border-radius: 8px;
-    padding: 24px;
-    box-shadow: var(--shadow);
+    overflow-y: auto;
 }
 
 /* Responsive Design */
