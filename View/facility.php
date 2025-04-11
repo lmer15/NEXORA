@@ -53,7 +53,7 @@
                 </div>
                 
                 <div class="nav-section">
-                    <div class="nav-title">Your Projects <i class="fa-solid fa-plus"></i></div>
+                <div class="nav-title">Your Projects <i class="fa-solid fa-plus new-project-nav-icon"></i></div>
                     <ul class="nav-list">
                         <li class="nav-item" data-view="project-alpha">
                             <div class="nav-item-left">

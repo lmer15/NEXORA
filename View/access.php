@@ -86,6 +86,6 @@
         <span class="close-btn" id="closeWelcome">&times;</span>
     </div>
 
-    <script src="../JSFolder/access.js?v=1.3"></script>
+    <script src="../JSFolder/access.js"></script>
 </body>
 </html>
