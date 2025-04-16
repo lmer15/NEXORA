@@ -12,88 +12,6 @@
         <h1 class="settings-title">Facility Settings</h1>
         
         <div class="settings-grid">
-            <!-- General Settings Card -->
-            <div class="settings-card">
-                <div class="settings-card-header">
-                    <i class="fas fa-cog"></i>
-                    <h2>General Settings</h2>
-                </div>
-                <div class="settings-card-body">
-                    <div class="form-group">
-                        <label for="facilityName">Facility Name</label>
-                        <input type="text" id="facilityName" value="My Facility" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="timezone">Timezone</label>
-                        <select id="timezone" class="form-control">
-                            <option value="UTC">UTC</option>
-                            <option value="EST" selected>Eastern Time (EST)</option>
-                            <option value="PST">Pacific Time (PST)</option>
-                            <option value="CST">Central Time (CST)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="dateFormat">Date Format</label>
-                        <select id="dateFormat" class="form-control">
-                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notification Settings Card -->
-            <div class="settings-card">
-                <div class="settings-card-header">
-                    <i class="fas fa-bell"></i>
-                    <h2>Notification Settings</h2>
-                </div>
-                <div class="settings-card-body">
-                    <div class="form-group">
-                        <label class="checkbox-container">
-                            <input type="checkbox" checked="checked">
-                            <span class="checkmark"></span>
-                            Email Notifications
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label class="checkbox-container">
-                            <input type="checkbox" checked="checked">
-                            <span class="checkmark"></span>
-                            Push Notifications
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label class="checkbox-container">
-                            <input type="checkbox">
-                            <span class="checkmark"></span>
-                            Desktop Notifications
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label>Notification Frequency</label>
-                        <div class="radio-group">
-                            <label class="radio-container">
-                                <input type="radio" name="frequency" checked="checked">
-                                <span class="radiomark"></span>
-                                Immediately
-                            </label>
-                            <label class="radio-container">
-                                <input type="radio" name="frequency">
-                                <span class="radiomark"></span>
-                                Daily Digest
-                            </label>
-                            <label class="radio-container">
-                                <input type="radio" name="frequency">
-                                <span class="radiomark"></span>
-                                Weekly Summary
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Security Settings Card -->
             <div class="settings-card">
                 <div class="settings-card-header">
@@ -101,26 +19,61 @@
                     <h2>Security Settings</h2>
                 </div>
                 <div class="settings-card-body">
+                    <!-- Current Password Verification -->
                     <div class="form-group">
-                        <label for="password">Change Password</label>
-                        <input type="password" id="password" placeholder="New Password" class="form-control">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" name="currentPassword" 
+                            placeholder="Enter your current password" class="form-control" required>
+                    </div>
+                    
+                    <!-- New Password Section -->
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" name="newPassword" 
+                            placeholder="New Password" class="form-control" required>
+                        <small class="form-text text-muted">Minimum 8 characters with at least one number and one special character</small>
                     </div>
                     <div class="form-group">
-                        <input type="password" id="confirmPassword" placeholder="Confirm Password" class="form-control">
+                        <input type="password" id="confirmNewPassword" name="confirmNewPassword" 
+                            placeholder="Confirm New Password" class="form-control" required>
                     </div>
+                    
+                    <!-- Security Options -->
                     <div class="form-group">
                         <label class="checkbox-container">
-                            <input type="checkbox" checked="checked">
+                            <input type="checkbox" name="twoFactorAuth" checked="checked">
                             <span class="checkmark"></span>
                             Two-Factor Authentication
                         </label>
                     </div>
                     <div class="form-group">
                         <label class="checkbox-container">
-                            <input type="checkbox">
+                            <input type="checkbox" name="reAuthSensitive">
                             <span class="checkmark"></span>
                             Require re-authentication for sensitive actions
                         </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recovery Settings Card -->
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <i class="fas fa-key"></i>
+                    <h2>Account Recovery</h2>
+                </div>
+                <div class="settings-card-body">
+                    <p class="recovery-description">Set up security questions to recover your account if you forget your password.</p>
+                    
+                    <div class="form-group">
+                        <label for="recoveryQuestion1">Security Question 1</label>
+                        <select id="recoveryQuestion1" name="recoveryQuestion1" class="form-control que" required>
+                            <option value="">Select a question</option>
+                            <option value="What was your first pet's name?">What was your first pet's name?</option>
+                            <option value="What city were you born in?">What city were you born in?</option>
+                            <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                        </select>
+                        <input type="text" id="answer1" name="answer1" placeholder="Your answer" class="form-control mt-2" required>
                     </div>
                 </div>
             </div>
@@ -143,35 +96,13 @@
                                 <div class="theme-preview"></div>
                                 <span>Dark</span>
                             </div>
-                            <div class="theme-option system" data-theme="system">
-                                <div class="theme-preview"></div>
-                                <span>System</span>
-                            </div>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Primary Color</label>
-                        <div class="color-palette">
-                            <div class="color-option" data-color="#06a566" style="background-color: #06a566;"></div>
-                            <div class="color-option" data-color="#3b82f6" style="background-color: #3b82f6;"></div>
-                            <div class="color-option" data-color="#8b5cf6" style="background-color: #8b5cf6;"></div>
-                            <div class="color-option" data-color="#ec4899" style="background-color: #ec4899;"></div>
-                            <div class="color-option" data-color="#f59e0b" style="background-color: #f59e0b;"></div>
-                            <div class="color-option" data-color="#ef4444" style="background-color: #ef4444;"></div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="checkbox-container">
-                            <input type="checkbox" checked="checked">
-                            <span class="checkmark"></span>
-                            Compact Mode
-                        </label>
                     </div>
                 </div>
             </div>
 
             <!-- Danger Zone Card -->
-            <div class="settings-card danger">
+            <d iv class="settings-card danger">
                 <div class="settings-card-header">
                     <i class="fas fa-exclamation-triangle"></i>
                     <h2>Danger Zone</h2>

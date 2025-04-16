@@ -1,12 +1,18 @@
 <?php
 session_start();
 require '../config/db.php';
-require '../Model/UserModel.php';
 
-session_unset();
+$_SESSION = array();
 session_destroy();
 
-setcookie('remember_me', '', time() - 3600, '/');
+if (ini_get("session.use_cookies")) {
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 42000,
+        $params["path"], $params["domain"],
+        $params["secure"], $params["httponly"]
+    );
+}
+
 header('Location: ../View/access.php');
 exit;
 ?>

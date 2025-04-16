@@ -26,13 +26,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user && password_verify($password, $user['password'])) {
         $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_name'] = $user['name']; // Store name in session
+        $_SESSION['user_name'] = $user['name']; 
         
         if ($rememberMe) {
             $cookieValue = json_encode([
                 'id' => $user['id'],
                 'email' => $email,
-                'name' => $user['name'], // Include name in cookie
+                'name' => $user['name'],
                 'token' => hash('sha256', $user['password'])
             ]);
             setcookie('remember_me', base64_encode($cookieValue), 

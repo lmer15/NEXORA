@@ -24,8 +24,8 @@
                         <span class="code-value">XK7H-9P2M</span>
                     </div>
                     <div class="desc">
-                        <span class="code-description">Invite other people to join in your facility. 
-                        You can use and regenerate new codes to allow other Nexora users to access your facility.</span>
+                        <span class="code-description">Invite other people by sending this code to allow other Nexora users to access your facility. 
+                        You can use and regenerate new codes to disable the older ones.</span>
                     </div>
                 </div>
                 <button class="btn regenerate-btn" aria-label="Regenerate facility code">
