@@ -11,8 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         $userId = $_SESSION['user_id'];
         $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
         $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-        
-        // Validate inputs
+
         if (empty($name) || empty($email)) {
             throw new Exception('Name and email are required');
         }
@@ -20,19 +19,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new Exception('Invalid email format');
         }
-        
-        // Check if email is already taken by another user
+
+        // Check if email is already in use by another account
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
         $stmt->execute([$email, $userId]);
         if ($stmt->rowCount() > 0) {
             throw new Exception('Email already in use by another account');
         }
-        
-        // Update user in database
-        $stmt = $conn->prepare("UPDATE users SET name = ?, email = ? WHERE id = ?");
-        $stmt->execute([$name, $email, $userId]);
-        
-        // Handle profile picture upload
+
+        // Get current profile picture path before update
+        $stmt = $conn->prepare("SELECT profile_picture FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $currentProfile = $stmt->fetch(PDO::FETCH_ASSOC);
+        $oldProfilePicture = $currentProfile['profile_picture'] ?? null;
+
         $profilePicturePath = null;
         if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
             $uploadDir = '../uploads/profile_pictures/';
@@ -40,34 +40,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action']) && $_GET['ac
                 mkdir($uploadDir, 0755, true);
             }
             
-            $fileExtension = pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION);
-            $fileName = 'user_' . $userId . '_' . time() . '.' . $fileExtension;
-            $targetPath = $uploadDir . $fileName;
+            // File validation
+            $file = $_FILES['profile_picture'];
+            $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
             
-            // Validate image
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-            $fileType = $_FILES['profile_picture']['type'];
-            if (!in_array($fileType, $allowedTypes)) {
+            // Check file type
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif'];
+            if (!in_array($mime, $allowedMimes)) {
                 throw new Exception('Only JPG, PNG, and GIF images are allowed');
             }
             
-            if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $targetPath)) {
-                $profilePicturePath = $targetPath;
+            // Check file extension
+            if (!in_array($fileExtension, $allowedExtensions)) {
+                throw new Exception('Invalid file extension');
+            }
+            
+            // Check file size (max 2MB)
+            if ($file['size'] > 2097152) {
+                throw new Exception('File size must be less than 2MB');
+            }
+            
+            // Check image dimensions (max 2000x2000)
+            list($width, $height) = getimagesize($file['tmp_name']);
+            if ($width > 2000 || $height > 2000) {
+                throw new Exception('Image dimensions must be less than 2000x2000 pixels');
+            }
+            
+            // Generate unique filename
+            $fileName = 'user_' . $userId . '_' . time() . '.' . $fileExtension;
+            $targetPath = $uploadDir . $fileName;
+            
+            if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                $profilePicturePath = 'uploads/profile_pictures/' . $fileName;
                 
-                // Update session with new profile picture
-                $_SESSION['profile_picture'] = $targetPath;
+                // Delete old profile picture if it exists and isn't the default
+                if ($oldProfilePicture && $oldProfilePicture !== 'Images/profile.PNG' && file_exists('../' . $oldProfilePicture)) {
+                    unlink('../' . $oldProfilePicture);
+                }
+            } else {
+                throw new Exception('Failed to upload profile picture');
             }
         }
+
+        // Update user in database
+        if ($profilePicturePath) {
+            $stmt = $conn->prepare("UPDATE users SET name = ?, email = ?, profile_picture = ? WHERE id = ?");
+            $stmt->execute([$name, $email, $profilePicturePath, $userId]);
+        } else {
+            $stmt = $conn->prepare("UPDATE users SET name = ?, email = ? WHERE id = ?");
+            $stmt->execute([$name, $email, $userId]);
+        }
         
-        // Update session with new name and email
+        // Update session
         $_SESSION['user_name'] = $name;
         $_SESSION['user_email'] = $email;
+        $_SESSION['profile_picture'] = $profilePicturePath ? $profilePicturePath : ($oldProfilePicture ? $oldProfilePicture : 'Images/profile.PNG');
         
         echo json_encode([
             'success' => true,
             'message' => 'Profile updated successfully',
             'name' => $name,
-            'profile_picture' => $profilePicturePath ? $profilePicturePath : null
+            'profile_picture' => $_SESSION['profile_picture']
         ]);
         
     } catch (Exception $e) {

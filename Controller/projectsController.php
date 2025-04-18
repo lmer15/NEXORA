@@ -20,7 +20,7 @@ try {
 
     switch ($_GET['action']) {
         case 'getAll':
-            $projects = $projectModel->getAll();
+            $projects = $projectModel->getAll($_SESSION['user_id']);
             echo json_encode([
                 'success' => true,
                 'projects' => $projects

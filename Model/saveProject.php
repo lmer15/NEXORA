@@ -73,19 +73,21 @@ class Project {
         return $errors;
     }
 
-    public function getAll(): array {
+    public function getAll(int $owner_id): array {
         try {
             $sql = "SELECT p.*, u.name as owner_name 
                     FROM projects p 
                     JOIN users u ON p.owner_id = u.id 
+                    WHERE p.owner_id = :owner_id
                     ORDER BY p.due_date ASC";
-
+    
             $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':owner_id', $owner_id, PDO::PARAM_INT);
             $stmt->execute();
             $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+    
             return $projects ?: [];
-
+    
         } catch (PDOException $e) {
             error_log('Database error: ' . $e->getMessage());
             throw new Exception('Failed to retrieve projects');

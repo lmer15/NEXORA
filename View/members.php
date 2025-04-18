@@ -29,7 +29,7 @@
                     </div>
                 </div>
                 <button class="btn regenerate-btn" aria-label="Regenerate facility code">
-                    <i class="fas fa-sync-alt"></i> Regenerate
+                    <i class="fas fa-sync-alt"></i>
                 </button>
             </div>
             

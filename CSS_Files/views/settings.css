@@ -8,9 +8,14 @@
 
 .settings-title {
     font-size: 2rem;
-    margin-bottom: 2rem;
     color: var(--secondary);
     font-weight: 600;
+}
+
+.settings-intro {
+    font-size: 1rem;
+    color: var(--text-light);
+    margin-bottom: 2rem;
 }
 
 .settings-grid {

@@ -7,12 +7,11 @@ document.addEventListener("DOMContentLoaded", function () {
         initProjectForm();
         initJoinFacilityModal();
         setupGlobalEventListeners();
-        initProfileModal();
 
         function initProfileModal() {
             const profileDropdown = document.querySelector('.profile');
             const profileModal = document.getElementById('profileModal');
-            const closeProfileModal = profileModal?.querySelector('.modal-close');
+            const closeModalBtn = profileModal?.querySelector('.modal-close'); 
             const cancelProfileBtn = document.getElementById('cancelProfileBtn');
             const changePhotoBtn = document.getElementById('changePhotoBtn');
             const removePhotoBtn = document.getElementById('removePhotoBtn');
@@ -21,12 +20,16 @@ document.addEventListener("DOMContentLoaded", function () {
             const currentProfilePic = document.getElementById('currentProfilePic');
             const profileForm = document.getElementById('profileForm');
 
-            // Open profile modal from dropdown
+            
+            if (currentProfilePic) {
+                currentProfilePic.src = document.querySelector('.profile-pic').src;
+            }
+
             document.querySelector('.dropdown-item[href="#"]')?.addEventListener('click', function(e) {
                 e.preventDefault();
                 showProfileModal();
             });
-
+        
             function showProfileModal() {
                 if (!profileModal) return;
                 profileModal.style.display = 'flex';
@@ -34,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     profileModal.classList.add('show');
                 }, 10);
             }
-
+        
             function closeProfileModal() {
                 if (!profileModal) return;
                 profileModal.classList.remove('show');
@@ -42,8 +45,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     profileModal.style.display = 'none';
                 }, 300);
             }
-
-            closeProfileModal?.addEventListener('click', closeProfileModal);
+        
+            closeModalBtn?.addEventListener('click', closeProfileModal); 
             cancelProfileBtn?.addEventListener('click', closeProfileModal);
             profileModal?.addEventListener('click', (e) => {
                 if (e.target === profileModal) closeProfileModal();
@@ -59,8 +62,8 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             removePhotoBtn?.addEventListener('click', () => {
-                currentProfilePic.src = '../Images/default-profile.jpg'; // Set to your default image
-                profilePicture.value = ''; // Clear the file input
+                currentProfilePic.src = '../Images/profile.PNG';
+                profilePicture.value = ''; 
             });
 
             profilePicture?.addEventListener('change', function(e) {
@@ -104,9 +107,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     
                     if (data.success) {
                         showSuccessNotification('Profile updated successfully!');
-                        // Update the profile picture in the header if changed
                         if (data.profile_picture) {
-                            document.querySelector('.profile-pic').src = data.profile_picture;
+                            const cleanPath = data.profile_picture.replace(/^\.\.\//, '');
+                            document.querySelector('.profile-pic').src = '../' + cleanPath;
+                            if (currentProfilePic) {
+                                currentProfilePic.src = '../' + cleanPath;
+                            }
                         }
                         // Update the name in the header
                         document.querySelector('.profile-name').textContent = data.name;
@@ -150,6 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
         
                     if (file.includes('dashboard.php')) {
+                        initProfileModal();
                         enhanceDashboardUI();
                         loadProjects();
                     }
@@ -411,128 +418,176 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         function handleSettingsPage() {
-            const currentPassword = document.getElementById('currentPassword');
-            const newPassword = document.getElementById('newPassword');
-            const confirmPassword = document.getElementById('confirmNewPassword');
-            
-            if (currentPassword && newPassword && confirmPassword) {
-                confirmPassword.addEventListener('input', function() {
-                    if (newPassword.value !== confirmPassword.value) {
-                        confirmPassword.setCustomValidity("Passwords don't match");
-                    } else {
-                        confirmPassword.setCustomValidity('');
-                    }
-                });
-                
-                newPassword.addEventListener('input', function() {
-                    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
-                    if (!passwordRegex.test(newPassword.value)) {
-                        newPassword.setCustomValidity('Password must be at least 8 characters with one number and one special character');
-                    } else {
-                        newPassword.setCustomValidity('');
-                    }
+            loadSecurityQuestions();
+            const passwordForm = document.getElementById('passwordForm');
+            if (passwordForm) {
+                passwordForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    updatePassword();
                 });
             }
-            
-            const recoveryQuestions = document.querySelectorAll('[id^="recoveryQuestion"]');
-            recoveryQuestions.forEach(question => {
-                question.addEventListener('change', function() {
-                    const answerId = this.id.replace('Question', '');
-                    const answerInput = document.getElementById(answerId);
-                    if (this.value && !answerInput.value) {
-                        answerInput.setCustomValidity('Please provide an answer');
-                    } else {
-                        answerInput.setCustomValidity('');
-                    }
+            const recoveryForm = document.getElementById('recoveryForm');
+            if (recoveryForm) {
+                recoveryForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    updateSecurityQuestions();
                 });
-            });
+            }
 
-            const themeOptions = document.querySelectorAll('.theme-option');
-            themeOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    themeOptions.forEach(opt => opt.classList.remove('active'));
-                    this.classList.add('active');
-                    console.log('Theme changed to:', this.dataset.theme);
-                });
-            });
-
-            const colorOptions = document.querySelectorAll('.color-option');
-            colorOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    colorOptions.forEach(opt => opt.classList.remove('selected'));
-                    this.classList.add('selected');
-                    console.log('Primary color changed to:', this.dataset.color);
-                });
-            });
-
-            const saveBtn = document.querySelector('.btn-primary');
+            const saveBtn = document.getElementById('saveSettingsBtn');
             if (saveBtn) {
                 saveBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    
-                    const forms = document.querySelectorAll('.settings-card-body');
-                    let isValid = true;
-                    
-                    forms.forEach(form => {
-                        const inputs = form.querySelectorAll('input[required], select[required]');
-                        inputs.forEach(input => {
-                            if (!input.value) {
-                                input.reportValidity();
-                                isValid = false;
-                            }
+                    let messages = [];
+                    let hasChanges = false;
+        
+                    const currentPassword = document.getElementById('currentPassword')?.value;
+                    const newPassword = document.getElementById('newPassword')?.value;
+                    if (currentPassword || newPassword) {
+                        hasChanges = true;
+                        updatePassword().then(result => {
+                            if (result && result.success) messages.push(result.message);
+                            checkAndShowMessages(messages, hasChanges);
                         });
+                    }
+        
+                    let hasQuestionChanges = false;
+                    document.querySelectorAll('[id^="recoveryQuestion"]').forEach(question => {
+                        if (question.value) hasQuestionChanges = true;
                     });
-                    
-                    if (isValid) {
-                        showNotification('Security settings saved successfully!', 'success');
+                    if (hasQuestionChanges) {
+                        hasChanges = true;
+                        updateSecurityQuestions().then(result => {
+                            if (result && result.success) messages.push(result.message);
+                            checkAndShowMessages(messages, hasChanges);
+                        });
+                    }
+        
+                    if (!hasChanges) {
+                        showSuccessNotification('No changes were made');
                     }
                 });
             }
 
-            const deleteBtn = document.querySelector('.btn-danger');
+            function checkAndShowMessages(messages, hasChanges) {
+                if (messages.length > 0) {
+                    showSuccessNotification(messages.join(' and '));
+                } else if (!hasChanges) {
+                    showSuccessNotification('No changes were made');
+                }
+            }
+
+            const cancelBtn = document.getElementById('cancelSettingsBtn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    window.location.reload();
+                });
+            }
+
+            const deleteBtn = document.getElementById('deleteAccountBtn');
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    if (confirm('Are you sure you want to permanently delete this facility? This action cannot be undone.')) {
-                        alert('Facility deletion initiated');
+                    if (confirm('Are you sure you want to permanently delete your account? This action cannot be undone.')) {
+                        // Add your account deletion logic here
+                        alert('Account deletion initiated');
                     }
                 });
             }
         }
-
-        function initJoinFacilityModal() {
-            const joinFacilityModal = document.getElementById('joinFacilityModal');
-            if (!joinFacilityModal) return;
-
-            window.showJoinFacilityModal = function() {
-                joinFacilityModal.style.display = 'flex';
-                setTimeout(() => {
-                    joinFacilityModal.classList.add('show');
-                }, 10);
-            };
-
-            const closeModal = () => {
-                joinFacilityModal.classList.remove('show');
-                setTimeout(() => {
-                    joinFacilityModal.style.display = 'none';
-                }, 300);
-            };
-
-            joinFacilityModal.querySelector('.modal-close')?.addEventListener('click', closeModal);
-            joinFacilityModal.querySelector('.cancel-btn')?.addEventListener('click', closeModal);
-            joinFacilityModal.addEventListener('click', (e) => {
-                if (e.target === joinFacilityModal) closeModal();
-            });
-
-            joinFacilityModal.querySelector('.confirm-btn')?.addEventListener('click', () => {
-                const facilityCode = document.getElementById('facilityCode')?.value.trim();
-                if (!facilityCode) {
-                    showNotification('Please enter a facility code', 'error');
-                    return;
+        
+        function loadSecurityQuestions() {
+            fetch('../Controller/SettingsController.php?action=getSecurityQuestions')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.questions) {
+                        data.questions.forEach((question, index) => {
+                            const questionId = `recoveryQuestion${index + 1}`;
+                            const answerId = `answer${index + 1}`;
+                            
+                            const questionSelect = document.getElementById(questionId);
+                            const answerInput = document.getElementById(answerId);
+                            
+                            if (questionSelect) questionSelect.value = question.question;
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading security questions:', error);
+                });
+        }
+        
+        function updatePassword() {
+            return new Promise((resolve) => {
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmNewPassword').value;
+                
+                if (newPassword !== confirmPassword) {
+                    showErrorNotification("Passwords don't match");
+                    return resolve(null);
                 }
                 
-                showNotification(`Request sent to join facility: ${facilityCode}`, 'success');
-                closeModal();
+                const formData = new FormData();
+                formData.append('currentPassword', currentPassword);
+                formData.append('newPassword', newPassword);
+                
+                fetch('../Controller/SettingsController.php?action=updatePassword', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmNewPassword').value = '';
+                        resolve(data);
+                    } else {
+                        showErrorNotification(data.message);
+                        resolve(null);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showErrorNotification('Failed to update password');
+                    resolve(null);
+                });
+            });
+        }
+        
+        function updateSecurityQuestions() {
+            return new Promise((resolve) => {
+                const formData = new FormData();
+                
+                document.querySelectorAll('[id^="recoveryQuestion"]').forEach((question, index) => {
+                    const questionNum = index + 1;
+                    const answer = document.getElementById(`answer${questionNum}`).value;
+                    
+                    if (question.value && answer) {
+                        formData.append(`question${questionNum}`, question.value);
+                        formData.append(`answer${questionNum}`, answer);
+                    }
+                });
+                
+                fetch('../Controller/SettingsController.php?action=updateSecurityQuestions', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        resolve(data);
+                    } else {
+                        showErrorNotification(data.message);
+                        resolve(null);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showErrorNotification('Failed to update security questions');
+                    resolve(null);
+                });
             });
         }
 
@@ -758,14 +813,31 @@ document.addEventListener("DOMContentLoaded", function () {
                 setTimeout(() => {
                     formOverlay.style.display = 'none';
                     // Reset form when closing
-                    projectForm.reset();
+                    document.getElementById('projectForm').reset();
+                    
+                    // Reset date picker
+                    const datePicker = flatpickr("#projectDueDate");
+                    if (datePicker) {
+                        datePicker.clear();
+                        datePicker.setDate(new Date().fp_incr(7));
+                    }
+                    
                     // Reset color to default
                     const defaultColor = '#3b82f6';
-                    colorPreview.style.backgroundColor = defaultColor;
-                    selectedColorInput.value = defaultColor;
-                    colorOptions.forEach(opt => opt.classList.remove('selected'));
-                    colorOptions[0]?.classList.add('selected');
-                    updateColorPreviewText(defaultColor);
+                    const colorPreview = document.getElementById('colorPreview');
+                    const selectedColorInput = document.getElementById('selectedColor');
+                    const colorOptions = document.querySelectorAll('.color-option');
+                    
+                    if (colorPreview) {
+                        colorPreview.style.backgroundColor = defaultColor;
+                        updateColorPreviewText(defaultColor);
+                    }
+                    if (selectedColorInput) selectedColorInput.value = defaultColor;
+                    if (colorOptions.length) {
+                        colorOptions.forEach(opt => opt.classList.remove('selected'));
+                        colorOptions[0]?.classList.add('selected');
+                    }
+                    
                     // Clear any errors
                     document.querySelectorAll('.form-error').forEach(el => el.remove());
                     document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
@@ -872,35 +944,69 @@ document.addEventListener("DOMContentLoaded", function () {
         function enhanceDashboardUI() {
             const kanbanTasks = document.querySelectorAll('.kanban-task');
             kanbanTasks.forEach(task => {
-                task.addEventListener('mouseenter', () => {
-                    task.style.transform = 'translateY(-3px)';
-                    task.style.boxShadow = '0 6px 12px rgba(0,0,0,0.1)';
+                task.draggable = true;
+                task.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', task.dataset.projectId);
+                    setTimeout(() => task.classList.add('dragging'), 0);
                 });
-                task.addEventListener('mouseleave', () => {
-                    task.style.transform = 'translateY(0)';
-                    task.style.boxShadow = '0 2px 6px rgba(0,0,0,0.05)';
+                task.addEventListener('dragend', () => task.classList.remove('dragging'));
+            });
+        
+            const columns = document.querySelectorAll('.kanban-column');
+            columns.forEach(column => {
+                column.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    column.classList.add('drag-over');
+                });
+                
+                column.addEventListener('dragleave', () => {
+                    column.classList.remove('drag-over');
+                });
+                
+                column.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    column.classList.remove('drag-over');
+                    
+                    const projectId = e.dataTransfer.getData('text/plain');
+                    const projectElement = document.querySelector(`.kanban-task[data-project-id="${projectId}"]`);
+                    const newStatus = column.dataset.status;
+                    
+                    if (projectElement && projectElement.dataset.status !== newStatus) {
+                        updateProjectStatus(projectId, newStatus);
+                    }
                 });
             });
+        }
 
-            const newProjectBtns = document.querySelectorAll('.new-project-btn');
-            newProjectBtns.forEach(btn => {
-                btn.addEventListener('mouseenter', () => {
-                    btn.style.animation = 'pulse 1.5s infinite';
-                });
-                btn.addEventListener('mouseleave', () => {
-                    btn.style.animation = 'none';
-                });
+        function updateProjectStatus(projectId, newStatus) {
+            fetch('../Controller/projectsController.php?action=updateStatus', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    projectId: projectId,
+                    status: newStatus
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadProjects(); // Refresh the board
+                } else {
+                    throw new Error(data.message || 'Failed to update project status');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showErrorNotification(error.message || 'Failed to update project status');
             });
-
-            const dashboard = document.querySelector('.dashboard-view');
-            if (dashboard) {
-                dashboard.style.backgroundImage = 'radial-gradient(circle at 1px 1px, #f0f0f0 1px, transparent 0)';
-                dashboard.style.backgroundSize = '20px 20px';
-            }
         }
 
         function loadProjects() {
-            fetch('../Controller/projectsController.php?action=getAll')
+            const userId = document.body.dataset.userId;
+            
+            fetch(`../Controller/projectsController.php?action=getAll`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`Server returned ${response.status} ${response.statusText}`);
@@ -920,6 +1026,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     if (data.success && data.projects) {
                         updateKanbanBoard(data.projects);
+                        updateProjectsNav(data.projects);
                     } else {
                         throw new Error(data.message || 'Failed to load projects');
                     }
@@ -929,6 +1036,47 @@ document.addEventListener("DOMContentLoaded", function () {
                     showErrorNotification(error.message || 'Failed to load projects. Please check console for details.');
                     updateKanbanBoard([]);
                 });
+        }
+
+        function updateProjectsNav(projects) {
+            const projectsNavSection = document.querySelector('.nav-section:nth-child(2) .nav-list');
+            if (!projectsNavSection) return;
+
+            projectsNavSection.innerHTML = '';
+            projects.forEach(project => {
+                const projectItem = document.createElement('li');
+                projectItem.className = 'nav-item';
+                projectItem.dataset.view = `project-${project.id}`;
+                projectItem.innerHTML = `
+                    <div class="nav-item-left">
+                        <i class="fa-solid fa-diagram-project"></i>
+                        <span class="nav-item-text">${project.name}</span>
+                    </div>
+                    <div class="nav-item-actions">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </div>
+                `;
+                projectsNavSection.appendChild(projectItem);
+        
+                projectItem.addEventListener('click', function() {
+                    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                    this.classList.add('active');
+                    loadProjectDetails(project.id);
+                });
+            });
+        
+            const newProjectIcon = document.querySelector('.new-project-nav-icon');
+            if (newProjectIcon) {
+                newProjectIcon.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showProjectOptionsMenu(this);
+                });
+            }
+        }
+        
+        function loadProjectDetails(projectId) {
+            console.log('Loading project:', projectId);
+            // You can fetch project details and display them in the main content area
         }
         
         function updateKanbanBoard(projects) {
@@ -974,7 +1122,10 @@ document.addEventListener("DOMContentLoaded", function () {
         function createProjectElement(project) {
             const element = document.createElement('div');
             element.className = 'kanban-task';
+            element.dataset.projectId = project.id;
+            element.dataset.status = project.status;
             element.style.borderLeft = `4px solid ${project.color}`;
+            element.draggable = true;
             element.innerHTML = `
                 <div class="task-header">
                     <h4>${project.name}</h4>

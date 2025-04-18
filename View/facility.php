@@ -33,7 +33,7 @@ if (!isset($_SESSION['user_id'])) {
                     <div class="profile-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'user_name'); ?></div>
                     <div class="profile-role"><?php echo htmlspecialchars($_SESSION['role'] ?? 'Owner'); ?></div>
                 </div>
-                <img src="../Images/profile.jpg" alt="Profile picture" class="profile-pic">
+                <img src="<?php echo '../' . htmlspecialchars($_SESSION['profile_picture'] ?? 'Images/profile.PNG'); ?>" alt="Profile picture" class="profile-pic">
                 <div class="profile-dropdown-menu">
                     <a href="#" class="dropdown-item"><i class="fas fa-user"></i> Profile</a>
                     <a href="#" class="dropdown-item"><i class="fas fa-cog"></i> Settings</a>
@@ -71,15 +71,7 @@ if (!isset($_SESSION['user_id'])) {
                 <div class="nav-section">
                     <div class="nav-title">Your Projects <i class="fa-solid fa-plus new-project-nav-icon"></i></div>
                     <ul class="nav-list">
-                        <li class="nav-item" data-view="project-alpha">
-                            <div class="nav-item-left">
-                                <i class="fa-solid fa-diagram-project"></i>
-                                <span class="nav-item-text">Project Alpha</span>
-                            </div>
-                            <div class="nav-item-actions">
-                                <i class="fa-solid fa-ellipsis"></i>
-                            </div>
-                        </li>
+                        <!-- Projects will be added here dynamically -->
                     </ul>
                 </div>
                 
@@ -258,7 +250,7 @@ if (!isset($_SESSION['user_id'])) {
                             <div class="form-group full-width">
                                 <div class="profile-picture-container">
                                     <div class="profile-picture-preview" id="profilePicturePreview">
-                                        <img src="../Images/profile.jpg" alt="Current profile picture" id="currentProfilePic">
+                                        <img src="../Images/profile.PNG" alt="Current profile picture" id="currentProfilePic">
                                         <div class="upload-overlay">
                                             <i class="fas fa-camera"></i>
                                             <span>Change Photo</span>

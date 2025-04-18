@@ -293,6 +293,25 @@
     background: #05925a;
 }
 
+.kanban-task.dragging {
+    opacity: 100%;
+    transform: scale(0.98);
+}
+
+.kanban-column.drag-over {
+    background-color: var(--hover-bg);
+    border: 2px dashed var(--primary);
+}
+
+.kanban-task {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: grab;
+}
+
+.kanban-task:active {
+    cursor: grabbing;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
     .kanban-container {
