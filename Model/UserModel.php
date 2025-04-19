@@ -15,11 +15,55 @@ class UserModel {
 
     public function createUser($name, $email, $password) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $this->conn->prepare("INSERT INTO users (name, email, password) VALUES (:name, :email, :password)");
-        $stmt->bindParam(':name', $name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':password', $hashedPassword);
-        return $stmt->execute();
+        
+        // Start transaction
+        $this->conn->beginTransaction();
+        
+        try {
+            // Create user
+            $stmt = $this->conn->prepare("INSERT INTO users (name, email, password) VALUES (:name, :email, :password)");
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':password', $hashedPassword);
+            $stmt->execute();
+            
+            $userId = $this->conn->lastInsertId();
+            
+            // Create facility for the user
+            $facilityName = $name . "'s Facility";
+            $facilityCode = $this->generateUniqueCode();
+            
+            $stmt = $this->conn->prepare("INSERT INTO facilities (name, code, owner_id) VALUES (:name, :code, :owner_id)");
+            $stmt->bindParam(':name', $facilityName);
+            $stmt->bindParam(':code', $facilityCode);
+            $stmt->bindParam(':owner_id', $userId);
+            $stmt->execute();
+            
+            $facilityId = $this->conn->lastInsertId();
+            
+            // Add user as member to their own facility
+            $stmt = $this->conn->prepare("INSERT INTO facility_members (facility_id, user_id) VALUES (:facility_id, :user_id)");
+            $stmt->bindParam(':facility_id', $facilityId);
+            $stmt->bindParam(':user_id', $userId);
+            $stmt->execute();
+            
+            // Add user as admin to their own facility
+            $stmt = $this->conn->prepare("INSERT INTO facility_admins (facility_id, user_id, assigned_by) VALUES (:facility_id, :user_id, :assigned_by)");
+            $stmt->bindParam(':facility_id', $facilityId);
+            $stmt->bindParam(':user_id', $userId);
+            $stmt->bindParam(':assigned_by', $userId);
+            $stmt->execute();
+            
+            // Commit transaction
+            $this->conn->commit();
+            
+            return $userId;
+            
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            $this->conn->rollBack();
+            throw $e;
+        }
     }
 
     public function getUserById($id) {
@@ -27,6 +71,27 @@ class UserModel {
         $stmt->bindParam(':id', $id);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function generateUniqueCode($length = 8) {
+        $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $code = '';
+        
+        do {
+            $code = '';
+            for ($i = 0; $i < $length; $i++) {
+                $code .= $characters[rand(0, strlen($characters) - 1)];
+            }
+            
+            // Check if code exists
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM facilities WHERE code = :code");
+            $stmt->bindParam(':code', $code);
+            $stmt->execute();
+            $count = $stmt->fetchColumn();
+            
+        } while ($count > 0);
+        
+        return $code;
     }
 }
 ?>

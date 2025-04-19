@@ -75,16 +75,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // If no validation errors, attempt registration
     if (empty($response['errors'])) {
         try {
-            if ($userModel->createUser($name, $email, $password)) {
+            $userId = $userModel->createUser($name, $email, $password);
+            if ($userId) {
                 $response['status'] = 'success';
                 $response['message'] = 'Registration successful! You can now login.';
                 $response['user'] = [
+                    'id' => $userId,
                     'name' => $name,
                     'email' => $email
                 ];
                 
                 session_start();
-                $_SESSION['user_id'] = $userModel->getUserByEmail($email)['id'];
+                $_SESSION['user_id'] = $userId;
                 $_SESSION['user_name'] = $name;
             }
         } catch (PDOException $e) {

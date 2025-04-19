@@ -80,8 +80,8 @@ if (!isset($_SESSION['user_id'])) {
                     <ul class="nav-list">
                         <li class="nav-item" data-view="project-beta">
                             <div class="nav-item-left">
-                                <i class="fa-solid fa-diagram-project"></i>
-                                <span class="nav-item-text">Project Beta</span>
+                                <i class="fa-solid fa-briefcase"></i>
+                                <span class="nav-item-text">Elmer's Facility</span>
                             </div>
                             <div class="nav-item-actions">
                                 <i class="fa-solid fa-ellipsis"></i>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 18, 2025 at 04:46 PM
+-- Generation Time: Apr 19, 2025 at 11:31 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -20,6 +20,98 @@ SET time_zone = "+00:00";
 --
 -- Database: `nexora`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `facilities`
+--
+
+CREATE TABLE `facilities` (
+  `id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `code` varchar(12) NOT NULL,
+  `owner_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `facilities`
+--
+
+INSERT INTO `facilities` (`id`, `name`, `code`, `owner_id`, `created_at`, `updated_at`) VALUES
+(2, 'Thomas Willis\'s Facility', 'M9SJR1ES', 15, '2025-04-19 06:35:14', '2025-04-19 06:35:14'),
+(3, 'Sylvia Levine\'s Facility', 'YJ5FY4YZ', 16, '2025-04-19 06:35:19', '2025-04-19 06:35:19'),
+(4, 'Jessamine Bridges\'s Facility', 'CTFEBU8G', 17, '2025-04-19 06:35:24', '2025-04-19 06:35:24'),
+(5, 'Kelsey Fletcher\'s Facility', 'IW670GKG', 18, '2025-04-19 06:35:28', '2025-04-19 06:35:28'),
+(8, 'Ross Shelton\'s Facility', 'DWAGYNZ2', 21, '2025-04-19 09:17:10', '2025-04-19 09:17:10');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `facility_admins`
+--
+
+CREATE TABLE `facility_admins` (
+  `id` int(11) NOT NULL,
+  `facility_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `assigned_by` int(11) NOT NULL,
+  `assigned_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `facility_admins`
+--
+
+INSERT INTO `facility_admins` (`id`, `facility_id`, `user_id`, `assigned_by`, `assigned_at`) VALUES
+(2, 2, 15, 15, '2025-04-19 06:35:14'),
+(3, 3, 16, 16, '2025-04-19 06:35:19'),
+(4, 4, 17, 17, '2025-04-19 06:35:24'),
+(5, 5, 18, 18, '2025-04-19 06:35:28'),
+(6, 8, 21, 21, '2025-04-19 09:17:10');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `facility_invitations`
+--
+
+CREATE TABLE `facility_invitations` (
+  `id` int(11) NOT NULL,
+  `facility_id` int(11) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `code` varchar(12) NOT NULL,
+  `status` enum('pending','accepted','expired') NOT NULL DEFAULT 'pending',
+  `invited_by` int(11) NOT NULL,
+  `invited_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `expires_at` timestamp NOT NULL DEFAULT (current_timestamp() + interval 7 day)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `facility_members`
+--
+
+CREATE TABLE `facility_members` (
+  `id` int(11) NOT NULL,
+  `facility_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `joined_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `facility_members`
+--
+
+INSERT INTO `facility_members` (`id`, `facility_id`, `user_id`, `joined_at`) VALUES
+(2, 2, 15, '2025-04-19 06:35:14'),
+(3, 3, 16, '2025-04-19 06:35:19'),
+(4, 4, 17, '2025-04-19 06:35:24'),
+(5, 5, 18, '2025-04-19 06:35:28'),
+(6, 8, 21, '2025-04-19 09:17:10');
 
 -- --------------------------------------------------------
 
@@ -44,7 +136,10 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `name`, `description`, `priority`, `due_date`, `color`, `status`, `owner_id`, `created_at`) VALUES
-(128, 'Maia Carlson', 'Quidem eligendi omni', 'high', '2025-12-18', '#ef4444', 'todo', 9, '2025-04-16 19:07:53');
+(133, 'Indigo Gray', 'Odit consectetur au', 'medium', '2025-12-12', '#b304a8', 'todo', 15, '2025-04-19 06:45:13'),
+(134, 'Gemma Abbott', 'Similique elit saep', 'medium', '2025-04-26', '#90e462', 'todo', 15, '2025-04-19 06:45:17'),
+(135, 'Lewis Boyle', 'Aut sed vero delenit', 'high', '2025-04-26', '#b2e1d9', 'todo', 15, '2025-04-19 06:45:22'),
+(136, 'Rhona Drake', 'Quasi voluptatibus n', 'low', '2025-04-26', '#60642f', 'todo', 15, '2025-04-19 06:45:25');
 
 -- --------------------------------------------------------
 
@@ -60,15 +155,6 @@ CREATE TABLE `security_questions` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `security_questions`
---
-
-INSERT INTO `security_questions` (`id`, `user_id`, `question`, `answer`, `created_at`, `updated_at`) VALUES
-(7, 10, 'What was your first pet\'s name?', '$2y$10$FdtctofJYwOtd81IzvZU3.3z/HB.cEyS8kr0LIaaNMhHsvqswD9OK', '2025-04-18 09:46:41', '2025-04-18 09:46:41'),
-(11, 9, 'What is your mother\'s maiden name?', '$2y$10$OvHyplceToeb7CRdYx.hwO7/cE2FtBLDnzSR2.vSOv28Nla57EZ42', '2025-04-18 13:51:04', '2025-04-18 13:51:04'),
-(14, 12, 'What was your first pet\'s name?', '$2y$10$PQF1bbLVJf4yqDSF.SIn8OT1NEMFyq.lyZ9/5sRNKOA07dLonfGBu', '2025-04-18 14:44:24', '2025-04-18 14:44:24');
 
 -- --------------------------------------------------------
 
@@ -91,14 +177,49 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `updated_at`, `profile_picture`) VALUES
-(9, 'Elmer Rapon', 'raponelmer15@gmail.com', '$2y$10$YMny4T32axrRLEX7nRRNL.fTYgn4tBe7qaHl8Rj.4dAyeFGwC5ptS', '2025-04-02 08:58:24', '2025-04-18 14:38:36', 'uploads/profile_pictures/user_9_1744987116.jpg'),
-(10, 'Kamal Young', 'dihykuh@mailinator.com', '$2y$10$gd44ApjcI/8WqGA.lV1aw.AEfMcoiCS72tWIt8i/EEV.6kdWGPomy', '2025-04-18 09:43:28', '2025-04-18 14:39:18', 'uploads/profile_pictures/user_10_1744987158.jpg'),
-(11, 'Wyatt Gordon', 'jocutyjyd@mailinator.com', '$2y$10$cIjdxfyRq8IcGW1AUKb0WO8E3c/VNpOOpFpvyHD3KM7cziCZ6XYPW', '2025-04-18 14:28:50', '2025-04-18 14:41:54', 'uploads/profile_pictures/user_11_1744987314.jpg'),
-(12, 'Philip Turner', 'gipud@mailinator.com', '$2y$10$q/txREeqkH9rThnAroVnYObDpmPwKiaJjI7dEWAHdtIb7bWhdhAJ6', '2025-04-18 14:43:16', '2025-04-18 14:44:24', 'Images/profile.PNG');
+(15, 'Elmer Rapon', 'raponelmer15@gmail.com', '$2y$10$e45iA6LSEvOec0tXE/pdzea9yzI/8NYwR2eQQninkyHGnzBjJEsnK', '2025-04-19 06:35:14', '2025-04-19 06:45:36', 'uploads/profile_pictures/user_15_1745045005.jpg'),
+(16, 'Sylvia Levine', 'zuqel@mailinator.com', '$2y$10$sDMdUSnxQl9DlEDMzu1FaOxR.z.3CWM9o9e7vsJUjsu.fely1g0m6', '2025-04-19 06:35:19', '2025-04-19 06:35:19', 'Images/profile.PNG'),
+(17, 'Jessamine Bridges', 'wybupebuw@mailinator.com', '$2y$10$azjFWjBXFL4cTLQzmtyIFO89In8SUl7EUWd2/NJmpNLzj0euAFcPG', '2025-04-19 06:35:24', '2025-04-19 06:35:24', 'Images/profile.PNG'),
+(18, 'Kelsey Fletcher', 'fakid@mailinator.com', '$2y$10$2PmRd8YXSj66ety0gnIXmuhWcMZVUcoEAAGW26iWVzpicDFLcAGzC', '2025-04-19 06:35:28', '2025-04-19 06:35:28', 'Images/profile.PNG'),
+(21, 'Ross Shelton', 'tewiw@mailinator.com', '$2y$10$2IsJg4tra0CDuZLeTN8PHOLJqfdO/.av3ylQwMAQ8lkqE8yz1a/eO', '2025-04-19 09:17:10', '2025-04-19 09:17:10', 'Images/profile.PNG');
 
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `facilities`
+--
+ALTER TABLE `facilities`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `code` (`code`),
+  ADD KEY `owner_id` (`owner_id`);
+
+--
+-- Indexes for table `facility_admins`
+--
+ALTER TABLE `facility_admins`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `facility_user` (`facility_id`,`user_id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `assigned_by` (`assigned_by`);
+
+--
+-- Indexes for table `facility_invitations`
+--
+ALTER TABLE `facility_invitations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `code` (`code`),
+  ADD KEY `facility_id` (`facility_id`),
+  ADD KEY `invited_by` (`invited_by`);
+
+--
+-- Indexes for table `facility_members`
+--
+ALTER TABLE `facility_members`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `facility_user` (`facility_id`,`user_id`),
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `projects`
@@ -126,26 +247,78 @@ ALTER TABLE `users`
 --
 
 --
+-- AUTO_INCREMENT for table `facilities`
+--
+ALTER TABLE `facilities`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `facility_admins`
+--
+ALTER TABLE `facility_admins`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `facility_invitations`
+--
+ALTER TABLE `facility_invitations`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `facility_members`
+--
+ALTER TABLE `facility_members`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
 -- AUTO_INCREMENT for table `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=129;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=137;
 
 --
 -- AUTO_INCREMENT for table `security_questions`
 --
 ALTER TABLE `security_questions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `facilities`
+--
+ALTER TABLE `facilities`
+  ADD CONSTRAINT `facilities_ibfk_1` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `facility_admins`
+--
+ALTER TABLE `facility_admins`
+  ADD CONSTRAINT `facility_admins_ibfk_1` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `facility_admins_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `facility_admins_ibfk_3` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `facility_invitations`
+--
+ALTER TABLE `facility_invitations`
+  ADD CONSTRAINT `facility_invitations_ibfk_1` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `facility_invitations_ibfk_2` FOREIGN KEY (`invited_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `facility_members`
+--
+ALTER TABLE `facility_members`
+  ADD CONSTRAINT `facility_members_ibfk_1` FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `facility_members_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `projects`

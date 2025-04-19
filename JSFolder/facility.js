@@ -255,12 +255,24 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         function handleMembersPage() {
-            const inviteBtn = document.querySelector('.invite-btn');
+            const currentUserId = document.body.dataset.userId;
+            const regenerateCodeBtn = document.getElementById('regenerateCodeBtn');
+            const inviteMembersBtn = document.getElementById('inviteMembersBtn');
             const inviteModal = document.getElementById('inviteModal');
-            const inviteModalClose = inviteModal?.querySelector('.modal-close');
+            const confirmModal = document.getElementById('confirmModal');
+            const membersTableBody = document.getElementById('membersTableBody');
+            const inviteLinkInput = document.getElementById('inviteLinkInput');
+            const copyInviteLinkBtn = document.getElementById('copyInviteLinkBtn');
+            const userSearchInput = document.getElementById('userSearchInput');
+            const userSuggestions = document.getElementById('userSuggestions');
+            const selectedUsersList = document.getElementById('selectedUsersList');
+            const sendInvitationBtn = document.getElementById('sendInvitationBtn');
             
-            if (inviteBtn && inviteModal && inviteModalClose) {
-                inviteBtn.addEventListener('click', () => {
+            // Initialize modals
+            if (inviteModal) {
+                const inviteModalClose = inviteModal.querySelector('.modal-close');
+                
+                inviteMembersBtn.addEventListener('click', () => {
                     inviteModal.style.display = 'flex';
                     setTimeout(() => {
                         inviteModal.classList.add('show');
@@ -273,148 +285,432 @@ document.addEventListener("DOMContentLoaded", function () {
                         inviteModal.style.display = 'none';
                     }, 300);
                 });
-            }
-            
-            const copyBtn = document.querySelector('.copy-btn');
-            if (copyBtn) {
-                copyBtn.addEventListener('click', () => {
-                    const inviteLink = document.querySelector('.invite-link');
-                    if (inviteLink) {
-                        navigator.clipboard.writeText(inviteLink.value);
-                        showNotification('Invite link copied to clipboard!', 'success');
+                
+                inviteModal.addEventListener('click', (e) => {
+                    if (e.target === inviteModal) {
+                        inviteModal.classList.remove('show');
+                        setTimeout(() => {
+                            inviteModal.style.display = 'none';
+                        }, 300);
                     }
                 });
             }
             
-            const actionButtons = document.querySelectorAll('.btn-icon.danger, .btn-icon[title*="Make Admin"], .btn-icon[title*="Revoke Admin"]');
-            const confirmModal = document.getElementById('confirmModal');
-            
-            if (actionButtons.length && confirmModal) {
-                const confirmModalClose = confirmModal.querySelector('.modal-close');
-                const cancelBtn = confirmModal.querySelector('.cancel-btn');
-                const confirmBtn = confirmModal.querySelector('.confirm-btn');
-                
-                actionButtons.forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        
-                        const isRemove = btn.classList.contains('danger');
-                        const isMakeAdmin = btn.getAttribute('title')?.includes('Make Admin');
-                        const isRevokeAdmin = btn.getAttribute('title')?.includes('Revoke Admin');
-                        
-                        let message = 'Are you sure?';
-                        if (isRemove) message = 'Are you sure you want to remove this member?';
-                        if (isMakeAdmin) message = 'Are you sure you want to make this member an admin?';
-                        if (isRevokeAdmin) message = 'Are you sure you want to revoke admin privileges?';
-                        
-                        document.getElementById('confirmMessage').textContent = message;
-                        
-                        confirmModal.style.display = 'flex';
-                        setTimeout(() => {
-                            confirmModal.classList.add('show');
-                        }, 10);
-                        
-                        confirmModal.dataset.source = Array.from(btn.classList).join(' ');
-                    });
+            // Copy invite link
+            if (copyInviteLinkBtn && inviteLinkInput) {
+                copyInviteLinkBtn.addEventListener('click', () => {
+                    if (!inviteLinkInput.value) return;
+                    
+                    navigator.clipboard.writeText(inviteLinkInput.value)
+                        .then(() => {
+                            const copyText = copyInviteLinkBtn.querySelector('.copy-code-text');
+                            if (copyText) {
+                                copyText.textContent = 'Copied!';
+                                setTimeout(() => {
+                                    copyText.textContent = 'Copy';
+                                }, 2000);
+                            }
+                            showSuccessNotification('Invite link copied to clipboard!');
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy: ', err);
+                            showErrorNotification('Failed to copy invite link');
+                        });
                 });
+            }
+            
+            // Regenerate facility code
+            if (regenerateCodeBtn) {
+                regenerateCodeBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to regenerate the facility code? The old code will no longer work.')) {
+                        fetch('../Controller/memberController.php?action=regenerateCode', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                document.getElementById('facilityCodeValue').textContent = data.code;
+                                if (inviteLinkInput) {
+                                    inviteLinkInput.value = `https://facility.example.com/join/${data.code}`;
+                                }
+                                showSuccessNotification('Facility code regenerated successfully!');
+                            } else {
+                                throw new Error(data.message || 'Failed to regenerate code');
+                            }
+                        })
+                        .catch(error => {
+                            showErrorNotification(error.message);
+                        });
+                    }
+                });
+            }
+            
+            // User search functionality
+            if (userSearchInput) {
+                userSearchInput.addEventListener('input', debounce(function(e) {
+                    const query = e.target.value.trim();
+                    if (query.length < 2) {
+                        userSuggestions.innerHTML = '';
+                        return;
+                    }
+        
+                    fetch(`../Controller/userController.php?action=search&query=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.users) {
+                                displayUserSuggestions(data.users);
+                            } else {
+                                userSuggestions.innerHTML = '<div class="suggestion-item">No users found</div>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            userSuggestions.innerHTML = '<div class="suggestion-item error">Error searching users</div>';
+                        });
+                }, 300));
+            }
+            
+            // Handle member actions
+            if (membersTableBody) {
+                membersTableBody.addEventListener('click', function(e) {
+                    const makeAdminBtn = e.target.closest('.make-admin-btn');
+                    const revokeAdminBtn = e.target.closest('.revoke-admin-btn');
+                    const removeMemberBtn = e.target.closest('.remove-member-btn');
+                    
+                    if (makeAdminBtn) {
+                        const userId = makeAdminBtn.dataset.userId;
+                        showConfirmModal(
+                            'Are you sure you want to make this member an admin?',
+                            () => makeAdmin(userId)
+                        );
+                    } else if (revokeAdminBtn) {
+                        const userId = revokeAdminBtn.dataset.userId;
+                        showConfirmModal(
+                            'Are you sure you want to revoke admin privileges from this member?',
+                            () => revokeAdmin(userId)
+                        );
+                    } else if (removeMemberBtn) {
+                        const userId = removeMemberBtn.dataset.userId;
+                        showConfirmModal(
+                            'Are you sure you want to remove this member from the facility?',
+                            () => removeMember(userId)
+                        );
+                    }
+                });
+            }
+            
+            // Send invitation
+            if (sendInvitationBtn) {
+                sendInvitationBtn.addEventListener('click', function() {
+                    if (selectedUsers.length === 0) {
+                        showErrorNotification('Please select at least one user');
+                        return;
+                    }
+            
+                    const promises = selectedUsers.map(user => {
+                        return fetch('../Controller/memberController.php?action=sendInvitation', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email: user.email })
+                        })
+                        .then(response => response.json());
+                    });
+            
+                    Promise.all(promises)
+                        .then(results => {
+                            const successful = results.filter(r => r.success);
+                            const failed = results.filter(r => !r.success);
+                            
+                            if (successful.length > 0) {
+                                showSuccessNotification(
+                                    `Invitations sent to ${successful.length} user(s) successfully`
+                                );
+                                selectedUsers = [];
+                                selectedUsersList.innerHTML = '';
+                            }
+                            
+                            if (failed.length > 0) {
+                                showErrorNotification(
+                                    `Failed to send ${failed.length} invitation(s): ${failed.map(f => f.message).join(', ')}`
+                                );
+                            }
+                        })
+                        .catch(error => {
+                            showErrorNotification('Error sending invitations: ' + error.message);
+                        });
+                });
+            }
+        
+            // Helper functions
+            function showConfirmModal(message, confirmCallback) {
+                const confirmMessage = document.getElementById('confirmMessage');
+                const confirmBtn = confirmModal.querySelector('.confirm-btn');
+                const cancelBtn = confirmModal.querySelector('.cancel-btn');
                 
-                const closeConfirmModal = () => {
+                confirmMessage.textContent = message;
+                confirmModal.style.display = 'flex';
+                setTimeout(() => {
+                    confirmModal.classList.add('show');
+                }, 10);
+                
+                const closeModal = () => {
                     confirmModal.classList.remove('show');
                     setTimeout(() => {
                         confirmModal.style.display = 'none';
                     }, 300);
                 };
                 
-                confirmModalClose?.addEventListener('click', closeConfirmModal);
-                cancelBtn?.addEventListener('click', closeConfirmModal);
+                const handleConfirm = () => {
+                    confirmCallback();
+                    closeModal();
+                };
                 
-                confirmBtn?.addEventListener('click', () => {
-                    const source = confirmModal.dataset.source;
-                    let message = 'Action completed';
-                    
-                    if (source.includes('danger')) {
-                        message = 'Member removed successfully';
-                    } else if (source.includes('fa-crown')) {
-                        message = 'Admin privileges granted';
-                    } else if (source.includes('fa-user-shield')) {
-                        message = 'Admin privileges revoked';
+                confirmBtn.onclick = handleConfirm;
+                cancelBtn.onclick = closeModal;
+                confirmModal.querySelector('.modal-close').onclick = closeModal;
+                confirmModal.onclick = (e) => {
+                    if (e.target === confirmModal) closeModal();
+                };
+            }
+        
+            function makeAdmin(userId) {
+                fetch('../Controller/memberController.php?action=makeAdmin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccessNotification('Member promoted to admin successfully');
+                        refreshMembersList();
+                    } else {
+                        throw new Error(data.message || 'Failed to make admin');
                     }
-                    
-                    showNotification(message, 'success');
-                    closeConfirmModal();
+                })
+                .catch(error => {
+                    showErrorNotification(error.message);
                 });
             }
-            
-            const regenerateBtn = document.querySelector('.regenerate-btn');
-            if (regenerateBtn) {
-                regenerateBtn.addEventListener('click', () => {
-                    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                    let code = '';
-                    for (let i = 0; i < 8; i++) {
-                        code += chars.charAt(Math.floor(Math.random() * chars.length));
-                        if (i === 3) code += '-';
+        
+            function revokeAdmin(userId) {
+                fetch('../Controller/memberController.php?action=revokeAdmin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccessNotification('Admin privileges revoked successfully');
+                        refreshMembersList();
+                    } else {
+                        throw new Error(data.message || 'Failed to revoke admin');
                     }
-                    
-                    const codeValue = document.querySelector('.code-value');
-                    const inviteLink = document.querySelector('.invite-link');
-                    
-                    if (codeValue) codeValue.textContent = code;
-                    if (inviteLink) inviteLink.value = `https://facility.example.com/join/${code}`;
-                    
-                    showNotification('Facility code regenerated!', 'success');
+                })
+                .catch(error => {
+                    showErrorNotification(error.message);
                 });
             }
-
-            function setupCopyButton(button, textToCopy, successMessage) {
-                if (!button) return;
-                
-                const copyTextElement = button.querySelector('.copy-code-text') || button.querySelector('.copy-text');
-                
-                button.addEventListener('click', () => {
-                    navigator.clipboard.writeText(textToCopy)
-                        .then(() => {
-                            if (copyTextElement) {
-                                copyTextElement.textContent = 'Copied!';
-                                button.classList.add('copied');
+        
+            function removeMember(userId) {
+                fetch('../Controller/memberController.php?action=removeMember', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccessNotification('Member removed successfully');
+                        refreshMembersList();
+                    } else {
+                        throw new Error(data.message || 'Failed to remove member');
+                    }
+                })
+                .catch(error => {
+                    showErrorNotification(error.message);
+                });
+            }
+        
+            function refreshMembersList() {
+                fetch('../Controller/memberController.php?action=getMembers')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            renderMembersTable(data.members);
+                        } else {
+                            throw new Error(data.message || 'Failed to load members');
+                        }
+                    })
+                    .catch(error => {
+                        showErrorNotification(error.message);
+                    });
+            }
+        
+            function renderMembersTable(members) {
+                membersTableBody.innerHTML = members.map(member => `
+                    <tr data-user-id="${member.id}">
+                        <td data-label="Member">
+                            <div class="member-info">
+                                <div class="avatar" style="background-color: ${getColorFromName(member.name)};">
+                                    ${getInitials(member.name)}
+                                </div>
+                                <div class="member-details">
+                                    <span class="member-name">${escapeHtml(member.name)}</span>
+                                    <span class="member-status">${member.role.charAt(0).toUpperCase() + member.role.slice(1)}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td data-label="Email">${escapeHtml(member.email)}</td>
+                        <td data-label="Role">
+                            <span class="role-badge ${member.role}">
+                                ${member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                            </span>
+                        </td>
+                        <td data-label="Joined">
+                            ${new Date(member.joined_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                        <td data-label="Actions">
+                            <div class="action-buttons">
+                                ${member.role === 'admin' && member.id != currentUserId ? `
+                                    <button class="btn-icon revoke-admin-btn" 
+                                            data-user-id="${member.id}" 
+                                            title="Revoke Admin" 
+                                            aria-label="Revoke admin privileges">
+                                        <i class="fas fa-user-shield"></i>
+                                    </button>
+                                ` : member.role === 'member' ? `
+                                    <button class="btn-icon make-admin-btn" 
+                                            data-user-id="${member.id}" 
+                                            title="Make Admin" 
+                                            aria-label="Make member admin">
+                                        <i class="fas fa-crown"></i>
+                                    </button>
+                                ` : ''}
                                 
-                                setTimeout(() => {
-                                    copyTextElement.textContent = 'Copy';
-                                    button.classList.remove('copied');
-                                }, 2000);
-                            }
-                            
-                            showNotification(successMessage, 'success');
-                        })
-                        .catch(err => {
-                            console.error('Failed to copy: ', err);
-                            showNotification('Failed to copy', 'error');
-                        });
+                                ${member.id != currentUserId ? `
+                                    <button class="btn-icon danger remove-member-btn" 
+                                            data-user-id="${member.id}" 
+                                            title="Remove Member" 
+                                            aria-label="Remove member">
+                                        <i class="fas fa-user-times"></i>
+                                    </button>
+                                ` : `
+                                    <button class="btn-icon" disabled aria-label="Owner actions disabled">
+                                        <i class="fas fa-crown"></i>
+                                    </button>
+                                    <button class="btn-icon" disabled aria-label="Owner actions disabled">
+                                        <i class="fas fa-user-times"></i>
+                                    </button>
+                                `}
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        
+            function displayUserSuggestions(users) {
+                userSuggestions.innerHTML = users.map(user => `
+                    <div class="user-suggestion-item" data-user-id="${user.id}">
+                        <div class="user-suggestion-avatar" style="background-color: ${getColorFromName(user.name)};">
+                            ${getInitials(user.name)}
+                        </div>
+                        <div class="suggestion-details">
+                            <div class="suggestion-name">${escapeHtml(user.name)}</div>
+                            <div class="suggestion-email">${escapeHtml(user.email)}</div>
+                        </div>
+                        <button class="btn-icon add-user-btn" title="Add user">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                `).join('');
+            
+                // Add event listeners to suggestion items
+                document.querySelectorAll('.user-suggestion-item').forEach(item => {
+                    const addBtn = item.querySelector('.add-user-btn');
+                    const userId = item.dataset.userId;
+                    const user = users.find(u => u.id == userId);
+                    
+                    addBtn.addEventListener('click', () => {
+                        if (!selectedUsers.some(u => u.id == userId)) {
+                            selectedUsers.push(user);
+                            renderSelectedUsers();
+                        }
+                    });
                 });
             }
         
-            const copyCodeBtn = document.querySelector('.code-display .copy-code-btn');
-            if (copyCodeBtn) {
-                const codeValue = document.querySelector('.code-value');
-                if (codeValue) {
-                    setupCopyButton(
-                        copyCodeBtn,
-                        codeValue.textContent,
-                        'Facility code copied to clipboard!'
-                    );
-                }
+            function renderSelectedUsers() {
+                selectedUsersList.innerHTML = selectedUsers.map(user => `
+                    <div class="selected-user" data-user-id="${user.id}">
+                        <div class="selected-avatar" style="background-color: ${getColorFromName(user.name)};">
+                            ${getInitials(user.name)}
+                        </div>
+                        <div class="selected-details">
+                            <div class="selected-name">${escapeHtml(user.name)}</div>
+                            <div class="selected-email">${escapeHtml(user.email)}</div>
+                        </div>
+                        <button class="btn-icon remove-user-btn" title="Remove user">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `).join('');
+            
+                // Add event listeners to remove buttons
+                document.querySelectorAll('.remove-user-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const userId = this.closest('.selected-user').dataset.userId;
+                        selectedUsers = selectedUsers.filter(u => u.id != userId);
+                        renderSelectedUsers();
+                    });
+                });
             }
         
-            const copyInviteBtn = document.querySelector('.invite-link-container .copy-code-btn');
-            if (copyInviteBtn) {
-                const inviteLink = document.querySelector('.invite-link');
-                if (inviteLink) {
-                    setupCopyButton(
-                        copyInviteBtn,
-                        inviteLink.value,
-                        'Invite link copied to clipboard!'
-                    );
-                }
+            function getInitials(name) {
+                return name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2).toUpperCase();
             }
+        
+            function getColorFromName(name) {
+                const colors = ['#3b82f6', '#06a566', '#f08c00', '#8b5cf6', '#ef4444', '#10b981', '#f59e0b'];
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) {
+                    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                return colors[Math.abs(hash) % colors.length];
+            }
+        
+            function escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+        
+            function debounce(func, wait) {
+                let timeout;
+                return function(...args) {
+                    const context = this;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(context, args), wait);
+                };
+            }
+        
+            // Initialize with current members
+            refreshMembersList();
         }
 
         function handleSettingsPage() {
