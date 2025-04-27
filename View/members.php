@@ -1,25 +1,61 @@
 <?php
-include_once '../config/db.php';
-require_once '../Model/facilityModel.php';
+require_once '../config/db.php';
 require_once '../Model/UserModel.php';
+require_once '../Model/FacilityModel.php';
 
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: access.php");
+    header("Location: ../access.php");
     exit();
 }
 
-$facilityModel = new FacilityModel($conn);
 $userModel = new UserModel($conn);
+$facilityModel = new FacilityModel($conn);
 
-// Get the user's default facility
-$user = $userModel->getUserById($_SESSION['user_id']);
-$facilityId = $user['default_facility_id'];
+// Get current user with facility info
+$currentUser = $userModel->getUserById($_SESSION['user_id']);
+if (!$currentUser) {
+    die("User not found");
+}
+
+// Debugging - remove after testing
+error_log("User data: " . print_r($currentUser, true));
+
+// Get the user's owned facility if default_facility_id is missing
+if (empty($currentUser['default_facility_id'])) {
+    $stmt = $conn->prepare("SELECT id FROM facilities WHERE owner_id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $ownedFacility = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($ownedFacility) {
+        // Update user's default facility
+        $conn->prepare("UPDATE users SET default_facility_id = ? WHERE id = ?")
+             ->execute([$ownedFacility['id'], $_SESSION['user_id']]);
+        $currentUser['default_facility_id'] = $ownedFacility['id'];
+        $currentUser['facility_id'] = $ownedFacility['id'];
+    } else {
+        die("Critical error: User has no facility. Please contact support.");
+    }
+}
+
+// Now we're sure the user has a facility
+$facilityId = $currentUser['default_facility_id'];
 $facility = $facilityModel->getFacilityById($facilityId);
-$members = $facilityModel->getFacilityMembers($facilityId);
-?>
+if (!$facility) {
+    die("Facility not found");
+}
 
+$facilityCode = $facility['code'];
+$members = $facilityModel->getFacilityMembers($facilityId);
+
+// Make sure the owner is first in the list
+usort($members, function($a, $b) use ($facility) {
+    if ($a['id'] == $facility['owner_id']) return -1;
+    if ($b['id'] == $facility['owner_id']) return 1;
+    return strcmp($a['name'], $b['name']);
+});
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,7 +63,7 @@ $members = $facilityModel->getFacilityMembers($facilityId);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facility Members</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../CSS_Files/views/members.css">
+    <link rel="stylesheet" href="../CSS_Files/views/members.css?v=1.0">
 </head>
 <body>
     <div class="members-container">        
@@ -42,7 +78,7 @@ $members = $facilityModel->getFacilityMembers($facilityId);
                 <div class="code-display">
                     <div class="code">
                         <span class="code-label">Facility Code:</span>
-                        <span class="code-value" id="facilityCodeValue"><?php echo htmlspecialchars($facility['code'] ?? 'N/A'); ?></span>
+                        <span class="code-value" id="facilityCodeValue"><?php echo htmlspecialchars($facilityCode); ?></span>
                     </div>
                     <div class="desc">
                         <span class="code-description">Invite other people by sending this code to allow other Nexora users to access your facility. 
@@ -66,7 +102,7 @@ $members = $facilityModel->getFacilityMembers($facilityId);
         <div class="members-list-section">
             <div class="section-header">
                 <h2>Current Members</h2>
-                <span class="facilityMembers">(<?php echo count($members); ?>)</span>
+                <span class="facilityMembers">(<?php echo $facilityModel->getMemberCount($facilityId); ?>)</span>
                 <div class="divider"></div>
             </div>
             
@@ -116,15 +152,16 @@ $members = $facilityModel->getFacilityMembers($facilityId);
                                     <?php echo date('M j, Y', strtotime($member['joined_at'])); ?>
                                 </td>
                                 <td data-label="Actions">
-                                    <div class="action-buttons">
-                                        <?php if ($member['role'] === 'admin' && $member['id'] != $_SESSION['user_id']): ?>
+                                <div class="action-buttons">
+                                    <?php if ($member['id'] != $_SESSION['user_id']): ?>
+                                        <?php if ($member['role'] === 'admin'): ?>
                                             <button class="btn-icon revoke-admin-btn" 
                                                     data-user-id="<?php echo $member['id']; ?>" 
                                                     title="Revoke Admin" 
                                                     aria-label="Revoke admin privileges">
                                                 <i class="fas fa-user-shield"></i>
                                             </button>
-                                        <?php elseif ($member['role'] === 'member'): ?>
+                                        <?php else: ?>
                                             <button class="btn-icon make-admin-btn" 
                                                     data-user-id="<?php echo $member['id']; ?>" 
                                                     title="Make Admin" 
@@ -133,23 +170,22 @@ $members = $facilityModel->getFacilityMembers($facilityId);
                                             </button>
                                         <?php endif; ?>
                                         
-                                        <?php if ($member['id'] != $_SESSION['user_id']): ?>
-                                            <button class="btn-icon danger remove-member-btn" 
-                                                    data-user-id="<?php echo $member['id']; ?>" 
-                                                    title="Remove Member" 
-                                                    aria-label="Remove member">
-                                                <i class="fas fa-user-times"></i>
-                                            </button>
-                                        <?php else: ?>
-                                            <button class="btn-icon" disabled aria-label="Owner actions disabled">
-                                                <i class="fas fa-crown"></i>
-                                            </button>
-                                            <button class="btn-icon" disabled aria-label="Owner actions disabled">
-                                                <i class="fas fa-user-times"></i>
-                                            </button>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
+                                        <button class="btn-icon danger remove-member-btn" 
+                                                data-user-id="<?php echo $member['id']; ?>" 
+                                                title="Remove Member" 
+                                                aria-label="Remove member">
+                                            <i class="fas fa-user-times"></i>
+                                        </button>
+                                    <?php else: ?>
+                                        <button class="btn-icon" disabled aria-label="Owner actions disabled">
+                                            <i class="fas fa-crown"></i>
+                                        </button>
+                                        <button class="btn-icon" disabled aria-label="Owner actions disabled">
+                                            <i class="fas fa-user-times"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -171,7 +207,7 @@ $members = $facilityModel->getFacilityMembers($facilityId);
                     <p class="method-description">Share this link with people you want to invite to your facility:</p>
                     <div class="invite-link-container">
                         <input type="text" class="invite-link" id="inviteLinkInput" 
-                               value="<?php echo "https://facility.example.com/join/" . htmlspecialchars($facility['code'] ?? ''); ?>" 
+                               value="<?php echo "https://facility.example.com/join/" . htmlspecialchars($facilityCode); ?>" 
                                readonly aria-label="Invitation link">
                         <button class="btn copy-code-btn" id="copyInviteLinkBtn" aria-label="Copy invitation link">
                             <i class="fas fa-copy"></i>
@@ -185,34 +221,46 @@ $members = $facilityModel->getFacilityMembers($facilityId);
                     <p class="method-title">Direct Add Members</p>
                     <p class="method-description">Add existing Nexora users to your facility immediately:</p>
                     
-                    <div class="search-add-container">
+                    <div class="search-container">
                         <div class="search-input-wrapper">
-                            <input type="text" class="email-input" id="userSearchInput" 
-                                   placeholder="Search for Nexora users..." aria-label="Search users">
                             <i class="fas fa-search search-icon"></i>
-                        </div>
-                        <div class="user-suggestions" id="userSuggestions"></div>
-                        
-                        <div class="selected-users">
-                            <p class="selected-title">Users to be added:</p>
-                            <div class="selected-list" id="selectedUsersList"></div>
+                            <input type="text" class="search-input" id="userSearchInput" 
+                                placeholder="Search by name or email..." aria-label="Search users" autocomplete="off">
                         </div>
                         
-                        <div class="message-area">
-                            <div class="success-message" id="inviteSuccessMessage" style="display: none;">
-                                <i class="fas fa-check-circle"></i>
-                                <span class="message-text"></span>
-                            </div>
-                            <div class="error-message" id="inviteErrorMessage" style="display: none;">
-                                <i class="fas fa-exclamation-circle"></i>
-                                <span class="message-text"></span>
+                        <!-- Updated floating suggestions dropdown -->
+                        <div class="floating-suggestions" id="userSuggestions">
+                            <div class="suggestion-list" id="suggestionList">
+                                <!-- Suggestions will be populated here -->
                             </div>
                         </div>
-                        
-                        <button class="btn send-btn full-width" id="sendInvitationBtn" aria-label="Add members">
-                            <i class="fas fa-user-plus"></i> Add Members
-                        </button>
                     </div>
+
+                    <div class="selected-users">
+                        <p class="selected-title">Users to be added:</p>
+                        <div class="selected-list" id="selectedUsersList">
+                            <div class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <p>No users selected</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="message-area">
+                        <div class="success-message" id="inviteSuccessMessage" style="display: none;">
+                            <i class="fas fa-check-circle"></i>
+                            <span class="message-text"></span>
+                        </div>
+                        <div class="error-message" id="inviteErrorMessage" style="display: none;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span class="message-text"></span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn send-btn full-width" id="sendInvitationBtn" aria-label="Add members" disabled>
+                        <i class="fas fa-user-plus"></i> Add Selected Members
+                    </button>
+                </div>
                 </div>
             </div>
         </div>
@@ -235,7 +283,7 @@ $members = $facilityModel->getFacilityMembers($facilityId);
         </div>
     </div>
 
-    <script src="../JSFolder/views/members.js"></script>
+    <script src="../JSFolder/facility.js"></script>
 </body>
 </html>
 

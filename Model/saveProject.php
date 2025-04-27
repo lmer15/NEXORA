@@ -73,13 +73,18 @@ class Project {
         return $errors;
     }
 
-    public function getAll(int $owner_id): array {
+    public function getAll(int $owner_id, bool $includeArchived = false): array {
         try {
             $sql = "SELECT p.*, u.name as owner_name 
                     FROM projects p 
                     JOIN users u ON p.owner_id = u.id 
-                    WHERE p.owner_id = :owner_id
-                    ORDER BY p.due_date ASC";
+                    WHERE p.owner_id = :owner_id";
+            
+            if (!$includeArchived) {
+                $sql .= " AND p.is_archived = FALSE";
+            }
+            
+            $sql .= " ORDER BY p.due_date ASC";
     
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':owner_id', $owner_id, PDO::PARAM_INT);
@@ -91,6 +96,61 @@ class Project {
         } catch (PDOException $e) {
             error_log('Database error: ' . $e->getMessage());
             throw new Exception('Failed to retrieve projects');
+        }
+    }
+
+    public function updateStatus(int $projectId, string $status): bool {
+        $validStatuses = ['todo', 'progress', 'done'];
+        if (!in_array($status, $validStatuses)) {
+            error_log('Invalid status value: ' . $status);
+            return false;
+        }
+
+        try {
+            $sql = "UPDATE projects SET status = :status WHERE id = :projectId";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':status', $status);
+            $stmt->bindParam(':projectId', $projectId, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log('Failed to update project status: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function archive(int $projectId): bool {
+        try {
+            $sql = "UPDATE projects SET is_archived = TRUE WHERE id = :projectId";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':projectId', $projectId, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log('Failed to archive project: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    public function unarchive(int $projectId): bool {
+        try {
+            $sql = "UPDATE projects SET is_archived = FALSE WHERE id = :projectId";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':projectId', $projectId, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log('Failed to unarchive project: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    public function delete(int $projectId): bool {
+        try {
+            $sql = "DELETE FROM projects WHERE id = :projectId";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':projectId', $projectId, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log('Failed to delete project: ' . $e->getMessage());
+            return false;
         }
     }
 }

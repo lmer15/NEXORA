@@ -65,6 +65,12 @@ if (!isset($_SESSION['user_id'])) {
                                 <span class="nav-item-text">Facility Settings</span>
                             </div>
                         </li>
+                        <li class="nav-item" data-view="archived-projects">
+                            <div class="nav-item-left">
+                                <i class="fa-solid fa-box-archive"></i>
+                                <span class="nav-item-text">Archived Projects</span>
+                            </div>
+                        </li>
                     </ul>
                 </div>
                 

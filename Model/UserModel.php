@@ -16,7 +16,6 @@ class UserModel {
     public function createUser($name, $email, $password) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         
-        // Start transaction
         $this->conn->beginTransaction();
         
         try {
@@ -54,20 +53,23 @@ class UserModel {
             $stmt->bindParam(':assigned_by', $userId);
             $stmt->execute();
             
-            // Commit transaction
             $this->conn->commit();
             
             return $userId;
             
         } catch (Exception $e) {
-            // Rollback transaction on error
             $this->conn->rollBack();
             throw $e;
         }
     }
-
+    
     public function getUserById($id) {
-        $stmt = $this->conn->prepare("SELECT * FROM users WHERE id = :id");
+        $stmt = $this->conn->prepare("
+            SELECT u.*, f.id AS facility_id, f.name AS facility_name, f.code AS facility_code 
+            FROM users u
+            LEFT JOIN facilities f ON u.default_facility_id = f.id
+            WHERE u.id = :id
+        ");
         $stmt->bindParam(':id', $id);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
