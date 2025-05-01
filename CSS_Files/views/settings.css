@@ -4,55 +4,90 @@
     margin: 0 auto;
     padding: 2rem;
     color: var(--text);
+    background: var(--white);
+    min-height: 100vh;
+}
+
+.settings-header {
+    position: relative;
+    border-radius: 12px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: center;
+    padding: 24px 32px;
+    background: linear-gradient(135deg, var(--primary) 0%, #0d420b 100%);
+    box-shadow: var(--shadow);
+    z-index: 50;
+    margin-bottom: 24px;
+    overflow: hidden;
 }
 
 .settings-title {
     font-size: 2rem;
-    color: var(--secondary);
-    font-weight: 600;
+    color: var(--white);
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .settings-intro {
-    font-size: 1rem;
-    color: var(--text-light);
-    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 0.5rem;
 }
 
 .settings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
 }
 
 .settings-card {
     background: var(--white);
-    border-radius: 8px;
+    border-radius: 16px;
     box-shadow: var(--shadow);
     overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.settings-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    border: 2px solid var(--primary-light);
 }
 
 .settings-card.danger {
-    border-top: 4px solid #e63946;
+    border-top: 6px solid #e63946;
 }
 
 .settings-card-header {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1.25rem;
+    gap: 1rem;
+    padding: 1.5rem;
     border-bottom: 1px solid var(--border);
+    background: var(--project-background);
 }
 
-.settings-card-header i {
+.settings-card-header i.card-icon {
     color: var(--primary);
-    font-size: 1.25rem;
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.settings-card:hover .card-icon {
+    transform: scale(1.2);
 }
 
 .settings-card-header h2 {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 600;
     margin: 0;
+    color: var(--secondary);
 }
 
 .settings-card.danger .settings-card-header i {
@@ -60,130 +95,55 @@
 }
 
 .settings-card-body {
-    padding: 1.25rem;
+    padding: 1.5rem;
 }
 
-.checkbox-container {
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.75rem;
     display: block;
-    position: relative;
-    padding-left: 30px;
-    cursor: pointer;
-    user-select: none;
 }
 
-.checkbox-container input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-}
-
-.checkmark {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 20px;
-    width: 20px;
-    background-color: var(--white);
+.form-control {
+    width: 100%;
+    padding: 0.85rem;
     border: 1px solid var(--border);
-    border-radius: 4px;
-}
-
-.checkbox-container:hover input ~ .checkmark {
-    background-color: var(--hover-bg);
-}
-
-.checkbox-container input:checked ~ .checkmark {
-    background-color: var(--primary);
-    border-color: var(--primary);
-}
-
-.checkmark:after {
-    content: "";
-    position: absolute;
-    display: none;
-}
-
-.checkbox-container input:checked ~ .checkmark:after {
-    display: block;
-}
-
-.checkbox-container .checkmark:after {
-    left: 7px;
-    top: 3px;
-    width: 5px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
-
-.radio-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.radio-container {
-    display: block;
-    position: relative;
-    padding-left: 30px;
-    cursor: pointer;
-    user-select: none;
-}
-
-.radio-container input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-}
-
-.radiomark {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 20px;
-    width: 20px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
     background-color: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 50%;
+    color: var(--text);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.radio-container:hover input ~ .radiomark {
-    background-color: var(--hover-bg);
-}
-
-.radio-container input:checked ~ .radiomark {
-    background-color: var(--white);
+.form-control:focus {
+    outline: none;
     border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(6, 165, 102, 0.15);
+    transform: scale(1.01);
 }
 
-.radiomark:after {
-    content: "";
-    position: absolute;
-    display: none;
+.animate-input, .animate-select {
+    animation: fadeIn 0.5s ease;
 }
 
-.radio-container input:checked ~ .radiomark:after {
-    display: block;
-}
-
-.radio-container .radiomark:after {
-    top: 4px;
-    left: 4px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--primary);
+.help-text {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 0.5rem;
+    transition: opacity 0.3s ease;
 }
 
 .theme-selector {
     display: flex;
-    gap: 1rem;
-    flex-direction: column;
+    gap: 1.5rem;
+    flex-direction: row;
+    justify-content: center;
 }
 
 .theme-option {
@@ -191,120 +151,194 @@
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: all 0.2s;
+    padding: 1rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    background: var(--project-background);
+    width: 120px;
 }
 
 .theme-option:hover {
-    background-color: var(--hover-bg);
+    background: var(--hover-bg);
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
 .theme-option.active {
-    background-color: var(--primary-light);
-    border: 1px solid var(--primary);
+    background: var(--primary-light);
+    border: 2px solid var(--primary);
+    transform: scale(1.05);
 }
 
 .theme-preview {
-    width: 60px;
-    height: 40px;
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
+    width: 80px;
+    height: 50px;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
     border: 1px solid var(--border);
+    transition: transform 0.3s ease;
+}
+
+.theme-option:hover .theme-preview {
+    transform: scale(1.1);
 }
 
 .theme-option.light .theme-preview {
-    background: linear-gradient(to right, #ffffff 50%, #f5f5f5 50%);
+    background: linear-gradient(135deg, #ffffff 50%, #f5f5f5 50%);
 }
 
 .theme-option.dark .theme-preview {
-    background: linear-gradient(to right, #1e1e1e 50%, #2d2d2d 50%);
+    background: linear-gradient(135deg, #1e1e1e 50%, #2d2d2d 50%);
 }
 
 .danger-item {
-    padding: 1rem 0;
+    padding: 1.25rem 0;
     border-bottom: 1px solid var(--border);
+    transition: transform 0.3s ease;
 }
 
 .danger-item:last-child {
     border-bottom: none;
 }
 
+.danger-item:hover {
+    transform: translateX(5px);
+}
+
 .danger-item h3 {
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
     color: var(--text);
 }
 
 .danger-item p {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--text-light);
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .settings-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 1rem;
-    padding-top: 1.5rem;
+    gap: 1.25rem;
+    padding-top: 2rem;
     border-top: 1px solid var(--border);
 }
 
-/* Recovery Settings Card Styles */
-.settings-card .recovery-description {
-    color: var(--text-light);
-    font-size: 0.9rem;
-    margin-bottom: 1.5rem;
-    line-height: 1.5;
+.animate-btn {
+    transform: scale(1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.recovery-questions .form-group {
-    margin-bottom: 1.5rem;
+.animate-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-.recovery-questions .form-group label {
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 0.5rem;
-    display: block;
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, #0d420b 100%);
+    color: white;
 }
 
-.que {
-    font-size: 0.9rem;
-    color: var(--text-light);
-    margin-bottom: 0.5rem;
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary) 0%, #0d420b 100%);
+}
+
+.btn-danger {
+    background: linear-gradient(90deg, #e63946 0%, #c1121f 100%);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(90deg, #c1121f 0%, #a00f1a 100%);
 }
 
 select {
-    padding: 0.75rem;
+    padding: 0.85rem;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 0.95rem;
-    transition: border-color 0.2s;
+    transition: all 0.3s ease;
     background-color: var(--white);
     color: var(--text);
-    box-sizing: border-box;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(6, 165, 102, 0.15);
+}
+
+/* Animations */
+.animate-title {
+    animation: slideIn 0.5s ease;
+}
+
+.animate-text {
+    animation: fadeIn 0.7s ease;
+}
+
+.animate-card {
+    animation: fadeIn 0.5s ease;
+}
+
+.animate-danger {
+    animation: fadeIn 0.6s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .settings-container {
-        padding: 1rem;
+        padding: 1.5rem;
     }
     
     .settings-grid {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
     
     .theme-selector {
         flex-direction: column;
+        align-items: center;
+    }
+    
+    .theme-option {
+        width: 100%;
+        max-width: 200px;
     }
     
     .settings-footer {
         flex-direction: column;
+        gap: 1rem;
     }
     
-    .recovery-questions .form-group {
-        margin-bottom: 1.25rem;
+    .settings-header {
+        padding: 20px;
+    }
+    
+    .settings-title {
+        font-size: 1.75rem;
     }
 }

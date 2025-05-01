@@ -742,7 +742,7 @@ select {
     color: var(--text);
     text-decoration: none;
     transition: all 0.2s;
-    gap: 10px;
+    gap: 10px;    
 }
 
 .dropdown-item i {

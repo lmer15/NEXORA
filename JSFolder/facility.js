@@ -194,6 +194,17 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (file.includes('settings.php')) {
                         handleSettingsPage();
                     }
+                    if (file.includes('archivedProject.php')) {
+                        const projectActions = handleProjectActions();
+                        projectActions.loadArchivedProjects();
+                        document.getElementById('refreshArchivedBtn')?.addEventListener('click', () => {
+                            projectActions.loadArchivedProjects();
+                        });
+                    }
+                    if (file.includes('project-')) {
+                        const projectId = file.split('project-')[1].replace('.php', '');
+                        loadProjectView(projectId);
+                    }
                 })
                 .catch(error => {
                     showErrorNotification('Error loading page. Please try again.');
@@ -1581,7 +1592,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         function enhanceDashboardUI() {
-            // Set up drop zones
             const columns = document.querySelectorAll('.kanban-column');
             
             columns.forEach(column => {
@@ -1604,13 +1614,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     }
                 });
-        
+            
                 column.addEventListener('dragleave', () => {
                     column.classList.remove('drag-over');
                     const indicator = document.querySelector('.drop-indicator');
                     if (indicator) indicator.remove();
                 });
-        
+            
                 column.addEventListener('drop', (e) => {
                     e.preventDefault();
                     column.classList.remove('drag-over');
@@ -1741,7 +1751,7 @@ document.addEventListener("DOMContentLoaded", function () {
         function updateProjectsNav(projects) {
             const projectsNavSection = document.querySelector('.nav-section:nth-child(2) .nav-list');
             if (!projectsNavSection) return;
-
+        
             projectsNavSection.innerHTML = '';
             projects.forEach(project => {
                 const projectItem = document.createElement('li');
@@ -1761,7 +1771,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 projectItem.addEventListener('click', function() {
                     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
                     this.classList.add('active');
-                    loadProjectDetails(project.id);
+                    loadProjectView(project.id);
                 });
             });
         
@@ -1846,6 +1856,21 @@ document.addEventListener("DOMContentLoaded", function () {
                     <span class="task-priority ${project.priority}" style="color: ${textColor}">
                         ${project.priority.charAt(0).toUpperCase() + project.priority.slice(1)}
                     </span>
+                    <div class="task-actions">
+                        <div class="dropdown">
+                            <button class="btn-icon dropdown-toggle" aria-label="More options">
+                                <i class="fas fa-ellipsis-v" style="color: ${iconColor}"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <button class="dropdown-item archive-project" data-project-id="${project.id}">
+                                    <i class="fas fa-box-archive"></i> Archive
+                                </button>
+                                <button class="dropdown-item delete-project" data-project-id="${project.id}">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="task-meta">
                     <div class="task-due-date" style="color: ${secondaryTextColor}">
@@ -1869,21 +1894,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         <i class="fas fa-user" style="color: ${iconColor}"></i>
                         ${escapeHtml(project.owner_name)}
                     </div>
-                    <div class="task-actions">
-                        <div class="dropdown">
-                            <button class="btn-icon dropdown-toggle" aria-label="More options">
-                                <i class="fas fa-ellipsis-v" style="color: ${iconColor}"></i>
-                            </button>
-                            <div class="dropdown-menu">
-                                <button class="dropdown-item archive-project" data-project-id="${project.id}">
-                                    <i class="fas fa-box-archive"></i> Archive
-                                </button>
-                                <button class="dropdown-item delete-project" data-project-id="${project.id}">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             `;
         
@@ -1893,14 +1903,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 
                 const dragImage = element.cloneNode(true);
                 dragImage.style.width = `${element.offsetWidth}px`;
-                dragImage.style.boxShadow = '0 15px 30px rgba(0,0,0,0.3)';
-                dragImage.style.transform = 'rotate(2deg)';
                 dragImage.style.position = 'fixed';
-                dragImage.style.pointerEvents = 'none';
+                dragImage.style.top = '-9999px'; 
+                dragImage.style.left = '-9999px';
                 dragImage.style.zIndex = '10000';
+                dragImage.style.pointerEvents = 'none';
+                dragImage.style.transform = 'rotate(2deg) scale(1.02)';
+                dragImage.style.boxShadow = '0 15px 30px rgba(0,0,0,0.3)';
+                dragImage.style.opacity = '0.9';
                 dragImage.id = 'drag-ghost';
+
                 document.body.appendChild(dragImage);
-                e.dataTransfer.setDragImage(dragImage, 0, 0);
+                
+                setTimeout(() => {
+                    e.dataTransfer.setDragImage(dragImage, 0, 0);
+                }, 0);
             });
         
             element.addEventListener('dragend', () => {
@@ -1908,6 +1925,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 const ghost = document.getElementById('drag-ghost');
                 if (ghost) ghost.remove();
             });
+
+            element.addEventListener('click', (e) => {
+                if (e.target.closest('.dropdown') || e.target.closest('.task-actions')) {
+                    return;
+                }
+                loadProjectView(project.id);
+            });        
             
             return element;
         }
@@ -2021,8 +2045,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (data.success) {
                         showSuccessNotification('Project retrieved successfully');
                         loadProjects();
-                        
-                        // If on archived projects page, reload that content
                         if (document.querySelector('.archived-projects-view')) {
                             loadArchivedProjects();
                         }
@@ -2069,25 +2091,36 @@ document.addEventListener("DOMContentLoaded", function () {
             async function loadArchivedProjects() {
                 const container = document.getElementById('archivedProjectsContainer');
                 if (!container) return;
-            
+
+                // Show loading state
                 container.innerHTML = `
                     <div class="loading-container">
                         <i class="fas fa-spinner fa-spin"></i> Loading archived projects...
                     </div>
                 `;
-            
+
                 try {
                     const response = await fetch('../Controller/projectsController.php?action=getArchived');
+                    
+                    if (!response.ok) {
+                        throw new Error(`Server returned ${response.status}`);
+                    }
+
                     const data = await response.json();
                     
-                    if (data.success && data.projects.length > 0) {
+                    if (!data.success) {
+                        throw new Error(data.message || 'Failed to load archived projects');
+                    }
+
+                    if (data.projects && data.projects.length > 0) {
                         container.innerHTML = renderArchivedProjects(data.projects);
                         setupProjectCardActions();
                     } else {
                         container.innerHTML = `
                             <div class="empty-state">
                                 <i class="fas fa-box-open"></i>
-                                <p>No archived projects found</p>
+                                <p>Your archive is empty</p>
+                                <p>Projects you archive will appear here</p>
                             </div>
                         `;
                     }
@@ -2097,53 +2130,239 @@ document.addEventListener("DOMContentLoaded", function () {
                         <div class="error-state">
                             <i class="fas fa-exclamation-triangle"></i>
                             <p>Failed to load archived projects</p>
+                            <p class="error-detail">${error.message}</p>
+                            <button class="btn btn-outline" id="retryLoadBtn">
+                                <i class="fas fa-sync-alt"></i> Try Again
+                            </button>
+                        </div>
+                    `;
+                    
+                    document.getElementById('retryLoadBtn')?.addEventListener('click', loadArchivedProjects);
+                }
+            }
+
+            function renderArchivedProjects(projects) {
+                if (!projects || projects.length === 0) {
+                    return `
+                        <div class="empty-state">
+                            <i class="fas fa-box-open"></i>
+                            <p>Your archive is empty</p>
+                            <p>Projects you archive will appear here</p>
                         </div>
                     `;
                 }
-            }
             
-            // Render archived projects
-            function renderArchivedProjects(projects) {
                 return `
-                    <div class="projects-grid">
-                        ${projects.map(project => `
-                            <div class="archived-project-card" data-project-id="${project.id}">
-                                <div class="project-header">
-                                    <h3 class="project-title">${escapeHtml(project.name)}</h3>
-                                    <span class="project-priority ${project.priority}">
-                                        ${project.priority.charAt(0).toUpperCase() + project.priority.slice(1)}
-                                    </span>
-                                </div>
-                                <div class="project-meta">
-                                    <div class="project-due-date">
-                                        <i class="far fa-calendar-alt"></i>
-                                        ${new Date(project.due_date).toLocaleDateString()}
-                                    </div>
-                                </div>
-                                <p class="project-description">${escapeHtml(truncateText(project.description, 100))}</p>
-                                <div class="project-footer">
-                                    <div class="project-owner">
-                                        <i class="fas fa-user"></i>
-                                        ${escapeHtml(project.owner_name)}
-                                    </div>
-                                    <div class="dropdown">
-                                        <button class="btn-icon dropdown-toggle" aria-label="More options">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <div class="dropdown-menu">
-                                            <button class="dropdown-item unarchive-project" data-project-id="${project.id}">
-                                                <i class="fas fa-box-open"></i> Retrieve
+                    <div class="archived-project-list">
+                        ${projects.map(project => {
+                            const textColor = getTextColorForBackground(project.color || '#ffffff');
+                            const textStyle = `style="color: ${textColor}"`;
+                            
+                            return `
+                            <div class="archived-project-card" 
+                                data-project-id="${project.id}" 
+                                style="--project-color: ${project.color || '#ffffff'}; --text-color: ${textColor}">
+                                
+                                <div class="project-info">
+                                    <div class="project-header">
+                                        <div class="project-title-wrapper">
+                                            <h3 class="project-name" ${textStyle}>${escapeHtml(project.name)}</h3>
+                                        </div>
+                                        <div class="project-actions">
+                                            <button class="dropdown-toggle" aria-label="More options" ${textStyle}>
+                                                <i class="fas fa-ellipsis-v"></i>
                                             </button>
-                                            <button class="dropdown-item delete-project" data-project-id="${project.id}">
-                                                <i class="fas fa-trash"></i> Delete
-                                            </button>
+                                            <div class="dropdown-menu">
+                                                <button class="dropdown-item unarchive-project" data-project-id="${project.id}">
+                                                    <i class="fas fa-box-open"></i> Retrieve
+                                                </button>
+                                                <button class="dropdown-item delete-project" data-project-id="${project.id}">
+                                                    <i class="fas fa-trash"></i> Delete Permanently
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <p class="project-description" ${textStyle}>${escapeHtml(truncateText(project.description, 120))}</p>
+                                    
+                                    <div class="project-meta">
+                                        <div class="project-due-date" ${textStyle}>
+                                            ${new Date(project.due_date).toLocaleDateString('en-US', { 
+                                                month: 'short', 
+                                                day: 'numeric', 
+                                                year: 'numeric' 
+                                            })}
+                                        </div>
+                                        <div class="project-priority ${project.priority}" ${textStyle}>
+                                            ${project.priority.charAt(0).toUpperCase() + project.priority.slice(1)}
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                 `;
+            }
+
+            function setupProjectCardActions() {
+                // Close all dropdowns when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.dropdown-toggle') && !e.target.closest('.dropdown-menu')) {
+                        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                            menu.classList.remove('show');
+                        });
+                    }
+                });
+            
+                // Toggle dropdown menus
+                document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+                    toggle.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const menu = toggle.nextElementSibling;
+                        
+                        // Close all other menus
+                        document.querySelectorAll('.dropdown-menu').forEach(otherMenu => {
+                            if (otherMenu !== menu) {
+                                otherMenu.classList.remove('show');
+                            }
+                        });
+                        
+                        menu.classList.toggle('show');
+                    });
+                });
+            
+                // Handle unarchive action - only when dropdown is visible
+                document.querySelectorAll('.unarchive-project').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const menu = btn.closest('.dropdown-menu');
+                        if (!menu || !menu.classList.contains('show')) return;
+                        
+                        e.stopPropagation();
+                        const projectId = btn.dataset.projectId;
+                        const projectCard = btn.closest('.archived-project-card');
+                        
+                        // Add loading state to the card
+                        projectCard.innerHTML = `
+                            <div class="loading-container" style="color: inherit">
+                                <i class="fas fa-spinner fa-spin"></i> Retrieving project...
+                            </div>
+                        `;
+                        
+                        try {
+                            const response = await fetch('../Controller/projectsController.php?action=unarchive', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ projectId })
+                            });
+                            
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                showSuccessNotification('Project retrieved successfully!');
+                                
+                                // Remove the card from view
+                                projectCard.style.opacity = '0';
+                                projectCard.style.transform = 'translateY(20px)';
+                                projectCard.style.transition = 'all 0.3s ease';
+                                
+                                setTimeout(() => {
+                                    projectCard.remove();
+                                    
+                                    // Check if we have any projects left
+                                    const remainingProjects = document.querySelectorAll('.archived-project-card');
+                                    if (remainingProjects.length === 0) {
+                                        document.getElementById('archivedProjectsContainer').innerHTML = `
+                                            <div class="empty-state">
+                                                <i class="fas fa-box-open"></i>
+                                                <p>Your archive is empty</p>
+                                                <p>Projects you archive will appear here</p>
+                                            </div>
+                                        `;
+                                    }
+                                }, 300);
+                            } else {
+                                throw new Error(data.message || 'Failed to retrieve project');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            showErrorNotification(error.message);
+                            // Reload the card
+                            loadArchivedProjects();
+                        }
+                    });
+                });
+            
+                // Handle delete action - only when dropdown is visible
+                document.querySelectorAll('.delete-project').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const menu = btn.closest('.dropdown-menu');
+                        if (!menu || !menu.classList.contains('show')) return;
+                        
+                        e.stopPropagation();
+                        const projectId = btn.dataset.projectId;
+                        const projectCard = btn.closest('.archived-project-card');
+                        
+                        // Create confirmation modal
+                        createConfirmationModal(
+                            'Are you sure you want to permanently delete this project? This action cannot be undone.',
+                            async () => {
+                                // Add loading state to the card
+                                projectCard.innerHTML = `
+                                    <div class="loading-container" style="color: inherit">
+                                        <i class="fas fa-spinner fa-spin"></i> Deleting project...
+                                    </div>
+                                `;
+                                
+                                try {
+                                    const response = await fetch('../Controller/projectsController.php?action=delete', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ projectId })
+                                    });
+                                    
+                                    const data = await response.json();
+                                    
+                                    if (data.success) {
+                                        showSuccessNotification('Project deleted permanently');
+                                        
+                                        // Remove the card from view with animation
+                                        projectCard.style.opacity = '0';
+                                        projectCard.style.transform = 'scale(0.9)';
+                                        projectCard.style.transition = 'all 0.3s ease';
+                                        
+                                        setTimeout(() => {
+                                            projectCard.remove();
+                                            
+                                            // Check if we have any projects left
+                                            const remainingProjects = document.querySelectorAll('.archived-project-card');
+                                            if (remainingProjects.length === 0) {
+                                                document.getElementById('archivedProjectsContainer').innerHTML = `
+                                                    <div class="empty-state">
+                                                        <i class="fas fa-box-open"></i>
+                                                        <p>Your archive is empty</p>
+                                                        <p>Projects you archive will appear here</p>
+                                                    </div>
+                                                `;
+                                            }
+                                        }, 300);
+                                    } else {
+                                        throw new Error(data.message || 'Failed to delete project');
+                                    }
+                                } catch (error) {
+                                    console.error('Error:', error);
+                                    showErrorNotification(error.message);
+                                    // Reload the card
+                                    loadArchivedProjects();
+                                }
+                            }
+                        );
+                    });
+                });
             }
             
             // Setup project card actions
@@ -2152,20 +2371,21 @@ document.addEventListener("DOMContentLoaded", function () {
                     toggle.addEventListener('click', (e) => {
                         e.stopPropagation();
                         const menu = toggle.nextElementSibling;
-                        menu.classList.toggle('show');
                         
-                        // Close other open menus
+                        // Close all other menus
                         document.querySelectorAll('.dropdown-menu').forEach(otherMenu => {
                             if (otherMenu !== menu) {
                                 otherMenu.classList.remove('show');
                             }
                         });
+                        
+                        menu.classList.toggle('show');
                     });
                 });
                 
                 // Close menus when clicking outside
                 document.addEventListener('click', (e) => {
-                    if (!e.target.closest('.dropdown')) {
+                    if (!e.target.closest('.dropdown-toggle') && !e.target.closest('.dropdown-menu')) {
                         document.querySelectorAll('.dropdown-menu').forEach(menu => {
                             menu.classList.remove('show');
                         });
@@ -2177,7 +2397,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     btn.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         const projectId = btn.dataset.projectId;
-                        await unarchiveProject(projectId);
+                        await projectActions.unarchiveProject(projectId);
                     });
                 });
                 
@@ -2186,7 +2406,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     btn.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         const projectId = btn.dataset.projectId;
-                        await deleteProject(projectId);
+                        await projectActions.deleteProject(projectId);
                     });
                 });
             }
@@ -2235,16 +2455,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             }
             
-            // Initialize all project action handlers
             function initProjectActions() {
                 setupKanbanProjectActions();
-                
-                // If on archived projects page, load the projects
                 if (document.querySelector('.archived-projects-view')) {
                     loadArchivedProjects();
                 }
             }
-            
+
             return {
                 init: initProjectActions,
                 archiveProject,
@@ -2268,6 +2485,41 @@ document.addEventListener("DOMContentLoaded", function () {
             return text.substring(0, maxLength) + '...';
         }
 
+        function loadProjectView(projectId) {
+            // Show loading state
+            contentContainer.innerHTML = `
+                <div class="loading-container">
+                    <i class="fas fa-spinner fa-spin"></i> Loading project...
+                </div>
+            `;
+        
+            fetch(`../View/projectView.php?id=${projectId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to load project view: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    contentContainer.innerHTML = html;
+                    document.body.dataset.projectId = projectId;
+
+                    const script = document.createElement('script');
+                    script.src = '../JSFolder/projectView.js';
+                    document.body.appendChild(script);
+                })
+                .catch(error => {
+                    console.error('Error loading project:', error);
+                    contentContainer.innerHTML = `
+                        <div class="error-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Failed to load project</p>
+                            <p class="error-detail">${error.message}</p>
+                        </div>
+                    `;
+                });
+        }
+
         loadPage("../View/dashboard.php");
         
         navItems.forEach(item => {
@@ -2276,16 +2528,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.classList.add("active");
         
                 const view = this.getAttribute("data-view");
-                const views = {
-                    "dashboard": "../View/dashboard.php",
-                    "members": "../View/members.php",
-                    "settings": "../View/settings.php",
-                    "archived-projects": "../View/archivedProject.php",
-                    "project-alpha": "../View/project-alpha.php",
-                    "project-beta": "../View/project-beta.php"
-                };
-        
-                loadPage(views[view] || "../View/dashboard.php");
+                
+                if (view.startsWith('project-')) {
+                    const projectId = view.split('-')[1];
+                    loadProjectView(projectId);
+                } else {
+                    const views = {
+                        "dashboard": "../View/dashboard.php",
+                        "members": "../View/members.php",
+                        "settings": "../View/settings.php",
+                        "archived-projects": "../View/archivedProject.php"
+                    };
+                    
+                    loadPage(views[view] || "../View/dashboard.php");
+                }
             });
         });
     }

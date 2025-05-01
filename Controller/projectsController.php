@@ -143,14 +143,12 @@ try {
             
             case 'getArchived':
                 $projects = $projectModel->getAll($_SESSION['user_id'], true);
-                $archivedProjects = array_filter($projects, function($project) {
-                    return $project['is_archived'] == true;
-                });
-                
-                echo json_encode([
+                $response = [
                     'success' => true,
-                    'projects' => array_values($archivedProjects)
-                ]);
+                    'projects' => $projects
+                ];
+                error_log('getArchived response: ' . json_encode($response));
+                echo json_encode($response);
                 break;
 
             default:

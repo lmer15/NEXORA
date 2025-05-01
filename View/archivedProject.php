@@ -13,6 +13,11 @@
             <h2 class="projects-title">
                 <i class="fas fa-box-archive"></i> Archived Projects
             </h2>
+            <div class="projects-actions">
+                <button class="btn btn-outline" id="refreshArchivedBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
         </div>
         
         <div id="archivedProjectsContainer">

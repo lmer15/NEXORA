@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 27, 2025 at 08:10 PM
+-- Generation Time: May 01, 2025 at 07:28 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -57,9 +57,9 @@ CREATE TABLE `facilities` (
 INSERT INTO `facilities` (`id`, `name`, `code`, `owner_id`, `created_at`, `updated_at`) VALUES
 (27, 'Calista Herman\'s Facility', 'KJ9KEG5K', 40, '2025-04-25 03:00:23', '2025-04-25 03:00:23'),
 (28, 'McKenzie Reilly\'s Facility', '297KWOKN', 41, '2025-04-25 03:24:14', '2025-04-26 04:04:13'),
-(29, 'Rafael Guy\'s Facility', 'ERTS-J4VZ', 42, '2025-04-25 06:48:31', '2025-04-26 10:52:18'),
+(29, 'Rafael Guy\'s Facility', '9H4U06U3', 42, '2025-04-25 06:48:31', '2025-04-27 18:57:19'),
 (30, 'Rosalyn Harmon\'s Facility', 'JEWD8OI7', 43, '2025-04-25 09:34:49', '2025-04-27 02:11:10'),
-(31, 'Mechelle Rutledge\'s Facility', 'ZSHJGEDE', 44, '2025-04-25 09:37:42', '2025-04-26 07:41:12'),
+(31, 'Mechelle Rutledge\'s Facility', '91ZKCDMO', 44, '2025-04-25 09:37:42', '2025-04-29 07:46:47'),
 (32, 'Rhoda Christensen\'s Facility', 'BR1IVN5U', 45, '2025-04-26 11:04:13', '2025-04-26 11:04:13');
 
 -- --------------------------------------------------------
@@ -86,7 +86,8 @@ INSERT INTO `facility_admins` (`id`, `facility_id`, `user_id`, `assigned_by`, `a
 (15, 29, 42, 42, '2025-04-25 06:48:31'),
 (16, 30, 43, 43, '2025-04-25 09:34:49'),
 (17, 31, 44, 44, '2025-04-25 09:37:42'),
-(21, 32, 45, 45, '2025-04-26 11:04:13');
+(21, 32, 45, 45, '2025-04-26 11:04:13'),
+(49, 29, 40, 42, '2025-04-29 14:09:58');
 
 -- --------------------------------------------------------
 
@@ -132,15 +133,14 @@ INSERT INTO `facility_members` (`id`, `facility_id`, `user_id`, `joined_at`) VAL
 (19, 28, 40, '2025-04-26 04:03:29'),
 (20, 28, 42, '2025-04-26 04:03:29'),
 (21, 29, 41, '2025-04-26 04:05:45'),
-(22, 29, 43, '2025-04-26 06:53:42'),
-(25, 31, 41, '2025-04-26 07:18:04'),
-(26, 31, 42, '2025-04-26 08:26:31'),
 (27, 29, 40, '2025-04-26 10:59:35'),
 (28, 32, 45, '2025-04-26 11:04:13'),
 (29, 32, 40, '2025-04-26 11:04:46'),
 (30, 32, 41, '2025-04-26 11:05:13'),
-(31, 31, 45, '2025-04-27 00:24:03'),
-(32, 28, 45, '2025-04-27 00:41:47');
+(32, 28, 45, '2025-04-27 00:41:47'),
+(35, 27, 41, '2025-04-29 00:18:12'),
+(37, 31, 41, '2025-04-29 14:06:12'),
+(38, 30, 44, '2025-04-29 14:06:55');
 
 -- --------------------------------------------------------
 
@@ -166,36 +166,74 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `name`, `description`, `priority`, `due_date`, `color`, `status`, `owner_id`, `created_at`, `is_archived`) VALUES
-(142, 'Cheyenne Albert', 'Odit veritatis molli', 'medium', '2025-12-25', '#cf0dde', 'done', 42, '2025-04-25 06:56:59', 0),
-(143, 'Otto Cote', 'Quas dolor debitis u', 'medium', '2025-09-25', '#2cbd61', 'todo', 44, '2025-04-25 12:01:50', 0),
-(144, 'Griffith Olson', 'Voluptatum cum sed d', 'medium', '2025-11-20', '#9912a0', 'progress', 41, '2025-04-25 13:10:41', 0),
-(145, 'Dane Newton', 'Bsomdl;fmlfdk;m;flgtftg', 'low', '2025-05-15', '#da4925', 'progress', 41, '2025-04-25 13:27:03', 0),
-(146, 'Oleg Sloan', 'Odio eveniet tempor', 'medium', '2025-05-23', '#49b3d6', 'todo', 43, '2025-04-25 23:25:22', 0),
-(147, 'Zelenia Hurley', 'Necessitatibus unde', 'low', '2025-05-04', '#725b45', 'todo', 41, '2025-04-27 14:56:25', 0),
-(148, 'Paul Burris', 'Est ullam voluptas i', 'medium', '2025-05-22', '#10b981', 'done', 41, '2025-04-27 15:02:04', 0),
-(149, 'Britanney Camacho', 'Ut esse esse deseru', 'medium', '2025-05-04', '#8b5cf6', 'done', 41, '2025-04-27 15:12:04', 0),
-(150, 'May Snow', 'Sunt ipsum autem au', 'medium', '2025-06-28', '#8b5cf6', 'todo', 43, '2025-04-27 15:30:49', 0),
-(151, 'Quyn King', 'Pariatur Voluptates', 'high', '2025-05-04', '#000000', 'todo', 43, '2025-04-27 15:31:30', 0),
-(152, 'Jena Mays', 'Optio dolores est e', 'low', '2025-05-04', '#2d7333', 'todo', 43, '2025-04-27 15:31:45', 0),
-(153, 'Iris Espinoza', 'Et enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum doloEt enim nostrum dolo', 'high', '2025-05-04', '#6d90ac', 'todo', 43, '2025-04-27 15:32:38', 0),
-(154, 'Ignacia Franco', 'Reprehenderit dolor', 'high', '2025-05-04', '#ef4444', 'todo', 43, '2025-04-27 15:33:07', 0),
-(155, 'Renee Simmons', 'Omnis incidunt dolo', 'medium', '2025-07-31', '#87d48b', 'done', 44, '2025-04-27 15:34:11', 0),
-(156, 'Vincent Ford', 'Eos accusamus nostru', 'high', '2025-05-04', '#ef4444', 'progress', 44, '2025-04-27 15:34:17', 0),
-(157, 'Idona Witt', 'Voluptas et voluptat', 'medium', '2025-06-09', '#d0fb1f', 'progress', 44, '2025-04-27 16:16:42', 0),
-(158, 'Kirestin Rich', 'Dolore consequatur i', 'medium', '2025-09-27', '#c52558', 'progress', 40, '2025-04-27 16:52:07', 0),
-(159, 'Heather Campbell', 'Doloremque deleniti', 'medium', '2025-05-23', '#1817de', 'done', 40, '2025-04-27 16:53:02', 0),
-(160, 'Dean Mills', 'Mollit dicta quibusd', 'medium', '2025-05-05', '#0a8717', 'todo', 40, '2025-04-27 16:53:27', 0),
-(161, 'Barry Mosley', 'Ut vel quia aut sit', 'low', '2025-07-17', '#ffffff', 'progress', 40, '2025-04-27 16:57:31', 0),
-(162, 'Tara Lynch', 'Dolore quod magni ar', 'low', '2025-05-05', '#8b5cf6', 'todo', 40, '2025-04-27 17:00:08', 0),
-(163, 'Jasmine Rivera', 'Et incididunt ullamc', 'low', '2025-05-21', '#10b981', 'todo', 41, '2025-04-27 17:08:38', 0),
-(164, 'Whitney Blanchard', 'Optio amet dolorem', 'high', '2025-05-05', '#81e8de', 'todo', 41, '2025-04-27 17:12:37', 0),
-(165, 'Boris Brewer', 'Duis laborum Aperia', 'low', '2025-11-19', '#ef4444', 'todo', 41, '2025-04-27 17:25:36', 0),
-(166, 'Megan Pace', 'Itaque cillum omnis', 'low', '2025-05-05', '#6f0dc2', 'todo', 41, '2025-04-27 17:25:50', 0),
-(167, 'Tatyana Rutledge', 'Dolore natus molesti', 'high', '2025-11-19', '#3b82f6', 'progress', 42, '2025-04-27 17:34:04', 0),
-(168, 'Beau Lynch', 'Quaerat delectus no', 'low', '2025-09-26', '#254256', 'todo', 42, '2025-04-27 17:34:50', 0),
-(169, 'Tallulah Kirk', 'Harum amet voluptat', 'high', '2025-05-22', '#000000', 'done', 42, '2025-04-27 17:35:47', 0),
-(170, 'Caesar Mcintyre', 'Similique voluptatem', 'high', '2025-11-21', '#f59e0b', 'progress', 42, '2025-04-27 17:42:30', 0),
-(171, 'Cynthia Mathis', 'Quisquam voluptatem', 'low', '2025-05-05', '#8b5cf6', 'todo', 42, '2025-04-27 17:42:41', 0);
+(176, 'Hope Oconnor', 'Pariatur Ducimus d', 'low', '2025-05-08', '#167f6a', 'todo', 44, '2025-04-27 19:06:12', 0),
+(177, 'TaShya Holder', 'At aut quo soluta pr', 'medium', '2025-05-05', '#b9ecad', 'todo', 44, '2025-04-27 19:06:21', 0),
+(178, 'Brynn Haynes', 'Dolore autem magni b', 'low', '2025-05-05', '#380ab2', 'done', 44, '2025-04-27 19:06:27', 0),
+(180, 'Nadine Cabrera', 'Eos ex cupiditate lo', 'medium', '2025-05-05', '#c02a49', 'progress', 44, '2025-04-27 19:06:43', 0),
+(181, 'Veronica Knapp', 'Adipisci id ea quia', 'low', '2025-05-05', '#de9eb2', 'done', 44, '2025-04-27 19:06:50', 0),
+(182, 'Whilemina Cote', 'Corporis harum neces', 'high', '2025-05-22', '#a9d91b', 'todo', 45, '2025-04-27 19:07:44', 0),
+(183, 'Leigh Bridges', 'Enim est perspiciat', 'medium', '2025-05-05', '#056e5d', 'progress', 45, '2025-04-27 19:07:50', 0),
+(184, 'Omar Myers', 'Sit cupiditate labor', 'low', '2025-05-05', '#29a41a', 'done', 45, '2025-04-27 19:07:57', 0),
+(185, 'Isaac Boyer', 'In aute neque occaec', 'medium', '2025-05-05', '#880d81', 'done', 45, '2025-04-27 19:08:03', 0),
+(186, 'Hollee Rosales', 'Duis in nulla provid', 'high', '2025-05-05', '#b1fceb', 'todo', 45, '2025-04-27 19:08:09', 0),
+(187, 'Clayton Schneider', 'Accusantium velit es', 'high', '2025-05-05', '#6248fa', 'progress', 45, '2025-04-27 19:08:13', 0),
+(189, 'September Leblanc', 'Sunt autem est quia', 'medium', '2025-05-05', '#95d68e', 'progress', 43, '2025-04-27 19:09:02', 0),
+(191, 'Kirsten Barr', 'Aut cupiditate dolor', 'low', '2025-05-05', '#323ba3', 'todo', 43, '2025-04-27 19:09:14', 0),
+(192, 'Callum Sanders', 'Labore ipsum dolorem', 'high', '2025-05-05', '#613f14', 'progress', 43, '2025-04-27 19:09:22', 0),
+(194, 'Cheryl Cummings', 'Architecto et doloru', 'low', '2025-05-30', '#357b96', 'done', 42, '2025-04-27 19:09:52', 0),
+(197, 'Lilah Meadows', 'Quis qui illo sit in', 'low', '2025-05-05', '#4bdfdc', 'done', 42, '2025-04-27 19:10:07', 0),
+(198, 'Orlando Mccarty', 'Praesentium est sit', 'low', '2025-05-05', '#e0f78a', 'todo', 42, '2025-04-27 19:10:11', 0),
+(199, 'Gisela Kirkland', 'Sint impedit sunt m', 'high', '2025-05-05', '#4455e2', 'done', 42, '2025-04-27 19:10:15', 0),
+(200, 'Todd Kidd', 'Sit dolorem consequ', 'medium', '2025-05-20', '#2d2a35', 'todo', 41, '2025-04-27 19:10:44', 0),
+(201, 'Abdul Young', 'Fuga Aut et ipsam e', 'high', '2025-05-05', '#6e7756', 'todo', 41, '2025-04-27 19:10:47', 0),
+(202, 'TaShya Holden', 'Nihil esse officiis', 'high', '2025-05-05', '#690e09', 'progress', 41, '2025-04-27 19:10:51', 0),
+(203, 'Regina Stuart', 'Sed ex eveniet do a', 'low', '2025-05-05', '#97b280', 'progress', 41, '2025-04-27 19:10:55', 0),
+(204, 'Leilani Christensen', 'Quo id dolores modi', 'high', '2025-05-21', '#b10c88', 'done', 41, '2025-04-27 19:11:10', 0),
+(205, 'Chester Owens', 'Eligendi dicta conse', 'high', '2025-05-05', '#94c5a1', 'done', 41, '2025-04-27 19:11:18', 0),
+(206, 'Ferdinand Harvey', 'Dolor aut non pariat', 'high', '2025-05-29', '#6bd5c1', 'progress', 40, '2025-04-27 19:11:37', 0),
+(207, 'Hedda Bush', 'Facilis sed qui aut', 'high', '2025-05-05', '#1c1cc6', 'todo', 40, '2025-04-27 19:11:40', 0),
+(208, 'Kibo Wilkinson', 'Voluptatem in quam q', 'high', '2025-05-05', '#bb7108', 'done', 40, '2025-04-27 19:11:46', 0),
+(209, 'Kuame Lyons', 'Quis quaerat dolor s', 'high', '2025-05-05', '#ea5868', 'todo', 40, '2025-04-27 19:11:52', 0),
+(210, 'Rana Randolph', 'Tempor omnis adipisc', 'medium', '2025-05-05', '#5d19c6', 'progress', 40, '2025-04-27 19:11:55', 0),
+(211, 'Vernon Holt', 'Error soluta ipsa l', 'high', '2025-05-05', '#cec5f7', 'done', 40, '2025-04-27 19:12:02', 0),
+(212, 'Halee Bernard', 'In qui occaecat mole', 'high', '2025-05-15', '#560025', 'done', 43, '2025-04-27 19:40:01', 0),
+(213, 'Xenos Frank', 'Aperiam et doloremqu', 'low', '2025-11-13', '#2abc51', 'done', 43, '2025-04-27 19:40:28', 0),
+(214, 'Jonah Ewing', 'In molestiae praesen', 'medium', '2025-05-05', '#a025e0', 'done', 43, '2025-04-27 19:40:34', 0),
+(215, 'Grady Washington', 'Modi cumque quos Nam', 'low', '2025-04-30', '#0e3e51', 'progress', 44, '2025-04-27 22:41:52', 0),
+(216, 'Judah Malone', 'Vel magni irure ea s', 'medium', '2025-05-23', '#bd8a51', 'todo', 45, '2025-04-29 04:12:56', 1),
+(219, 'Colton Spence', 'Qui ut ex laborum qu', 'low', '2025-05-02', '#3a6d2c', 'todo', 42, '2025-04-29 13:30:22', 0),
+(220, 'Paul Miles', 'Aute praesentium aut', 'high', '2025-11-28', '#aa403f', 'progress', 42, '2025-04-29 13:33:31', 0),
+(222, 'McKenzie Newman', 'Dolore sit cum et of', 'low', '2025-06-27', '#dc4c6b', 'progress', 42, '2025-04-29 14:56:33', 0),
+(224, 'Plato Ratliff', 'Eu voluptatibus sed', 'low', '2025-05-06', '#ff96a4', 'done', 42, '2025-04-29 14:57:05', 0),
+(225, 'Gail Aguirre', 'Mollit in explicabo', 'high', '2025-05-06', '#382a3e', 'progress', 42, '2025-04-29 14:57:36', 0),
+(227, 'Odette Lowe', 'Enim aliquip iure qu', 'medium', '2025-05-29', '#5adce0', 'todo', 42, '2025-04-30 06:49:06', 1),
+(228, 'Tobias Foley', 'Perspiciatis qui ea', 'high', '2025-06-18', '#d189b3', 'todo', 43, '2025-04-30 08:28:30', 0),
+(230, 'Quintessa Whitaker', 'Aut tempore qui cor', 'high', '2025-05-07', '#ffffff', 'todo', 42, '2025-04-30 10:20:33', 0),
+(231, 'Matthew Larson', 'Amet neque tempor d', 'medium', '2025-05-17', '#000000', 'progress', 42, '2025-04-30 11:16:14', 0),
+(232, 'Garth Weeks', 'Vitae id numquam dol', 'low', '2025-12-25', '#f0de46', 'progress', 44, '2025-04-30 11:38:39', 1),
+(233, 'Yeo Torres', 'Minim voluptas ea od', 'high', '2025-10-29', '#db165c', 'todo', 44, '2025-04-30 13:08:20', 1),
+(234, 'Sheila Witt', 'Sint rerum corrupti', 'high', '2025-05-07', '#3d53f3', 'todo', 44, '2025-04-30 13:08:43', 1),
+(235, 'Rhona Madden', 'Voluptatem vel sed u', 'low', '2025-05-07', '#bcb3f1', 'todo', 44, '2025-04-30 13:08:57', 1),
+(236, 'Roanna Fulton', 'Est quo est perspic', 'medium', '2025-05-07', '#622637', 'todo', 44, '2025-04-30 13:09:07', 1),
+(237, 'Jackson Whitfield', 'Eum illum veritatis', 'high', '2025-05-07', '#923aed', 'todo', 44, '2025-04-30 13:09:14', 1),
+(238, 'Erica Dominguez', 'Dolor illo veniam e', 'high', '2025-09-24', '#807bda', 'todo', 43, '2025-05-01 17:04:03', 0),
+(239, 'Brock Boyer', 'Quae et quia amet i', 'medium', '2025-10-24', '#31ceab', 'progress', 44, '2025-05-01 17:19:30', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `project_categories`
+--
+
+CREATE TABLE `project_categories` (
+  `id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `color` varchar(7) DEFAULT '#3b82f6',
+  `position` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -226,6 +264,83 @@ CREATE TABLE `security_questions` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `security_questions`
+--
+
+INSERT INTO `security_questions` (`id`, `user_id`, `question`, `answer`, `created_at`, `updated_at`) VALUES
+(21, 42, 'What city were you born in?', '$2y$10$5l7dKuv297cOaNn6Ine7z.WWFRhe4lhL/5zroB9WhgcPALacRS7TS', '2025-05-01 17:14:55', '2025-05-01 17:14:55');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tasks`
+--
+
+CREATE TABLE `tasks` (
+  `id` int(11) NOT NULL,
+  `category_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `status` enum('todo','progress','done','blocked') NOT NULL DEFAULT 'todo',
+  `priority` enum('high','medium','low') NOT NULL DEFAULT 'medium',
+  `due_date` date DEFAULT NULL,
+  `assignee_id` int(11) DEFAULT NULL,
+  `position` int(11) DEFAULT 0,
+  `created_by` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_activities`
+--
+
+CREATE TABLE `task_activities` (
+  `id` int(11) NOT NULL,
+  `task_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `action` varchar(50) NOT NULL,
+  `old_value` text DEFAULT NULL,
+  `new_value` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_attachments`
+--
+
+CREATE TABLE `task_attachments` (
+  `id` int(11) NOT NULL,
+  `task_id` int(11) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
+  `file_path` varchar(255) NOT NULL,
+  `file_type` varchar(100) NOT NULL,
+  `file_size` int(11) NOT NULL,
+  `uploaded_by` int(11) NOT NULL,
+  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_comments`
+--
+
+CREATE TABLE `task_comments` (
+  `id` int(11) NOT NULL,
+  `task_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `content` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- --------------------------------------------------------
 
 --
@@ -252,7 +367,7 @@ INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `updated_a
 (41, 'McKenzie Reilly', 'pomotudofo@mailinator.com', '$2y$10$OCg0Hy8hT6/esUE0stURu.891MqNf6WawzPI/19mwaY86kQhocBEy', '2025-04-25 03:24:14', '2025-04-25 03:24:26', 'Images/profile.PNG', 28),
 (42, 'Rafael Guy', 'typuk@mailinator.com', '$2y$10$79AN8f0yA/wfD7Fu4rlNJ.lu2RM8VlT.gOJ1UIuIipz4W/490ZdFi', '2025-04-25 06:48:31', '2025-04-25 06:52:30', 'uploads/profile_pictures/user_42_1745563950.jpg', 29),
 (43, 'Rosalyn Harmon', 'dimeto@mailinator.com', '$2y$10$tmRp4fhAUdkWN6L0C3.3yu6KiRI7KWgxm232P.etGSyGCW3GH.FGS', '2025-04-25 09:34:49', '2025-04-25 09:35:00', 'Images/profile.PNG', 30),
-(44, 'Mechelle Rutledge', 'kykebe@mailinator.com', '$2y$10$t8pFlZLsBvsn6FPAB56M7uK3ZjC/2dbMaAXWrGFp5fmdfbkTrWt/K', '2025-04-25 09:37:42', '2025-04-25 09:37:51', 'Images/profile.PNG', 31),
+(44, 'Mechelle Rutledge', 'kykebe@mailinator.com', '$2y$10$t8pFlZLsBvsn6FPAB56M7uK3ZjC/2dbMaAXWrGFp5fmdfbkTrWt/K', '2025-04-25 09:37:42', '2025-04-29 14:06:30', 'uploads/profile_pictures/user_44_1745935590.jpg', 31),
 (45, 'Rhoda Christensen', 'gona@mailinator.com', '$2y$10$h4omxnZkMkasb3ajpCwAieK4ABMCMXw.5H20Wn8m1.WhAjw9xSmoW', '2025-04-26 11:04:13', '2025-04-26 11:04:26', 'Images/profile.PNG', 32);
 
 --
@@ -309,6 +424,13 @@ ALTER TABLE `projects`
   ADD KEY `owner_id` (`owner_id`);
 
 --
+-- Indexes for table `project_categories`
+--
+ALTER TABLE `project_categories`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `project_id` (`project_id`);
+
+--
 -- Indexes for table `remember_tokens`
 --
 ALTER TABLE `remember_tokens`
@@ -321,6 +443,40 @@ ALTER TABLE `remember_tokens`
 --
 ALTER TABLE `security_questions`
   ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- Indexes for table `tasks`
+--
+ALTER TABLE `tasks`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `category_id` (`category_id`),
+  ADD KEY `project_id` (`project_id`),
+  ADD KEY `assignee_id` (`assignee_id`),
+  ADD KEY `created_by` (`created_by`);
+
+--
+-- Indexes for table `task_activities`
+--
+ALTER TABLE `task_activities`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `task_id` (`task_id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- Indexes for table `task_attachments`
+--
+ALTER TABLE `task_attachments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `task_id` (`task_id`),
+  ADD KEY `uploaded_by` (`uploaded_by`);
+
+--
+-- Indexes for table `task_comments`
+--
+ALTER TABLE `task_comments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `task_id` (`task_id`),
   ADD KEY `user_id` (`user_id`);
 
 --
@@ -351,7 +507,7 @@ ALTER TABLE `facilities`
 -- AUTO_INCREMENT for table `facility_admins`
 --
 ALTER TABLE `facility_admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT for table `facility_invitations`
@@ -363,13 +519,19 @@ ALTER TABLE `facility_invitations`
 -- AUTO_INCREMENT for table `facility_members`
 --
 ALTER TABLE `facility_members`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41;
 
 --
 -- AUTO_INCREMENT for table `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=172;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=240;
+
+--
+-- AUTO_INCREMENT for table `project_categories`
+--
+ALTER TABLE `project_categories`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `remember_tokens`
@@ -381,7 +543,31 @@ ALTER TABLE `remember_tokens`
 -- AUTO_INCREMENT for table `security_questions`
 --
 ALTER TABLE `security_questions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+
+--
+-- AUTO_INCREMENT for table `tasks`
+--
+ALTER TABLE `tasks`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `task_activities`
+--
+ALTER TABLE `task_activities`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `task_attachments`
+--
+ALTER TABLE `task_attachments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `task_comments`
+--
+ALTER TABLE `task_comments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -434,6 +620,12 @@ ALTER TABLE `projects`
   ADD CONSTRAINT `projects_ibfk_1` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`);
 
 --
+-- Constraints for table `project_categories`
+--
+ALTER TABLE `project_categories`
+  ADD CONSTRAINT `project_categories_ibfk_1` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `remember_tokens`
 --
 ALTER TABLE `remember_tokens`
@@ -444,6 +636,36 @@ ALTER TABLE `remember_tokens`
 --
 ALTER TABLE `security_questions`
   ADD CONSTRAINT `security_questions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `tasks`
+--
+ALTER TABLE `tasks`
+  ADD CONSTRAINT `tasks_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `project_categories` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `tasks_ibfk_2` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `tasks_ibfk_3` FOREIGN KEY (`assignee_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `tasks_ibfk_4` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task_activities`
+--
+ALTER TABLE `task_activities`
+  ADD CONSTRAINT `task_activities_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `task_activities_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task_attachments`
+--
+ALTER TABLE `task_attachments`
+  ADD CONSTRAINT `task_attachments_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `task_attachments_ibfk_2` FOREIGN KEY (`uploaded_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task_comments`
+--
+ALTER TABLE `task_comments`
+  ADD CONSTRAINT `task_comments_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `task_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

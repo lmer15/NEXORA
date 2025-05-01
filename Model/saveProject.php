@@ -82,6 +82,8 @@ class Project {
             
             if (!$includeArchived) {
                 $sql .= " AND p.is_archived = FALSE";
+            } else {
+                $sql .= " AND p.is_archived = TRUE";
             }
             
             $sql .= " ORDER BY p.due_date ASC";
