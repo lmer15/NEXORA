@@ -3090,16 +3090,16 @@ document.addEventListener("DOMContentLoaded", function () {
         
             function renderCategories(categories) {
                 if (!categoriesContainer) return;
-        
+            
                 document.querySelectorAll('.category-column').forEach(el => el.remove());
-        
+            
                 categories.forEach(category => {
                     const categoryColumn = document.createElement('div');
                     categoryColumn.className = 'category-column';
                     categoryColumn.dataset.categoryId = category.id;
                     categoryColumn.innerHTML = `
                         <div class="category-header" style="border-color: ${category.color}">
-                            <h3>${escapeHtml(category.name)}</h3>
+                            <h3 contenteditable="true" class="editable-category-name">${escapeHtml(category.name)}</h3>
                             <div class="category-actions">
                                 <button class="btn-icon add-task-btn" title="Add Task">
                                     <i class="fas fa-plus"></i>
@@ -3110,17 +3110,74 @@ document.addEventListener("DOMContentLoaded", function () {
                             </div>
                         </div>
                         <div class="category-task-list" data-sortable-initialized="false">
-                            ${category.task_count > 0 ? '' : `
-                                <div class="empty-state">
-                                    <i class="fas fa-tasks"></i>
-                                    <p>No tasks in this category</p>
-                                </div>
-                            `}
+                            <div class="empty-state">
+                                <i class="fas fa-tasks"></i>
+                                <p>No tasks in this category</p>
+                            </div>
                         </div>
                     `;
-        
+            
                     categoriesContainer.appendChild(categoryColumn);
-        
+            
+                    // Make category name editable and save on blur/enter
+                    const categoryNameEl = categoryColumn.querySelector('.editable-category-name');
+                    let isEditing = false;
+                    let originalName = category.name;
+            
+                    categoryNameEl.addEventListener('focus', () => {
+                        isEditing = true;
+                        originalName = categoryNameEl.textContent;
+                        categoryNameEl.classList.add('editing');
+                    });
+            
+                    categoryNameEl.addEventListener('blur', async () => {
+                        if (!isEditing) return;
+                        isEditing = false;
+                        categoryNameEl.classList.remove('editing');
+            
+                        const newName = categoryNameEl.textContent.trim();
+                        if (!newName) {
+                            categoryNameEl.textContent = originalName;
+                            return;
+                        }
+            
+                        if (newName !== originalName) {
+                            try {
+                                const response = await fetch('../Controller/projectController.php?action=updateCategory', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                                    },
+                                    body: JSON.stringify({
+                                        categoryId: category.id,
+                                        name: newName
+                                    })
+                                });
+            
+                                const data = await response.json();
+                                if (data.success) {
+                                    category.name = newName; // Update local copy
+                                    showSuccessNotification('Category name updated');
+                                } else {
+                                    throw new Error(data.message || 'Failed to update category name');
+                                }
+                            } catch (error) {
+                                console.error('Error updating category name:', error);
+                                showErrorNotification(error.message);
+                                categoryNameEl.textContent = originalName; // Revert to original name
+                            }
+                        }
+                    });
+            
+                    categoryNameEl.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            categoryNameEl.blur();
+                        }
+                    });
+            
+                    // Add task button functionality
                     const addTaskBtn = categoryColumn.querySelector('.add-task-btn');
                     addTaskBtn.addEventListener('click', () => {
                         const taskList = categoryColumn.querySelector('.category-task-list');
@@ -3135,17 +3192,20 @@ document.addEventListener("DOMContentLoaded", function () {
                                 </button>
                             </div>
                         `;
-        
+            
+                        taskList.appendChild(addTaskForm);
+                        updateEmptyState(taskList);
+            
                         const input = addTaskForm.querySelector('.add-task-input');
                         const saveBtn = addTaskForm.querySelector('.add-task-btn');
                         const cancelBtn = addTaskForm.querySelector('.cancel-add-task');
-        
+            
                         setTimeout(() => input.focus(), 10);
-        
+            
                         saveBtn.addEventListener('click', async () => {
                             const title = input.value.trim();
                             if (!title) return;
-        
+            
                             try {
                                 const response = await fetch('../Controller/projectController.php?action=createTask', {
                                     method: 'POST',
@@ -3160,11 +3220,12 @@ document.addEventListener("DOMContentLoaded", function () {
                                         status: 'todo'
                                     })
                                 });
-        
+            
                                 const data = await response.json();
                                 if (data.success) {
                                     loadTasksForCategory(category.id);
                                     addTaskForm.remove();
+                                    updateEmptyState(taskList);
                                 } else {
                                     throw new Error(data.message || 'Failed to create task');
                                 }
@@ -3173,31 +3234,34 @@ document.addEventListener("DOMContentLoaded", function () {
                                 showErrorNotification(error.message);
                             }
                         });
-        
+            
                         cancelBtn.addEventListener('click', () => {
                             addTaskForm.remove();
+                            updateEmptyState(taskList);
                         });
-        
+            
                         input.addEventListener('keydown', (e) => {
                             if (e.key === 'Enter') {
                                 saveBtn.click();
                             }
                         });
-        
-                        taskList.appendChild(addTaskForm);
                     });
-        
+            
+                    // Delete category button functionality
                     categoryColumn.querySelector('.delete-category-btn').addEventListener('click', () => {
                         deleteCategory(category.id);
                     });
-        
+            
+                    const taskList = categoryColumn.querySelector('.category-task-list');
+                    updateEmptyState(taskList);
+                    
                     if (category.task_count > 0) {
                         loadTasksForCategory(category.id);
                     }
-        
+            
                     initializeSortable(categoryColumn.querySelector('.category-task-list'));
                 });
-        
+            
                 if (!document.querySelector('.add-category-btn')) {
                     const addBtn = document.createElement('button');
                     addBtn.className = 'add-category-btn';
@@ -3207,7 +3271,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     categoriesContainer.appendChild(addBtn);
                 }
             }
-        
+
             async function loadTasksForCategory(categoryId) {
                 try {
                     const response = await fetch(`../Controller/projectController.php?action=getTasks&categoryId=${categoryId}&projectId=${projectId}`);
@@ -3225,6 +3289,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         }));
                         
                         renderTasks(tasksWithAssignees, categoryId);
+                        const taskList = document.querySelector(`.category-column[data-category-id="${categoryId}"] .category-task-list`);
+                        if (taskList) {
+                            updateEmptyState(taskList);
+                        }
                     } else {
                         throw new Error(data.message || 'Failed to load tasks');
                     }
@@ -3237,9 +3305,9 @@ document.addEventListener("DOMContentLoaded", function () {
             function renderTasks(tasks, categoryId) {
                 const taskList = document.querySelector(`.category-column[data-category-id="${categoryId}"] .category-task-list`);
                 if (!taskList) return;
-        
+            
                 taskList.innerHTML = '';
-        
+            
                 if (tasks.length === 0) {
                     taskList.innerHTML = `
                         <div class="empty-state">
@@ -3249,7 +3317,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     `;
                     return;
                 }
-        
+            
                 tasks.forEach(task => {
                     const taskCard = document.createElement('div');
                     taskCard.className = `task-card ${task.priority}`;
@@ -3279,33 +3347,40 @@ document.addEventListener("DOMContentLoaded", function () {
                             </button>
                         </div>
                     `;
-        
+            
                     taskCard.addEventListener('dragstart', () => {
                         taskCard.classList.add('dragging');
                     });
-        
+            
                     taskCard.addEventListener('dragend', () => {
                         taskCard.classList.remove('dragging');
+                        updateEmptyState(taskList);
                     });
-        
+            
                     taskList.appendChild(taskCard);
-        
+            
                     taskCard.addEventListener('click', (e) => {
                         if (!e.target.closest('.task-actions')) {
                             taskDetailPanel.show(task);
                         }
                     });
-        
+            
                     taskCard.querySelector('.edit-task-btn').addEventListener('click', (e) => {
                         e.stopPropagation();
                         taskDetailPanel.show(task);
                     });
-        
+            
                     taskCard.querySelector('.delete-task-btn').addEventListener('click', (e) => {
                         e.stopPropagation();
                         deleteTask(task.id, categoryId);
                     });
                 });
+            
+                // Remove any existing empty state
+                const emptyState = taskList.querySelector('.empty-state');
+                if (emptyState) {
+                    emptyState.remove();
+                }
             }
         
             function initializeSortable(list) {
@@ -3327,7 +3402,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         list.appendChild(placeholder);
                     }
             
-                    // Hide empty state when dragging over
                     if (emptyState) {
                         emptyState.style.display = 'none';
                     }
@@ -3347,6 +3421,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (!draggingTask) return;
             
                     const taskId = draggingTask.dataset.taskId;
+                    const sourceTaskList = draggingTask.closest('.category-task-list');
+                    const sourceCategoryId = sourceTaskList.closest('.category-column').dataset.categoryId;
+            
                     const tasks = Array.from(list.querySelectorAll('.task-card:not(.dragging)'));
                     let newPosition = tasks.length;
             
@@ -3380,9 +3457,12 @@ document.addEventListener("DOMContentLoaded", function () {
                             } else {
                                 list.appendChild(draggingTask);
                             }
-                            
-                            // Update empty state visibility
-                            updateEmptyState(list);
+                        
+                            draggingTask.classList.remove('dragging');
+                            await Promise.all([
+                                loadTasksForCategory(categoryId),
+                                sourceCategoryId !== categoryId ? loadTasksForCategory(sourceCategoryId) : Promise.resolve()
+                            ]);
                         } else {
                             throw new Error(data.message || 'Failed to update task position');
                         }
@@ -3391,16 +3471,15 @@ document.addEventListener("DOMContentLoaded", function () {
                         showErrorNotification('Failed to update task position. Please try again.');
                         loadCategories();
                     }
-            
-                    draggingTask.classList.remove('dragging');
                 });
             }
-            
+        
             function updateEmptyState(taskList) {
                 const tasks = taskList.querySelectorAll('.task-card');
                 const emptyState = taskList.querySelector('.empty-state');
-                
-                if (tasks.length === 0) {
+                const addTaskForm = taskList.querySelector('.add-task-form');
+        
+                if (tasks.length === 0 && !addTaskForm) {
                     if (!emptyState) {
                         const emptyDiv = document.createElement('div');
                         emptyDiv.className = 'empty-state';
@@ -3412,8 +3491,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     } else {
                         emptyState.style.display = 'flex';
                     }
-                } else if (emptyState) {
-                    emptyState.style.display = 'none';
+                } else {
+                    if (emptyState) {
+                        emptyState.style.display = 'none';
+                    }
                 }
             }
         
@@ -3522,7 +3603,7 @@ document.addEventListener("DOMContentLoaded", function () {
             async function deleteCategory(categoryId) {
                 const confirmed = await showConfirmModal(
                     'Delete Category',
-                    'Are you sure you want to delete this category? All tasks in it will be deleted.',
+                    'Are you sure you want to delete this category? All tasks will be deleted.',
                     'Delete',
                     'Cancel'
                 );
@@ -3536,13 +3617,16 @@ document.addEventListener("DOMContentLoaded", function () {
                             'Content-Type': 'application/json',
                             'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
                         },
-                        body: JSON.stringify({ categoryId: categoryId })
+                        body: JSON.stringify({ categoryId })
                     });
         
                     const data = await response.json();
                     if (data.success) {
                         showSuccessNotification('Category deleted successfully');
-                        loadCategories();
+                        const categoryColumn = document.querySelector(`.category-column[data-category-id="${categoryId}"]`);
+                        if (categoryColumn) {
+                            categoryColumn.remove();
+                        }
                     } else {
                         throw new Error(data.message || 'Failed to delete category');
                     }
@@ -3559,9 +3643,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     'Delete',
                     'Cancel'
                 );
-        
+            
                 if (!confirmed) return;
-        
+            
                 try {
                     const response = await fetch('../Controller/projectController.php?action=deleteTask', {
                         method: 'POST',
@@ -3571,11 +3655,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                         body: JSON.stringify({ taskId: taskId })
                     });
-        
+            
                     const data = await response.json();
                     if (data.success) {
                         showSuccessNotification('Task deleted successfully');
-                        loadTasksForCategory(categoryId);
+                        // Reload tasks for the category to refresh the UI
+                        await loadTasksForCategory(categoryId);
                     } else {
                         throw new Error(data.message || 'Failed to delete task');
                     }

@@ -294,7 +294,7 @@ try {
             $json = file_get_contents('php://input');
             $data = json_decode($json, true);
 
-            if (!isset($data['categoryId']) || !isset($data['name']) || !isset($data['color'])) {
+            if (!isset($data['categoryId']) || !isset($data['name'])) {
                 throw new Exception('Missing required fields', 400);
             }
 
@@ -314,12 +314,7 @@ try {
                 throw new Exception('Project not found or access denied', 404);
             }
 
-            $color = filter_var($data['color'], FILTER_SANITIZE_STRING);
-            if (!preg_match('/^#[a-f0-9]{6}$/i', $color)) {
-                throw new Exception('Invalid color format', 400);
-            }
-
-            $success = $projectModel->updateCategory($categoryId, $name, $color);
+            $success = $projectModel->updateCategory($categoryId, $name);
             echo json_encode([
                 'success' => $success,
                 'message' => $success ? 'Category updated successfully' : 'Failed to update category'

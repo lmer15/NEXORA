@@ -1401,7 +1401,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .notification.success {
-    background: #4CAF50;
+    background: var(--primary);
     color: white;
 }
 
@@ -1486,6 +1486,20 @@ input:focus, select:focus, textarea:focus {
 
 .confirm-modal .btn-confirm:hover {
     background: #D32F2F;
+}
+
+.editable-category-name {
+    cursor: text;
+    padding: 2px 5px;
+    border-radius: 3px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.editable-category-name.editing {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 0 2px rgba(12, 143, 52, 0.89);
 }
 
 /* Responsive Design */

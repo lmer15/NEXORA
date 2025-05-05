@@ -142,18 +142,16 @@ class ProjectModel {
         }
     }
 
-    public function updateCategory($categoryId, $name, $color) {
+    public function updateCategory($categoryId, $name) {
         try {
             $categoryId = filter_var($categoryId, FILTER_VALIDATE_INT);
             $name = filter_var(trim($name), FILTER_SANITIZE_STRING);
-            $color = filter_var($color, FILTER_SANITIZE_STRING);
-            if (!$categoryId || !$name || !preg_match('/^#[a-f0-9]{6}$/i', $color)) {
+            if (!$categoryId || !$name) {
                 return false;
             }
 
-            $stmt = $this->conn->prepare("UPDATE project_categories SET name = :name, color = :color WHERE id = :categoryId");
+            $stmt = $this->conn->prepare("UPDATE project_categories SET name = :name WHERE id = :categoryId");
             $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-            $stmt->bindParam(':color', $color, PDO::PARAM_STR);
             $stmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
             return $stmt->execute();
         } catch (PDOException $e) {
