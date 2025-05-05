@@ -2,278 +2,201 @@
 session_start();
 header('Content-Type: text/html; charset=UTF-8');
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 require_once '../config/db.php';
 require_once '../Model/ProjectModel.php';
 
-$projectModel = new ProjectModel($conn);
 $projectId = $_GET['id'] ?? null;
+if (!$projectId) die('Project ID is required');
 
-if (!$projectId) {
-    die('Project ID is required');
-}
-
+$projectModel = new ProjectModel($conn);
 $project = $projectModel->getById($projectId);
-if (!$project) {
-    die('Project not found');
-}
+if (!$project) die('Project not found');
 
-// Check if the user has access to the project
-if ($project['owner_id'] !== $_SESSION['user_id']) {
-    die('Access denied to this project');
-}
-
-// Check if the project is archived
-if ($project['status'] === 'archived') {
-    die('This project is archived and cannot be viewed.');
-}
+// Check access
+if ($project['owner_id'] !== $_SESSION['user_id']) die('Access denied');
+if ($project['status'] === 'archived') die('This project is archived');
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project View</title>
+    <title>Project View - <?= htmlspecialchars($project['name']) ?></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="stylesheet" href="../CSS_Files/views/projectView.css">
+    <script defer src="../JSFolder/facility.js"></script>
 </head>
-<body data-project-id="<?php echo htmlspecialchars($projectId); ?>">
+<body data-project-id="<?= htmlspecialchars($projectId) ?>" data-user-id="<?= $_SESSION['user_id'] ?>">
     <div class="project-view-container">
-        <!-- Back button to return to dashboard -->
-        <button class="back-to-dashboard">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </button>
-        
-        <!-- Project Header -->
-        <div class="project-header">
+        <header class="project-header">
+            <button class="back-to-dashboard" aria-label="Back to Dashboard">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </button>
             <div class="project-title-container">
-                <h1 class="project-title" contenteditable="true"><?php echo htmlspecialchars($project['name']); ?></h1>
-                <div class="project-status-badge <?php echo htmlspecialchars($project['status']); ?>">
-                    <?php echo ucfirst(htmlspecialchars($project['status'])); ?>
-                </div>
+                <h1 class="project-title" contenteditable="true" aria-label="Project Title">
+                    <?= htmlspecialchars($project['name']) ?>
+                </h1>
+                <span class="project-status-badge <?= htmlspecialchars($project['status']) ?>" role="status">
+                    <?= ucfirst(htmlspecialchars($project['status'])) ?>
+                </span>
             </div>
-            
             <div class="project-meta">
                 <div class="project-due-date">
-                    <i class="far fa-calendar-alt"></i>
-                    <span>Due: </span>
-                    <input type="text" class="date-picker" value="<?php echo date('M j, Y', strtotime($project['due_date'])); ?>">
+                    <i class="far fa-calendar-alt" aria-hidden="true"></i>
+                    <input type="text" class="date-picker" 
+                           value="<?= date('M j, Y', strtotime($project['due_date'])) ?>" 
+                           aria-label="Project Due Date">
                 </div>
-                <div class="project-priority <?php echo htmlspecialchars($project['priority']); ?>">
-                    <?php echo ucfirst(htmlspecialchars($project['priority'])); ?>
-                </div>
+                <span class="project-priority <?= htmlspecialchars($project['priority']) ?>" role="status">
+                    <?= ucfirst(htmlspecialchars($project['priority'])) ?>
+                </span>
             </div>
-        </div>
-        
-        <!-- Project Description -->
-        <div class="project-description-container">
+        </header>
+
+        <section class="project-description-container">
             <div class="description-header">
-                <h3>Description</h3>
-                <button class="edit-description-btn">
+                <h2>Description</h2>
+                <button class="edit-description-btn" aria-label="Edit Description">
                     <i class="fas fa-pencil-alt"></i> Edit
                 </button>
             </div>
-            <div class="project-description" contenteditable="false">
-                <?php echo nl2br(htmlspecialchars($project['description'])); ?>
+            <div class="project-description" contenteditable="false" role="textbox">
+                <?= nl2br(htmlspecialchars($project['description'])) ?>
             </div>
-        </div>
-        
-        <!-- View Toggle -->
-        <div class="view-toggle">
-            <button class="toggle-btn active" data-view="kanban">
-                <i class="fas fa-table-columns"></i> Kanban View
+        </section>
+
+        <nav class="view-toggle" role="navigation">
+            <button class="toggle-btn active" data-view="kanban" aria-label="Kanban View" role="tab">
+                <i class="fas fa-table-columns"></i> Kanban
             </button>
-            <button class="toggle-btn" data-view="calendar">
-                <i class="far fa-calendar-alt"></i> Calendar View
+            <button class="toggle-btn" data-view="calendar" aria-label="Calendar View" role="tab">
+                <i class="far fa-calendar-alt"></i> Calendar
             </button>
-        </div>
-        
-        <!-- Kanban View -->
-        <div class="kanban-view active-view">
+        </nav>
+
+        <main class="kanban-view active-view" role="main">
             <div class="categories-container">
-                <!-- Categories will be loaded here dynamically -->
                 <div class="empty-state" id="noCategoriesMessage">
-                    <i class="fas fa-folder-open"></i>
+                    <i class="fas fa-folder-open" aria-hidden="true"></i>
                     <p>No categories yet</p>
-                    <button class="btn btn-primary add-category-btn">
-                        <i class="fas fa-plus"></i> Add Category
-                    </button>
                 </div>
             </div>
-        </div>
-        
-        <!-- Calendar View (Hidden by default) -->
-        <div class="calendar-view">
-            <div class="calendar-header">
-                <div class="calendar-nav">
-                    <button class="btn btn-outline prev-month">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <h3 class="current-month">Month Year</h3>
-                    <button class="btn btn-outline next-month">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
+        </main>
+
+        <section class="calendar-view" role="region">
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button class="calendar-nav-btn prev-month"><i class="fas fa-chevron-left"></i></button>
+                    <h3 class="calendar-month-year">Month Year</h3>
+                    <button class="calendar-nav-btn next-month"><i class="fas fa-chevron-right"></i></button>
                 </div>
-                <div class="view-options">
-                    <button class="btn btn-outline view-option active" data-view="month">Month</button>
-                    <button class="btn btn-outline view-option" data-view="week">Week</button>
-                    <button class="btn btn-outline view-option" data-view="day">Day</button>
+                <div class="calendar-grid">
+                    <!-- Calendar will be populated dynamically -->
                 </div>
-            </div>
-            <div class="calendar-grid">
-                <!-- Calendar will be rendered here -->
-            </div>
-        </div>
-        
-        <!-- Add Category Modal -->
-        <div class="modal-overlay" id="addCategoryModal">
-            <div class="modal-container small">
-                <div class="modal-header">
-                    <h3>Add New Category</h3>
-                    <button class="modal-close">&times;</button>
-                </div>
-                <div class="modal-content">
-                    <form id="addCategoryForm">
-                        <div class="form-group">
-                            <label for="categoryName">Category Name</label>
-                            <input type="text" id="categoryName" placeholder="e.g., Design, Development" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Category Color</label>
-                            <div class="color-options">
-                                <div class="color-preview" id="categoryColorPreview"></div>
-                                <input type="color" id="categoryColorPicker" value="#3b82f6">
-                            </div>
-                        </div>
-                        <div class="modal-actions">
-                            <button class="btn btn-outline cancel-btn">Cancel</button>
-                            <button class="btn btn-primary" type="submit">Add Category</button>
-                        </div>
-                    </form>
+                <div class="calendar-legend">
+                    <div class="legend-item">
+                        <span class="legend-color high"></span>
+                        <span>High Priority</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color medium"></span>
+                        <span>Medium Priority</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color low"></span>
+                        <span>Low Priority</span>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Task Detail Modal -->
-        <div class="modal-overlay" id="taskDetailModal">
-            <div class="modal-container large">
-                <div class="modal-header">
-                    <h3 class="task-modal-title">Task Details</h3>
-                    <button class="modal-close">&times;</button>
-                </div>
-                <div class="modal-content">
-                    <form id="taskDetailForm">
-                        <div class="task-detail-grid">
-                            <div class="task-main-content">
-                                <div class="form-group">
-                                    <input type="text" class="task-title-input" placeholder="Task title" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Description</label>
-                                    <div class="rich-text-editor" id="taskDescriptionEditor"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Attachments</label>
-                                    <div class="attachments-container">
-                                        <div class="attachment-list">
-                                            <!-- Attachments will be listed here -->
-                                        </div>
-                                        <div class="attachment-upload">
-                                            <input type="file" id="taskAttachment" multiple style="display: none;">
-                                            <button type="button" class="btn btn-outline upload-btn">
-                                                <i class="fas fa-paperclip"></i> Add Attachment
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Comments</label>
-                                    <div class="comments-container">
-                                        <div class="comment-list">
-                                            <!-- Comments will be listed here -->
-                                        </div>
-                                        <div class="comment-input">
-                                            <textarea placeholder="Add a comment..." rows="3"></textarea>
-                                            <button type="button" class="btn btn-primary post-comment-btn">
-                                                Post Comment
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="task-sidebar">
-                                <div class="form-group">
-                                    <label>Status</label>
-                                    <select class="task-status-select">
-                                        <option value="todo">To Do</option>
-                                        <option value="progress">In Progress</option>
-                                        <option value="done">Done</option>
-                                        <option value="blocked">Blocked</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Assignee</label>
-                                    <select class="task-assignee-select">
-                                        <option value="">Unassigned</option>
-                                        <!-- Team members will be populated here -->
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Due Date</label>
-                                    <input type="text" class="task-due-date-picker">
-                                </div>
-                                <div class="form-group">
-                                    <label>Priority</label>
-                                    <select class="task-priority-select">
-                                        <option value="high">High</option>
-                                        <option value="medium">Medium</option>
-                                        <option value="low">Low</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Category</label>
-                                    <select class="task-category-select">
-                                        <!-- Categories will be populated here -->
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Activity</label>
-                                    <div class="activity-log">
-                                        <!-- Activity logs will be shown here -->
-                                    </div>
-                                </div>
-                                <div class="task-actions">
-                                    <button type="button" class="btn btn-outline delete-task-btn">
-                                        <i class="fas fa-trash"></i> Delete Task
-                                    </button>
-                                    <button type="submit" class="btn btn-primary save-task-btn">
-                                        <i class="fas fa-save"></i> Save Changes
-                                    </button>
-                                </div>
-                            </div>
+        </section>
+
+        <!-- Task Detail Panel -->
+        <div id="taskDetailPanel" class="task-detail-panel">
+            <div class="task-detail-header">
+                <h3>Task Details</h3>
+                <button class="task-detail-close">&times;</button>
+            </div>
+            <div class="task-detail-content">
+                <form id="taskDetailForm" class="task-detail-form">
+                    <div class="input-group">
+                        <label for="taskDetailTitle">Task Title</label>
+                        <input type="text" id="taskDetailTitle" required maxlength="100">
+                    </div>
+                    <div class="input-group">
+                        <label for="taskDetailDescription">Description</label>
+                        <div id="richTextEditor" class="rich-text-editor"></div>
+                        <input type="hidden" id="taskDetailDescription" name="description">
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="taskDetailStatus">Status</label>
+                            <select id="taskDetailStatus">
+                                <option value="todo">To Do</option>
+                                <option value="progress">In Progress</option>
+                                <option value="done">Done</option>
+                                <option value="blocked">Blocked</option>
+                            </select>
                         </div>
-                    </form>
-                </div>
+                        <div class="input-group">
+                            <label for="taskDetailAssignee">Assignee</label>
+                            <select id="taskDetailAssignee">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="taskDetailDueDate">Deadline</label>
+                            <input type="text" id="taskDetailDueDate" class="date-picker">
+                        </div>
+                        <div class="input-group">
+                            <label for="taskDetailPriority">Priority</label>
+                            <select id="taskDetailPriority">
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Attachments</label>
+                        <div class="file-upload">
+                            <i class="fas fa-upload"></i> Upload Files
+                            <input type="file" id="taskDetailFiles" multiple style="display: none;">
+                        </div>
+                        <div class="file-list" id="fileList"></div>
+                    </div>
+                    <div class="comments-section">
+                        <h4>Comments</h4>
+                        <div class="comment-input">
+                            <textarea placeholder="Add a comment..."></textarea>
+                            <button type="button"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                        <div class="comment-list" id="commentList"></div>
+                    </div>
+                    <div class="activity-section">
+                        <h4>Activity</h4>
+                        <div class="activity-list" id="taskActivityList"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-outline" id="deleteTaskBtn">
+                            <i class="fas fa-trash"></i> Delete Task
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-    
-    <script src="../JSFolder/projectView.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
-    // Initialize date pickers
-    document.addEventListener("DOMContentLoaded", function() {
-        flatpickr(".date-picker", {
-            dateFormat: "M j, Y",
-            allowInput: true
-        });
-        
-        flatpickr(".task-due-date-picker", {
-            dateFormat: "M j, Y",
-            allowInput: true
-        });
-    });
-    </script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </body>
 </html>

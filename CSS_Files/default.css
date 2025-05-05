@@ -18,6 +18,17 @@
     --done-color: #1971c2;
     --done-color-hover: #0b4780;
     --project-background: #f5f5f5;
+    --category-header-bg: #f5f6f5;
+    --task-card-bg: var(--white);
+    --task-card-hover: var(--hover-bg);
+    --priority-high: #e63946; 
+    --priority-medium: #fa8c16; 
+    --priority-low: #52c41a; 
+    --priority-high-bg: #fff1f0;
+    --priority-medium-bg: #fff7e6;
+    --priority-low-bg: #f6ffed;
+    --status-blocked: #f5222d; /* Specific to blocked status */
+    --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 * {

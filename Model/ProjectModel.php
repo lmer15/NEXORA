@@ -1,5 +1,4 @@
 <?php
-
 require_once __DIR__ . '/TaskModel.php';
 
 class ProjectModel {
@@ -8,11 +7,14 @@ class ProjectModel {
 
     public function __construct($conn) {
         $this->conn = $conn;
-        $this->taskModel = new Task($conn);
+        $this->taskModel = new TaskModel($conn); 
     }
 
     public function getById($projectId) {
         try {
+            $projectId = filter_var($projectId, FILTER_VALIDATE_INT);
+            if (!$projectId) return false;
+
             $stmt = $this->conn->prepare("
                 SELECT p.*, u.name as owner_name 
                 FROM projects p 
@@ -27,23 +29,28 @@ class ProjectModel {
             return false;
         }
     }
-
+    
     public function updateField($projectId, $field, $value) {
         $allowedFields = ['name', 'description', 'due_date', 'priority', 'color', 'status'];
-        
         if (!in_array($field, $allowedFields)) {
             return false;
         }
-
+    
         try {
-            // Sanitize field name to prevent SQL injection
+            $projectId = filter_var($projectId, FILTER_VALIDATE_INT);
             $field = filter_var($field, FILTER_SANITIZE_STRING);
-            
+            if (!$projectId || !$field) return false;
+    
+            // Special handling for date fields
+            if ($field === 'due_date' && $value) {
+                $value = date('Y-m-d', strtotime($value));
+                if (!$value) return false;
+            }
+    
             $sql = "UPDATE projects SET {$field} = :value WHERE id = :projectId";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':value', $value);
             $stmt->bindParam(':projectId', $projectId, PDO::PARAM_INT);
-            
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Error updating project field: ' . $e->getMessage());
@@ -53,6 +60,9 @@ class ProjectModel {
 
     public function getCategories($projectId) {
         try {
+            $projectId = filter_var($projectId, FILTER_VALIDATE_INT);
+            if (!$projectId) return [];
+
             $stmt = $this->conn->prepare("
                 SELECT 
                     pc.*,
@@ -63,26 +73,23 @@ class ProjectModel {
             ");
             $stmt->bindParam(':projectId', $projectId, PDO::PARAM_INT);
             $stmt->execute();
-            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // Get tasks for each category
-            foreach ($categories as &$category) {
-                $category['tasks'] = $this->taskModel->getByCategory($category['id']);
-            }
-            unset($category); // Unset reference to prevent side effects
-
-            return $categories;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('Error fetching categories: ' . $e->getMessage());
             return [];
         }
     }
 
-    public function addCategory($projectId, $name, $color = '#3b82f6') {
+    public function addCategory($projectId, $name) {
         try {
+            $projectId = filter_var($projectId, FILTER_VALIDATE_INT);
+            $name = filter_var(trim($name), FILTER_SANITIZE_STRING);
+            if (!$projectId || !$name) {
+                return false;
+            }
+    
             $this->conn->beginTransaction();
-
-            // Get current max position
+    
             $stmt = $this->conn->prepare("
                 SELECT COALESCE(MAX(position), 0) + 1 as new_position 
                 FROM project_categories 
@@ -91,33 +98,91 @@ class ProjectModel {
             $stmt->bindParam(':projectId', $projectId, PDO::PARAM_INT);
             $stmt->execute();
             $position = $stmt->fetchColumn();
-
+    
             $stmt = $this->conn->prepare("
                 INSERT INTO project_categories (
                     project_id, 
                     name, 
-                    color, 
                     position
                 ) VALUES (
                     :projectId, 
                     :name, 
-                    :color, 
                     :position
                 )
             ");
             $stmt->bindParam(':projectId', $projectId, PDO::PARAM_INT);
             $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-            $stmt->bindParam(':color', $color, PDO::PARAM_STR);
             $stmt->bindParam(':position', $position, PDO::PARAM_INT);
             $stmt->execute();
-            
+    
             $categoryId = $this->conn->lastInsertId();
             $this->conn->commit();
-            
+    
+            error_log("Category added: ID=$categoryId, Project=$projectId");
             return $categoryId;
         } catch (PDOException $e) {
             $this->conn->rollBack();
             error_log('Error adding category: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getCategoryById($categoryId) {
+        try {
+            $categoryId = filter_var($categoryId, FILTER_VALIDATE_INT);
+            if (!$categoryId) return false;
+
+            $stmt = $this->conn->prepare("SELECT * FROM project_categories WHERE id = :categoryId");
+            $stmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
+        } catch (PDOException $e) {
+            error_log('Error fetching category: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function updateCategory($categoryId, $name, $color) {
+        try {
+            $categoryId = filter_var($categoryId, FILTER_VALIDATE_INT);
+            $name = filter_var(trim($name), FILTER_SANITIZE_STRING);
+            $color = filter_var($color, FILTER_SANITIZE_STRING);
+            if (!$categoryId || !$name || !preg_match('/^#[a-f0-9]{6}$/i', $color)) {
+                return false;
+            }
+
+            $stmt = $this->conn->prepare("UPDATE project_categories SET name = :name, color = :color WHERE id = :categoryId");
+            $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+            $stmt->bindParam(':color', $color, PDO::PARAM_STR);
+            $stmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log('Error updating category: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function deleteCategory($categoryId) {
+        try {
+            $categoryId = filter_var($categoryId, FILTER_VALIDATE_INT);
+            if (!$categoryId) return false;
+
+            $this->conn->beginTransaction();
+
+            $stmt = $this->conn->prepare("DELETE FROM tasks WHERE category_id = :categoryId");
+            $stmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $stmt = $this->conn->prepare("DELETE FROM project_categories WHERE id = :categoryId");
+            $stmt->bindParam(':categoryId', $categoryId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $this->conn->commit();
+            error_log("Category deleted: ID=$categoryId");
+            return true;
+        } catch (PDOException $e) {
+            $this->conn->rollBack();
+            error_log('Error deleting category: ' . $e->getMessage());
             return false;
         }
     }
