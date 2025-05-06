@@ -350,50 +350,50 @@ try {
         case 'updateTask':
             $json = file_get_contents('php://input');
             $data = json_decode($json, true);
-
+        
             $requiredFields = ['taskId', 'title', 'status', 'priority'];
             foreach ($requiredFields as $field) {
                 if (!isset($data[$field])) {
                     throw new Exception("Missing required field: $field", 400);
                 }
             }
-
+        
             $taskId = filter_var($data['taskId'], FILTER_VALIDATE_INT);
             $title = filter_var(trim($data['title']), FILTER_SANITIZE_STRING);
-            if (strlen($title) < 3 || strlen($title) > 100) {
-                throw new Exception('Task title must be between 3-100 characters', 400);
+            if (!$taskId || strlen($title) < 3 || strlen($title) > 100) {
+                throw new Exception('Task ID or title is invalid', 400);
             }
-
+        
             $description = isset($data['description']) ? filter_var(trim($data['description']), FILTER_SANITIZE_STRING) : '';
             if (strlen($description) > 500) {
                 throw new Exception('Description too long (max 500 chars)', 400);
             }
-
+        
             $status = $data['status'];
             if (!in_array($status, ['todo', 'progress', 'done', 'blocked'])) {
                 throw new Exception('Invalid task status', 400);
             }
-
+        
             $priority = $data['priority'];
             if (!in_array($priority, ['high', 'medium', 'low'])) {
                 throw new Exception('Invalid task priority', 400);
             }
-
-            $dueDate = isset($data['due_date']) ? $data['due_date'] : null;
-            if ($dueDate && !strtotime($dueDate)) {
+        
+            $dueDate = isset($data['due_date']) && $data['due_date'] ? $data['due_date'] : null;
+            if ($dueDate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate)) {
                 throw new Exception('Invalid due date format', 400);
             }
-
+        
             $task = $taskModel->getById($taskId);
             if (!$task) {
                 throw new Exception('Task not found', 404);
             }
-
+        
             $project = $projectModel->getById($task['project_id']);
             if (!$project || $project['owner_id'] !== $userId) {
                 throw new Exception('Project not found or access denied', 404);
             }
-
+        
             $fieldsToUpdate = [
                 'title' => $title,
                 'description' => $description,
@@ -401,7 +401,7 @@ try {
                 'priority' => $priority,
                 'due_date' => $dueDate
             ];
-
+        
             $success = true;
             foreach ($fieldsToUpdate as $field => $value) {
                 if ($value !== null && !$taskModel->updateField($taskId, $field, $value)) {
@@ -409,7 +409,17 @@ try {
                     break;
                 }
             }
-
+        
+            if ($success) {
+                // Log activity for status and priority changes
+                if ($task['status'] !== $status) {
+                    $taskModel->logActivity($taskId, $userId, 'status_updated', json_encode(['old_status' => $task['status'], 'new_status' => $status]));
+                }
+                if ($task['priority'] !== $priority) {
+                    $taskModel->logActivity($taskId, $userId, 'priority_updated', json_encode(['old_priority' => $task['priority'], 'new_priority' => $priority]));
+                }
+            }
+        
             error_log("Task updated: ID=$taskId, Project={$task['project_id']}");
             echo json_encode([
                 'success' => $success,
@@ -591,6 +601,99 @@ try {
                 'success' => true,
                 'members' => $members
             ]);
+            break;
+
+        case 'getComments':
+            $taskId = filter_input(INPUT_GET, 'taskId', FILTER_VALIDATE_INT);
+            if (!$taskId) throw new Exception('Task ID is required', 400);
+            
+            $task = $taskModel->getById($taskId);
+            if (!$task) throw new Exception('Task not found', 404);
+            
+            $project = $projectModel->getById($task['project_id']);
+            if (!$project || $project['owner_id'] !== $userId) {
+                throw new Exception('Project not found or access denied', 404);
+            }
+            
+            $comments = $taskModel->getComments($taskId);
+            echo json_encode(['success' => true, 'comments' => $comments]);
+            break;
+
+        case 'addComment':
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+            
+            if (!isset($data['taskId']) || !isset($data['content'])) {
+                throw new Exception('Missing required fields', 400);
+            }
+            
+            $taskId = filter_var($data['taskId'], FILTER_VALIDATE_INT);
+            $content = filter_var(trim($data['content']), FILTER_SANITIZE_STRING);
+            
+            if (!$taskId || empty($content)) {
+                throw new Exception('Invalid input data', 400);
+            }
+            
+            $task = $taskModel->getById($taskId);
+            if (!$task) throw new Exception('Task not found', 404);
+            
+            $project = $projectModel->getById($task['project_id']);
+            if (!$project || $project['owner_id'] !== $userId) {
+                throw new Exception('Project not found or access denied', 404);
+            }
+            
+            $commentId = $taskModel->addComment($taskId, $userId, $content);
+            if (!$commentId) {
+                throw new Exception('Failed to add comment', 500);
+            }
+            
+            // Log activity
+            $taskModel->logActivity($taskId, $userId, 'comment_added');
+            
+            echo json_encode(['success' => true, 'message' => 'Comment added successfully']);
+            break;
+
+        case 'addLink':
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+            if (!isset($data['taskId']) || !isset($data['url'])) {
+                throw new Exception('Missing required fields', 400);
+            }
+            $taskId = filter_var($data['taskId'], FILTER_VALIDATE_INT);
+            $url = filter_var(trim($data['url']), FILTER_SANITIZE_URL);
+            if (!$taskId || !$url || !filter_var($url, FILTER_VALIDATE_URL)) {
+                throw new Exception('Invalid task ID or URL', 400);
+            }
+            $task = $taskModel->getById($taskId);
+            if (!$task) {
+                throw new Exception('Task not found', 404);
+            }
+            $project = $projectModel->getById($task['project_id']);
+            if (!$project || $project['owner_id'] !== $userId) {
+                throw new Exception('Project not found or access denied', 404);
+            }
+            $linkId = $taskModel->addLink($taskId, $url, $userId);
+            if (!$linkId) {
+                throw new Exception('Failed to add link', 500);
+            }
+            echo json_encode(['success' => true, 'message' => 'Link added successfully']);
+            break;
+
+        case 'getLinks':
+            $taskId = filter_input(INPUT_GET, 'taskId', FILTER_VALIDATE_INT);
+            if (!$taskId) {
+                throw new Exception('Task ID is required', 400);
+            }
+            $task = $taskModel->getById($taskId);
+            if (!$task) {
+                throw new Exception('Task not found', 404);
+            }
+            $project = $projectModel->getById($task['project_id']);
+            if (!$project || $project['owner_id'] !== $userId) {
+                throw new Exception('Project not found or access denied', 404);
+            }
+            $links = $taskModel->getLinks($taskId);
+            echo json_encode(['success' => true, 'links' => $links]);
             break;
 
         default:

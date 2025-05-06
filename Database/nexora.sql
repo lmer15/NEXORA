@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 05, 2025 at 06:09 AM
+-- Generation Time: May 06, 2025 at 11:19 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -135,12 +135,12 @@ INSERT INTO `facility_members` (`id`, `facility_id`, `user_id`, `joined_at`) VAL
 (21, 29, 41, '2025-04-26 04:05:45'),
 (27, 29, 40, '2025-04-26 10:59:35'),
 (28, 32, 45, '2025-04-26 11:04:13'),
-(29, 32, 40, '2025-04-26 11:04:46'),
 (30, 32, 41, '2025-04-26 11:05:13'),
 (32, 28, 45, '2025-04-27 00:41:47'),
 (35, 27, 41, '2025-04-29 00:18:12'),
 (37, 31, 41, '2025-04-29 14:06:12'),
-(38, 30, 44, '2025-04-29 14:06:55');
+(38, 30, 44, '2025-04-29 14:06:55'),
+(42, 32, 43, '2025-05-06 04:22:29');
 
 -- --------------------------------------------------------
 
@@ -242,27 +242,12 @@ CREATE TABLE `project_categories` (
 --
 
 INSERT INTO `project_categories` (`id`, `project_id`, `name`, `color`, `position`, `created_at`, `updated_at`) VALUES
-(34, 198, 'Design Development', '#006d75', 1, '2025-05-03 13:47:19', '2025-05-03 13:47:19'),
-(35, 198, 'ELMER GWAPA', '#006d75', 2, '2025-05-03 13:47:48', '2025-05-03 13:47:48'),
-(37, 198, 'LALALAA', '#006d75', 3, '2025-05-03 13:56:37', '2025-05-03 13:56:37'),
-(39, 225, 'Design Development', '#006d75', 1, '2025-05-03 14:03:31', '2025-05-03 14:03:31'),
-(40, 215, 'Design Development', '#006d75', 1, '2025-05-03 17:00:41', '2025-05-03 17:00:41'),
-(41, 215, 'JOKE PROJECT', '#26949c', 2, '2025-05-03 17:01:09', '2025-05-03 17:01:09'),
-(42, 215, 'MAMA', '#006d75', 3, '2025-05-03 17:12:32', '2025-05-03 17:12:32'),
-(44, 213, 'DARLING', '#0f9099', 1, '2025-05-03 17:16:37', '2025-05-03 17:16:37'),
-(46, 213, 'Design Development', '#006d75', 2, '2025-05-03 17:30:46', '2025-05-03 17:30:46'),
-(48, 228, 'Design Development', '#006d75', 2, '2025-05-03 17:49:21', '2025-05-03 17:49:21'),
-(49, 176, 'Design Development', '#006d75', 1, '2025-05-04 10:47:29', '2025-05-04 10:47:29'),
-(50, 176, 'DARLING', '#006d75', 2, '2025-05-04 12:37:18', '2025-05-04 12:37:18'),
-(51, 178, 'Design Development', '#006d75', 1, '2025-05-04 13:18:50', '2025-05-04 13:18:50'),
-(52, 198, 'Design Development', '#3b82f6', 4, '2025-05-04 15:24:18', '2025-05-04 15:24:18'),
-(53, 198, 'ELMER GWAPA', '#3b82f6', 5, '2025-05-04 15:25:06', '2025-05-04 15:25:06'),
-(54, 231, 'DRKLFMK', '#3b82f6', 1, '2025-05-04 15:30:17', '2025-05-04 15:30:17'),
-(55, 230, 'LALAY', '#3b82f6', 1, '2025-05-04 23:36:19', '2025-05-04 23:36:19'),
-(56, 230, 'LALAY', '#3b82f6', 2, '2025-05-04 23:36:20', '2025-05-04 23:36:20'),
-(57, 230, 'lag', '#3b82f6', 3, '2025-05-04 23:42:22', '2025-05-04 23:42:22'),
-(58, 230, 'Design Development', '#3b82f6', 4, '2025-05-04 23:42:56', '2025-05-04 23:42:56'),
-(59, 230, 'Design Development', '#3b82f6', 5, '2025-05-04 23:44:13', '2025-05-04 23:44:13');
+(63, 182, 'DFSGGH', '#3b82f6', 1, '2025-05-06 06:41:52', '2025-05-06 06:41:52'),
+(64, 202, 'MAMA', '#3b82f6', 1, '2025-05-06 07:42:37', '2025-05-06 07:42:37'),
+(65, 204, 'MAMA', '#3b82f6', 1, '2025-05-06 07:56:41', '2025-05-06 07:56:41'),
+(66, 197, 'MAMA', '#3b82f6', 1, '2025-05-06 08:01:56', '2025-05-06 08:01:56'),
+(67, 197, 'Design Development', '#3b82f6', 2, '2025-05-06 08:01:59', '2025-05-06 08:01:59'),
+(68, 197, 'ELMER GWAPA', '#3b82f6', 3, '2025-05-06 08:02:04', '2025-05-06 08:02:04');
 
 -- --------------------------------------------------------
 
@@ -327,27 +312,10 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`id`, `category_id`, `project_id`, `title`, `description`, `status`, `priority`, `due_date`, `assignee_id`, `position`, `created_by`, `created_at`, `updated_at`) VALUES
-(26, 39, 225, 'LAMIA', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-03 14:03:47', '2025-05-04 17:45:35'),
-(27, 41, 215, 'KIKI', '', 'todo', 'medium', NULL, NULL, 1, 44, '2025-05-03 17:00:47', '2025-05-04 17:57:08'),
-(28, 41, 215, 'BEBE', '', 'todo', 'medium', NULL, NULL, 2, 44, '2025-05-03 17:00:52', '2025-05-04 17:57:08'),
-(29, 40, 215, 'JAKO', '', 'todo', 'medium', NULL, NULL, 2, 44, '2025-05-03 17:01:18', '2025-05-03 17:12:48'),
-(30, 41, 215, 'MAKO', '', 'todo', 'medium', NULL, NULL, 3, 44, '2025-05-03 17:01:22', '2025-05-04 17:57:08'),
-(31, 40, 215, 'MIMI', '', 'todo', 'medium', NULL, NULL, 1, 44, '2025-05-03 17:11:43', '2025-05-03 17:12:48'),
-(37, 50, 176, 'LALAY', '', 'todo', 'medium', NULL, NULL, 1, 44, '2025-05-04 10:47:35', '2025-05-04 17:56:53'),
-(38, 51, 178, 'LALA', '', 'todo', 'medium', NULL, NULL, 1, 44, '2025-05-04 13:19:01', '2025-05-04 13:19:01'),
-(39, 51, 178, 'MAMA', '', 'todo', 'medium', NULL, NULL, 2, 44, '2025-05-04 13:19:05', '2025-05-04 13:19:05'),
-(40, 51, 178, 'KOKO', '', 'todo', 'medium', NULL, NULL, 3, 44, '2025-05-04 13:19:09', '2025-05-04 13:19:09'),
-(41, 51, 178, 'LILO', '', 'todo', 'medium', NULL, NULL, 4, 44, '2025-05-04 13:19:13', '2025-05-04 13:19:13'),
-(42, 48, 228, 'kaka', '', 'todo', 'medium', NULL, NULL, 1, 43, '2025-05-04 14:51:37', '2025-05-04 14:51:37'),
-(43, 34, 198, 'LOLLIPOP', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-04 17:46:18', '2025-05-04 18:23:27'),
-(44, 35, 198, 'KOJI', '', 'todo', 'medium', NULL, NULL, 0, 42, '2025-05-04 18:06:37', '2025-05-04 18:23:27'),
-(45, 54, 231, 'lala', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-04 18:23:23', '2025-05-04 18:23:23'),
-(46, 55, 230, 'lala', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-04 23:44:24', '2025-05-04 23:44:47'),
-(47, 55, 230, 'kaka', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-04 23:45:08', '2025-05-04 23:45:08'),
-(48, 55, 230, 'kaa', '', 'todo', 'medium', NULL, NULL, 3, 42, '2025-05-04 23:45:11', '2025-05-04 23:45:11'),
-(49, 55, 230, 'lala', '', 'todo', 'medium', NULL, NULL, 4, 42, '2025-05-04 23:45:13', '2025-05-04 23:45:13'),
-(50, 55, 230, 'karb', '', 'todo', 'medium', NULL, NULL, 5, 42, '2025-05-04 23:45:17', '2025-05-04 23:45:17'),
-(51, 55, 230, 'nanan', '', 'todo', 'medium', NULL, NULL, 6, 42, '2025-05-04 23:45:20', '2025-05-04 23:45:20');
+(55, 63, 182, 'FDHFG', '', 'todo', 'medium', NULL, NULL, 1, 45, '2025-05-06 06:41:54', '2025-05-06 06:41:54'),
+(58, 67, 197, 'fdgt', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-06 08:02:10', '2025-05-06 09:17:05'),
+(59, 66, 197, 'tryrt', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-06 08:02:12', '2025-05-06 09:17:08'),
+(60, 64, 202, 'reyu', '', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-06 09:17:39', '2025-05-06 09:17:39');
 
 -- --------------------------------------------------------
 
@@ -407,6 +375,20 @@ CREATE TABLE `task_comments` (
   `content` text NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `task_links`
+--
+
+CREATE TABLE `task_links` (
+  `id` int(11) NOT NULL,
+  `task_id` int(11) NOT NULL,
+  `url` varchar(255) NOT NULL,
+  `created_by` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -556,6 +538,14 @@ ALTER TABLE `task_comments`
   ADD KEY `user_id` (`user_id`);
 
 --
+-- Indexes for table `task_links`
+--
+ALTER TABLE `task_links`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `task_id` (`task_id`),
+  ADD KEY `created_by` (`created_by`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -595,7 +585,7 @@ ALTER TABLE `facility_invitations`
 -- AUTO_INCREMENT for table `facility_members`
 --
 ALTER TABLE `facility_members`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT for table `projects`
@@ -607,7 +597,7 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT for table `project_categories`
 --
 ALTER TABLE `project_categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT for table `remember_tokens`
@@ -625,7 +615,7 @@ ALTER TABLE `security_questions`
 -- AUTO_INCREMENT for table `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
 
 --
 -- AUTO_INCREMENT for table `task_activities`
@@ -649,6 +639,12 @@ ALTER TABLE `task_attachments`
 -- AUTO_INCREMENT for table `task_comments`
 --
 ALTER TABLE `task_comments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `task_links`
+--
+ALTER TABLE `task_links`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -741,6 +737,13 @@ ALTER TABLE `task_attachments`
 ALTER TABLE `task_comments`
   ADD CONSTRAINT `task_comments_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `task_comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task_links`
+--
+ALTER TABLE `task_links`
+  ADD CONSTRAINT `task_links_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `task_links_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -29,8 +29,8 @@ if ($project['status'] === 'archived') die('This project is archived');
     <title>Project View - <?= htmlspecialchars($project['name']) ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css">
     <link rel="stylesheet" href="../CSS_Files/views/projectView.css">
-    <script defer src="../JSFolder/facility.js"></script>
 </head>
 <body data-project-id="<?= htmlspecialchars($projectId) ?>" data-user-id="<?= $_SESSION['user_id'] ?>">
     <div class="project-view-container">
@@ -115,88 +115,10 @@ if ($project['status'] === 'archived') die('This project is archived');
                 </div>
             </div>
         </section>
-
-        <!-- Task Detail Panel -->
-        <div id="taskDetailPanel" class="task-detail-panel">
-            <div class="task-detail-header">
-                <h3>Task Details</h3>
-                <button class="task-detail-close">&times;</button>
-            </div>
-            <div class="task-detail-content">
-                <form id="taskDetailForm" class="task-detail-form">
-                    <div class="input-group">
-                        <label for="taskDetailTitle">Task Title</label>
-                        <input type="text" id="taskDetailTitle" required maxlength="100">
-                    </div>
-                    <div class="input-group">
-                        <label for="taskDetailDescription">Description</label>
-                        <div id="richTextEditor" class="rich-text-editor"></div>
-                        <input type="hidden" id="taskDetailDescription" name="description">
-                    </div>
-                    <div class="form-row">
-                        <div class="input-group">
-                            <label for="taskDetailStatus">Status</label>
-                            <select id="taskDetailStatus">
-                                <option value="todo">To Do</option>
-                                <option value="progress">In Progress</option>
-                                <option value="done">Done</option>
-                                <option value="blocked">Blocked</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label for="taskDetailAssignee">Assignee</label>
-                            <select id="taskDetailAssignee">
-                                <!-- Populated dynamically -->
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="input-group">
-                            <label for="taskDetailDueDate">Deadline</label>
-                            <input type="text" id="taskDetailDueDate" class="date-picker">
-                        </div>
-                        <div class="input-group">
-                            <label for="taskDetailPriority">Priority</label>
-                            <select id="taskDetailPriority">
-                                <option value="high">High</option>
-                                <option value="medium">Medium</option>
-                                <option value="low">Low</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>Attachments</label>
-                        <div class="file-upload">
-                            <i class="fas fa-upload"></i> Upload Files
-                            <input type="file" id="taskDetailFiles" multiple style="display: none;">
-                        </div>
-                        <div class="file-list" id="fileList"></div>
-                    </div>
-                    <div class="comments-section">
-                        <h4>Comments</h4>
-                        <div class="comment-input">
-                            <textarea placeholder="Add a comment..."></textarea>
-                            <button type="button"><i class="fas fa-paper-plane"></i></button>
-                        </div>
-                        <div class="comment-list" id="commentList"></div>
-                    </div>
-                    <div class="activity-section">
-                        <h4>Activity</h4>
-                        <div class="activity-list" id="taskActivityList"></div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn-outline" id="deleteTaskBtn">
-                            <i class="fas fa-trash"></i> Delete Task
-                        </button>
-                        <button type="submit" class="btn-primary">
-                            Save Changes
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
     </div>
 
-    <script defer src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.min.js"></script>
+    <script defer src="../JSFolder/facility.js"></script>
 </body>
 </html>

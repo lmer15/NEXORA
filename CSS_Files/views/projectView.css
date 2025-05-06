@@ -1502,6 +1502,24 @@ input:focus, select:focus, textarea:focus {
     box-shadow: 0 0 0 2px rgba(12, 143, 52, 0.89);
 }
 
+.task-detail-modal.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
     .categories-container {

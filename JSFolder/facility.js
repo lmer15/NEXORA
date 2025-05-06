@@ -2637,133 +2637,154 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         
             function setupTaskDetailPanel() {
-                const panel = document.createElement('div');
-                panel.className = 'task-detail-modal';
-                panel.innerHTML = `
-                    <div class="modal-overlay"></div>
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3>Task Details</h3>
-                            <button class="modal-close">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="taskDetailForm">
-                                <div class="form-group">
-                                    <label for="taskTitle">Title</label>
-                                    <input type="text" id="taskTitle" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="taskDescription">Description</label>
-                                    <div id="taskDescriptionEditor"></div>
-                                </div>
-                                <div class="form-row">
+                const flatpickrInstances = []; // Store Flatpickr instances
+            
+                // Initialize modal HTML
+                function initializeModal() {
+                    const panel = document.createElement('div');
+                    panel.className = 'task-detail-modal';
+                    panel.setAttribute('aria-hidden', 'true');
+                    panel.innerHTML = `
+                        <div class="modal-overlay" role="presentation"></div>
+                        <div class="modal-content" role="dialog" aria-labelledby="taskDetailTitle">
+                            <div class="modal-header">
+                                <h3 id="taskDetailTitle">Task Details</h3>
+                                <button class="modal-close" aria-label="Close modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="taskDetailForm" aria-label="Task details form">
                                     <div class="form-group">
-                                        <label for="taskStatus">Status</label>
-                                        <select id="taskStatus">
-                                            <option value="todo">To Do</option>
-                                            <option value="progress">In Progress</option>
-                                            <option value="done">Done</option>
-                                            <option value="blocked">Blocked</option>
-                                        </select>
+                                        <label for="taskTitle">Title</label>
+                                        <input type="text" id="taskTitle" required aria-required="true">
                                     </div>
                                     <div class="form-group">
-                                        <label for="taskPriority">Priority</label>
-                                        <select id="taskPriority">
-                                            <option value="high">High</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="low">Low</option>
-                                        </select>
+                                        <label for="taskDescriptionEditor">Description</label>
+                                        <div id="taskDescriptionEditor" role="textbox" aria-multiline="true"></div>
                                     </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Due Date</label>
-                                    <input type="text" id="taskDueDate" class="date-picker">
-                                </div>
-                                <div class="form-group">
-                                    <label>Assignees</label>
-                                    <div class="assignees-container">
-                                        <div class="assignee-list" id="assigneeList"></div>
-                                        <div class="assignee-selector">
-                                            <button type="button" class="add-assignee-btn">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                            <div class="assignee-dropdown" id="assigneeDropdown"></div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="taskStatus">Status</label>
+                                            <select id="taskStatus" aria-label="Task status">
+                                                <option value="todo">To Do</option>
+                                                <option value="progress">In Progress</option>
+                                                <option value="done">Done</option>
+                                                <option value="blocked">Blocked</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="taskPriority">Priority</label>
+                                            <select id="taskPriority" aria-label="Task priority">
+                                                <option value="high">High</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="low">Low</option>
+                                            </select>
                                         </div>
                                     </div>
+                                    <div class="form-group">
+                                        <label for="taskDueDate">Due Date</label>
+                                        <input type="text" id="taskDueDate" class="date-picker" aria-label="Task due date">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="assigneeList">Assignees</label>
+                                        <div class="assignees-container">
+                                            <div class="assignee-list" id="assigneeList" aria-live="polite"></div>
+                                            <div class="assignee-selector">
+                                                <button type="button" class="add-assignee-btn" aria-label="Add assignee">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                                <div class="assignee-dropdown" id="assigneeDropdown" role="listbox"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="taskComment">Add Comment</label>
+                                        <div class="comment-input">
+                                            <textarea id="taskComment" placeholder="Write a comment..." aria-label="Comment input"></textarea>
+                                            <button type="button" id="addCommentBtn" class="btn-primary" aria-label="Add comment">
+                                                <i class="fas fa-comment"></i> Comment
+                                            </button>
+                                        </div>
+                                        <div class="comment-list" id="commentList" aria-live="polite"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="taskLink">Attach Link</label>
+                                        <div class="link-input">
+                                            <input type="text" id="taskLink" placeholder="Paste a link..." aria-label="Link input">
+                                            <button type="button" id="addLinkBtn" class="btn-primary" aria-label="Attach link">
+                                                <i class="fas fa-link"></i> Attach
+                                            </button>
+                                        </div>
+                                        <div class="link-list" id="linkList" aria-live="polite"></div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="button" class="btn-danger" id="deleteTaskBtn" aria-label="Delete task">
+                                            <i class="fas fa-trash"></i> Delete Task
+                                        </button>
+                                        <button type="submit" class="btn-primary" aria-label="Save changes">
+                                            <i class="fas fa-save"></i> Save Changes
+                                        </button>
+                                    </div>
+                                </form>
+                                <div class="task-activity">
+                                    <h4>Activity Log</h4>
+                                    <div class="activity-list" id="activityList" aria-live="polite"></div>
                                 </div>
-                                <div class="form-actions">
-                                    <button type="button" class="btn-danger" id="deleteTaskBtn">
-                                        <i class="fas fa-trash"></i> Delete Task
-                                    </button>
-                                    <button type="submit" class="btn-primary">
-                                        <i class="fas fa-save"></i> Save Changes
-                                    </button>
-                                </div>
-                            </form>
-                            <div class="task-activity">
-                                <h4>Activity Log</h4>
-                                <div class="activity-list" id="activityList"></div>
                             </div>
                         </div>
-                    </div>
-                `;
-                
-                document.body.appendChild(panel);
+                    `;
+                    document.body.appendChild(panel);
+                    return panel;
+                }
             
-                // Initialize Quill editor
-                const quill = new Quill('#taskDescriptionEditor', {
-                    theme: 'snow',
-                    modules: {
-                        toolbar: [
-                            ['bold', 'italic', 'underline'],
-                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                            ['link'],
-                            ['clean']
-                        ]
-                    }
-                });
+                // Initialize Quill editor and Flatpickr
+                function initializeEditors(panel) {
+                    const quill = new Quill('#taskDescriptionEditor', {
+                        theme: 'snow',
+                        modules: {
+                            toolbar: [
+                                ['bold', 'italic', 'underline'],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                ['link'],
+                                ['clean']
+                            ]
+                        }
+                    });
             
-                // Initialize date picker
-                flatpickr('#taskDueDate', {
-                    dateFormat: 'Y-m-d',
-                    allowInput: true
-                });
+                    const datePicker = flatpickr('#taskDueDate', {
+                        dateFormat: 'Y-m-d',
+                        allowInput: true
+                    });
+                    flatpickrInstances.push(datePicker);
             
-                let currentTaskId = null;
-                let currentAssignees = [];
+                    return { quill, datePicker };
+                }
             
-                // Close modal function
-                function closeModal() {
+                // Close modal
+                function closeModal(panel) {
                     panel.classList.remove('active');
+                    panel.setAttribute('aria-hidden', 'true');
                     document.body.style.overflow = '';
                     currentTaskId = null;
                     currentAssignees = [];
                     quill.root.innerHTML = '';
                 }
             
-                // Event listeners for closing modal
-                panel.querySelector('.modal-close').addEventListener('click', closeModal);
-                panel.querySelector('.modal-overlay').addEventListener('click', closeModal);
-            
-                // Load assignees dropdown
-                async function loadAssigneeDropdown() {
+                // Load assignee dropdown
+                async function loadAssigneeDropdown(panel) {
                     try {
                         const response = await fetch('../Controller/projectController.php?action=getFacilityMembers');
                         const data = await response.json();
-                        
+            
                         if (data.success) {
                             const dropdown = document.getElementById('assigneeDropdown');
                             dropdown.innerHTML = data.members.map(member => `
-                                <div class="dropdown-item" data-user-id="${member.id}">
+                                <div class="dropdown-item" data-user-id="${member.id}" role="option">
                                     <img src="../${member.profile_picture}" alt="${member.name}">
                                     <span>${member.name}</span>
                                 </div>
                             `).join('');
-                            
-                            // Show dropdown
                             dropdown.style.display = 'block';
-                            
-                            // Add click handlers
+            
                             document.querySelectorAll('.dropdown-item').forEach(item => {
                                 item.addEventListener('click', () => {
                                     const userId = parseInt(item.dataset.userId);
@@ -2774,18 +2795,19 @@ document.addEventListener("DOMContentLoaded", function () {
                                     dropdown.style.display = 'none';
                                 });
                             });
-                            
-                            // Close dropdown when clicking outside
+            
                             document.addEventListener('click', function outsideClickHandler(e) {
                                 if (!dropdown.contains(e.target) && e.target !== panel.querySelector('.add-assignee-btn')) {
                                     dropdown.style.display = 'none';
                                     document.removeEventListener('click', outsideClickHandler);
                                 }
                             });
+                        } else {
+                            throw new Error(data.message || 'Failed to load assignees');
                         }
                     } catch (error) {
                         console.error('Error loading assignees:', error);
-                        showError('Failed to load assignees. Please try again.');
+                        showErrorNotification('Failed to load assignees. Please try again.');
                     }
                 }
             
@@ -2793,13 +2815,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 async function renderAssignees() {
                     const assigneeList = document.getElementById('assigneeList');
                     assigneeList.innerHTML = '';
-                    
+            
                     if (currentAssignees.length === 0) return;
-                    
+            
                     try {
                         const response = await fetch(`../Controller/projectController.php?action=getFacilityMembers`);
                         const data = await response.json();
-                        
+            
                         if (data.success) {
                             currentAssignees.forEach(userId => {
                                 const user = data.members.find(m => m.id === userId);
@@ -2809,13 +2831,12 @@ document.addEventListener("DOMContentLoaded", function () {
                                     assigneeItem.dataset.userId = userId;
                                     assigneeItem.innerHTML = `
                                         <img src="../${user.profile_picture}" alt="${user.name}">
-                                        <span class="remove-assignee">&times;</span>
+                                        <span class="remove-assignee" aria-label="Remove assignee">&times;</span>
                                     `;
                                     assigneeList.appendChild(assigneeItem);
                                 }
                             });
-                            
-                            // Add remove handlers
+            
                             document.querySelectorAll('.remove-assignee').forEach(btn => {
                                 btn.addEventListener('click', (e) => {
                                     e.stopPropagation();
@@ -2824,42 +2845,39 @@ document.addEventListener("DOMContentLoaded", function () {
                                     renderAssignees();
                                 });
                             });
+                        } else {
+                            throw new Error(data.message || 'Failed to render assignees');
                         }
                     } catch (error) {
                         console.error('Error rendering assignees:', error);
+                        showErrorNotification('Failed to render assignees. Please try again.');
                     }
                 }
             
-                // Show task details
-                async function showTaskDetails(task) {
-                    currentTaskId = task.id;
-                    
-                    // Set form values
-                    document.getElementById('taskTitle').value = task.title;
-                    quill.root.innerHTML = task.description || '';
-                    document.getElementById('taskStatus').value = task.status;
-                    document.getElementById('taskPriority').value = task.priority;
-                    document.getElementById('taskDueDate').value = task.due_date || '';
-                    
-                    // Load assignees
+                // Load comments
+                async function loadComments(taskId) {
                     try {
-                        const response = await fetch(`../Controller/projectController.php?action=getAssignees&taskId=${task.id}`);
+                        const response = await fetch(`../Controller/projectController.php?action=getComments&taskId=${taskId}`);
                         const data = await response.json();
-                        
+            
                         if (data.success) {
-                            currentAssignees = data.assignees.map(a => a.id);
-                            renderAssignees();
+                            const commentList = document.getElementById('commentList');
+                            commentList.innerHTML = data.comments.map(comment => `
+                                <div class="comment-item">
+                                    <div class="comment-meta">
+                                        <span class="user-name">${comment.user_name}</span>
+                                        <span class="comment-time">${formatActivityTime(comment.created_at)}</span>
+                                    </div>
+                                    <div class="comment-content">${comment.content}</div>
+                                </div>
+                            `).join('');
+                        } else {
+                            throw new Error(data.message || 'Failed to load comments');
                         }
                     } catch (error) {
-                        console.error('Error loading assignees:', error);
+                        console.error('Error loading comments:', error);
+                        showErrorNotification('Failed to load comments. Please try again.');
                     }
-                    
-                    // Load activity log
-                    loadActivityLog(task.id);
-                    
-                    // Show modal
-                    panel.classList.add('active');
-                    document.body.style.overflow = 'hidden';
                 }
             
                 // Load activity log
@@ -2867,79 +2885,135 @@ document.addEventListener("DOMContentLoaded", function () {
                     try {
                         const response = await fetch(`../Controller/projectController.php?action=getTaskActivity&taskId=${taskId}`);
                         const data = await response.json();
-                        
+            
                         if (data.success) {
                             const activityList = document.getElementById('activityList');
                             activityList.innerHTML = data.activity.map(activity => `
                                 <div class="activity-item">
-                                    <div class="activity-user">
-                                        <img src="../${activity.profile_picture}" alt="${activity.user_name}">
+                                    <div class="activity-meta">
+                                        <span class="user-name">${activity.user_name}</span>
+                                        <span class="activity-action">${formatActivityAction(activity.action)}</span>
+                                        <span class="activity-time">${formatActivityTime(activity.created_at)}</span>
                                     </div>
-                                    <div class="activity-content">
-                                        <div class="activity-meta">
-                                            <span class="user-name">${activity.user_name}</span>
-                                            <span class="activity-time">${formatActivityTime(activity.created_at)}</span>
-                                        </div>
-                                        <div class="activity-action">${formatActivityAction(activity)}</div>
-                                    </div>
+                                    ${activity.details ? `<div class="activity-details">${activity.details}</div>` : ''}
                                 </div>
                             `).join('');
+                        } else {
+                            throw new Error(data.message || 'Failed to load activity log');
                         }
                     } catch (error) {
-                        console.error('Error loading activity:', error);
+                        console.error('Error loading activity log:', error);
+                        showErrorNotification('Failed to load activity log. Please try again.');
                     }
+                }
+            
+                // Format activity action
+                function formatActivityAction(action) {
+                    const actionMap = {
+                        'comment_added': 'added a comment',
+                        'assignee_added': 'added an assignee',
+                        'assignee_removed': 'removed an assignee',
+                        'status_updated': 'updated status',
+                        'priority_updated': 'updated priority'
+                    };
+                    return actionMap[action] || action.replace(/_/g, ' ');
                 }
             
                 // Format activity time
                 function formatActivityTime(timestamp) {
-                    return new Date(timestamp).toLocaleString();
+                    const date = new Date(timestamp);
+                    return date.toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
                 }
             
-                // Format activity action
-                function formatActivityAction(activity) {
-                    switch(activity.action) {
-                        case 'assignee_added':
-                            return `assigned this task to ${activity.details.user_name}`;
-                        case 'assignee_removed':
-                            return `removed ${activity.details.user_name} from this task`;
-                        case 'status_changed':
-                            return `changed status to ${activity.details.status}`;
-                        case 'created':
-                            return `created this task`;
-                        default:
-                            return activity.action;
+                // Show task details
+                async function showTaskDetails(task) {
+                    if (!task || !task.id) {
+                        showErrorNotification('Invalid task data. Please try again.');
+                        return;
                     }
+            
+                    currentTaskId = task.id;
+            
+                    // Set form values with fallback
+                    document.getElementById('taskTitle').value = task.title || '';
+                    quill.root.innerHTML = task.description || '';
+                    document.getElementById('taskStatus').value = task.status || 'todo';
+                    document.getElementById('taskPriority').value = task.priority || 'low';
+                    document.getElementById('taskDueDate').value = task.due_date || '';
+            
+                    // Load assignees
+                    try {
+                        const response = await fetch(`../Controller/projectController.php?action=getAssignees&taskId=${task.id}`);
+                        const data = await response.json();
+            
+                        if (data.success) {
+                            currentAssignees = data.assignees.map(a => a.id) || [];
+                            renderAssignees();
+                        } else {
+                            throw new Error(data.message || 'Failed to load assignees');
+                        }
+                    } catch (error) {
+                        console.error('Error loading assignees:', error);
+                        showErrorNotification('Failed to load assignees. Please try again.');
+                    }
+            
+                    // Load comments
+                    loadComments(task.id);
+            
+                    // Load activity log
+                    loadActivityLog(task.id);
+            
+                    // Show modal
+                    panel.classList.add('active');
+                    panel.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
                 }
             
-                // Add assignee button
-                panel.querySelector('.add-assignee-btn').addEventListener('click', loadAssigneeDropdown);
-                
-                // Form submission
-                panel.querySelector('#taskDetailForm').addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    
-                    try {
-                        const formData = new FormData();
-                        formData.append('taskId', currentTaskId);
-                        formData.append('title', document.getElementById('taskTitle').value);
-                        formData.append('description', quill.root.innerHTML);
-                        formData.append('status', document.getElementById('taskStatus').value);
-                        formData.append('priority', document.getElementById('taskPriority').value);
-                        formData.append('due_date', document.getElementById('taskDueDate').value);
-                        
-                        const response = await fetch('../Controller/projectController.php?action=updateTask', {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: formData
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            // Update assignees
-                            const assigneeResponse = await fetch('../Controller/projectController.php?action=updateAssignees', {
+                // Initialize modal and editors
+                const panel = initializeModal();
+                const { quill, datePicker } = initializeEditors(panel);
+                let currentTaskId = null;
+                let currentAssignees = [];
+            
+                // Setup event listeners
+                function setupEventListeners() {
+                    // Close modal
+                    panel.querySelector('.modal-close').addEventListener('click', () => closeModal(panel));
+                    panel.querySelector('.modal-overlay').addEventListener('click', () => closeModal(panel));
+            
+                    // Keyboard shortcuts
+                    document.addEventListener('keydown', (e) => {
+                        if (panel.classList.contains('active')) {
+                            if (e.key === 'Escape') {
+                                closeModal(panel);
+                            }
+                            if (e.ctrlKey && e.key === 'Enter') {
+                                panel.querySelector('#taskDetailForm').dispatchEvent(new Event('submit'));
+                            }
+                        }
+                    });
+            
+                    // Add assignee button
+                    panel.querySelector('.add-assignee-btn').addEventListener('click', () => loadAssigneeDropdown(panel));
+            
+                    // Add comment
+                    panel.querySelector('#addCommentBtn').addEventListener('click', async () => {
+                        const commentContent = document.getElementById('taskComment').value.trim();
+                        if (!commentContent || !currentTaskId) {
+                            showErrorNotification('Comment or task ID is missing.');
+                            return;
+                        }
+            
+                        try {
+                            panel.classList.add('loading');
+                            const response = await fetch('../Controller/projectController.php?action=addComment', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -2947,69 +3021,168 @@ document.addEventListener("DOMContentLoaded", function () {
                                 },
                                 body: JSON.stringify({
                                     taskId: currentTaskId,
-                                    assignees: currentAssignees
+                                    content: commentContent
                                 })
                             });
-                            
-                            const assigneeData = await assigneeResponse.json();
-                            
-                            if (assigneeData.success) {
-                                showSuccessNotification('Task updated successfully');
-                                closeModal();
-                                loadCategories();
+            
+                            const data = await response.json();
+                            if (data.success) {
+                                document.getElementById('taskComment').value = '';
+                                loadComments(currentTaskId);
+                                loadActivityLog(currentTaskId);
+                                showSuccessNotification('Comment added successfully');
                             } else {
-                                throw new Error(assigneeData.message || 'Failed to update assignees');
+                                throw new Error(data.message || 'Failed to add comment');
                             }
-                        } else {
-                            throw new Error(data.message || 'Failed to update task');
+                        } catch (error) {
+                            console.error('Error adding comment:', error);
+                            showErrorNotification(error.message || 'Failed to add comment');
+                        } finally {
+                            panel.classList.remove('loading');
                         }
-                    } catch (error) {
-                        console.error('Error updating task:', error);
-                        showError(error.message || 'Failed to update task. Please try again.');
-                    }
-                });
-                
-                // Delete task button
-                panel.querySelector('#deleteTaskBtn').addEventListener('click', async () => {
-                    if (!currentTaskId) return;
-                    
-                    const confirmed = await showConfirmModal(
-                        'Delete Task',
-                        'Are you sure you want to delete this task? This action cannot be undone.',
-                        'Delete',
-                        'Cancel'
-                    );
-                    
-                    if (confirmed) {
+                    });
+            
+                    // Delete task
+                    panel.querySelector('#deleteTaskBtn').addEventListener('click', async () => {
+                        if (!currentTaskId) {
+                            showErrorNotification('Task ID is missing.');
+                            return;
+                        }
+            
+                        const confirmed = await showConfirmModal(
+                            'Delete Task',
+                            'Are you sure you want to delete this task? This action cannot be undone.',
+                            'Delete',
+                            'Cancel'
+                        );
+            
+                        if (confirmed) {
+                            try {
+                                panel.classList.add('loading');
+                                const response = await fetch('../Controller/projectController.php?action=deleteTask', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                                    },
+                                    body: JSON.stringify({ taskId: currentTaskId })
+                                });
+            
+                                const data = await response.json();
+            
+                                if (data.success) {
+                                    showSuccessNotification('Task deleted successfully');
+                                    closeModal(panel);
+                                    loadCategories(); // Assuming loadCategories is defined elsewhere
+                                } else {
+                                    throw new Error(data.message || 'Failed to delete task');
+                                }
+                            } catch (error) {
+                                console.error('Error deleting task:', error);
+                                showErrorNotification(error.message || 'Failed to delete task. Please try again.');
+                            } finally {
+                                panel.classList.remove('loading');
+                            }
+                        }
+                    });
+            
+                    // Form submission (debounced)
+                    const debouncedSubmit = debounce(async (e) => {
+                        e.preventDefault();
+            
+                        if (!currentTaskId) {
+                            showErrorNotification('Task ID is missing. Please try reopening the task.');
+                            return;
+                        }
+            
                         try {
-                            const response = await fetch('../Controller/projectController.php?action=deleteTask', {
+                            panel.classList.add('loading');
+                            const taskData = {
+                                taskId: currentTaskId,
+                                title: document.getElementById('taskTitle').value.trim(),
+                                description: DOMPurify.sanitize(quill.root.innerHTML),
+                                status: document.getElementById('taskStatus').value,
+                                priority: document.getElementById('taskPriority').value,
+                                due_date: document.getElementById('taskDueDate').value || null
+                            };
+            
+                            // Client-side validation
+                            if (!taskData.title || taskData.title.length < 3 || taskData.title.length > 100) {
+                                showErrorNotification('Task title must be between 3 and 100 characters.');
+                                return;
+                            }
+                            if (taskData.description.length > 500) {
+                                showErrorNotification('Task description cannot exceed 500 characters.');
+                                return;
+                            }
+                            if (!['todo', 'progress', 'done', 'blocked'].includes(taskData.status)) {
+                                showErrorNotification('Invalid task status.');
+                                return;
+                            }
+                            if (!['high', 'medium', 'low'].includes(taskData.priority)) {
+                                showErrorNotification('Invalid task priority.');
+                                return;
+                            }
+                            if (taskData.due_date && !/^\d{4}-\d{2}-\d{2}$/.test(taskData.due_date)) {
+                                showErrorNotification('Invalid due date format.');
+                                return;
+                            }
+            
+                            const response = await fetch('../Controller/projectController.php?action=updateTask', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                     'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
                                 },
-                                body: JSON.stringify({ taskId: currentTaskId })
+                                body: JSON.stringify(taskData)
                             });
-                            
+            
                             const data = await response.json();
-                            
+            
                             if (data.success) {
-                                showSuccessNotification('Task deleted successfully');
-                                closeModal();
-                                loadCategories();
+                                const assigneeResponse = await fetch('../Controller/projectController.php?action=updateAssignees', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                                    },
+                                    body: JSON.stringify({
+                                        taskId: currentTaskId,
+                                        assignees: currentAssignees
+                                    })
+                                });
+            
+                                const assigneeData = await assigneeResponse.json();
+            
+                                if (assigneeData.success) {
+                                    showSuccessNotification('Task updated successfully');
+                                    closeModal(panel);
+                                    loadCategories();
+                                } else {
+                                    throw new Error(assigneeData.message || 'Failed to update assignees');
+                                }
                             } else {
-                                throw new Error(data.message || 'Failed to delete task');
+                                throw new Error(data.message || 'Failed to update task');
                             }
                         } catch (error) {
-                            console.error('Error deleting task:', error);
-                            showError(error.message || 'Failed to delete task. Please try again.');
+                            console.error('Error updating task:', error);
+                            showErrorNotification(error.message || 'Failed to update task. Please try again.');
+                        } finally {
+                            panel.classList.remove('loading');
                         }
-                    }
-                });
+                    }, 300);
+            
+                    panel.querySelector('#taskDetailForm').addEventListener('submit', function(e) {
+                        e.preventDefault(); // Add this to prevent default form submission
+                        debouncedSubmit(e);
+                    });
+                }
+            
+                setupEventListeners();
             
                 return {
                     show: showTaskDetails,
-                    close: closeModal
+                    close: () => closeModal(panel)
                 };
             }
         

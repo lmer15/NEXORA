@@ -275,45 +275,47 @@ class TaskModel {
                     throw new Exception("Missing required field: $field", 400);
                 }
             }
-
+    
             $taskId = filter_var($data['taskId'], FILTER_VALIDATE_INT);
             $title = filter_var(trim($data['title']), FILTER_SANITIZE_STRING);
             $description = isset($data['description']) ? filter_var(trim($data['description']), FILTER_SANITIZE_STRING) : '';
             $status = filter_var($data['status'], FILTER_SANITIZE_STRING);
             $priority = filter_var($data['priority'], FILTER_SANITIZE_STRING);
             $dueDate = isset($data['due_date']) ? $data['due_date'] : null;
-
+    
             if (!$taskId || strlen($title) < 3) {
                 throw new Exception('Invalid input data', 400);
             }
-
+    
             $allowedStatuses = ['todo', 'progress', 'done', 'blocked'];
             $allowedPriorities = ['high', 'medium', 'low'];
-
+    
             if (!in_array($status, $allowedStatuses) || !in_array($priority, $allowedPriorities)) {
                 throw new Exception('Invalid status or priority value', 400);
             }
-
+    
             $this->conn->beginTransaction();
-
+    
             $fieldsToUpdate = [
                 'title' => $title,
                 'description' => $description,
                 'status' => $status,
                 'priority' => $priority
             ];
-
+    
             if ($dueDate) {
                 $fieldsToUpdate['due_date'] = $dueDate;
             }
-
+    
             foreach ($fieldsToUpdate as $field => $value) {
-                $stmt = $this->conn->prepare("UPDATE tasks SET $field = :value WHERE id = :taskId");
-                $stmt->bindParam(':value', $value);
-                $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
-                $stmt->execute();
+                if ($value !== null) {
+                    $stmt = $this->conn->prepare("UPDATE tasks SET $field = :value WHERE id = :taskId");
+                    $stmt->bindParam(':value', $value);
+                    $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
+                    $stmt->execute();
+                }
             }
-
+    
             $this->conn->commit();
             return true;
         } catch (Exception $e) {
@@ -444,6 +446,62 @@ class TaskModel {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('Error fetching activity: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getComments($taskId) {
+        $stmt = $this->conn->prepare("SELECT * FROM task_comments WHERE task_id = :taskId ORDER BY created_at DESC");
+        $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function addComment($taskId, $userId, $content) {
+        $stmt = $this->conn->prepare("
+            INSERT INTO task_comments (task_id, user_id, content, created_at) 
+            VALUES (:taskId, :userId, :content, NOW())
+        ");
+        $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
+        $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+        $stmt->bindParam(':content', $content, PDO::PARAM_STR);
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId();
+        }
+        return false;
+    }
+
+    public function addLink($taskId, $url, $userId) {
+        try {
+            $stmt = $this->conn->prepare("
+                INSERT INTO task_links (task_id, url, created_by)
+                VALUES (:taskId, :url, :userId)
+            ");
+            $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
+            $stmt->bindParam(':url', $url, PDO::PARAM_STR);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $this->conn->lastInsertId();
+        } catch (PDOException $e) {
+            error_log('Error adding link: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getLinks($taskId) {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT tl.id, tl.url, tl.created_at, u.name AS created_by
+                FROM task_links tl
+                JOIN users u ON tl.created_by = u.id
+                WHERE tl.task_id = :taskId
+                ORDER BY tl.created_at DESC
+            ");
+            $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Error fetching links: ' . $e->getMessage());
             return [];
         }
     }
