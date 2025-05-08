@@ -696,6 +696,30 @@ try {
             echo json_encode(['success' => true, 'links' => $links]);
             break;
 
+        case 'getCurrentUser':
+            if (!isset($_SESSION['user_id'])) {
+                throw new Exception('Unauthorized', 401);
+            }
+            
+            $userId = $_SESSION['user_id'];
+            $stmt = $conn->prepare("SELECT id, name, profile_picture FROM users WHERE id = :userId");
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$user) {
+                throw new Exception('User not found', 404);
+            }
+            
+            // Set default picture if none exists
+            $user['profile_picture'] = $user['profile_picture'] ?: 'Images/profile.PNG';
+            
+            echo json_encode([
+                'success' => true,
+                'user' => $user
+            ]);
+            break;
+
         default:
             throw new Exception('Invalid action', 400);
     }

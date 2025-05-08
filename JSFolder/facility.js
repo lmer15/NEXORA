@@ -2635,110 +2635,181 @@ document.addEventListener("DOMContentLoaded", function () {
                     loadProjectData();
                 }
             }
-        
+
             function setupTaskDetailPanel() {
-                const flatpickrInstances = []; // Store Flatpickr instances
+                // Initialize variables to track instances for this panel
+                let quill = null;
+                let currentTaskId = null;
+                let currentAssignees = [];
+                let commentInputFocused = false;
+                let currentUser = null;
+                let panel = null;
+                let datePicker = null;
             
-                // Initialize modal HTML
-                function initializeModal() {
-                    const panel = document.createElement('div');
-                    panel.className = 'task-detail-modal';
-                    panel.setAttribute('aria-hidden', 'true');
+                async function fetchCurrentUser() {
+                    try {
+                        const response = await fetch('../Controller/projectController.php?action=getCurrentUser');
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            currentUser = data.user;
+                            // Ensure profile picture path is correct
+                            if (currentUser.profile_picture && !currentUser.profile_picture.startsWith('../')) {
+                                currentUser.profile_picture = '../' + currentUser.profile_picture;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error fetching user data:', error);
+                    }
+                }
+            
+                async function initializePanel() {
+                    await fetchCurrentUser();
+                    
+                    // Create the panel HTML
+                    panel = document.createElement('div');
+                    panel.className = 'task-detail-panel';
                     panel.innerHTML = `
-                        <div class="modal-overlay" role="presentation"></div>
-                        <div class="modal-content" role="dialog" aria-labelledby="taskDetailTitle">
-                            <div class="modal-header">
-                                <h3 id="taskDetailTitle">Task Details</h3>
-                                <button class="modal-close" aria-label="Close modal">&times;</button>
+                        <div class="panel-overlay"></div>
+                        <div class="panel-content">
+                            <div class="panel-header">
+                                <div class="header-actions">
+                                    <button class="btn-close-panel" aria-label="Close panel">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="task-title-container">
+                                    <input type="text" id="taskTitle" class="task-title-input" placeholder="Task title" aria-label="Task title">
+                                    <div class="task-meta">
+                                        <span class="task-id">#TASKID</span>
+                                        <span class="task-status-badge"></span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="modal-body">
-                                <form id="taskDetailForm" aria-label="Task details form">
-                                    <div class="form-group">
-                                        <label for="taskTitle">Title</label>
-                                        <input type="text" id="taskTitle" required aria-required="true">
+                            
+                            <div class="panel-body">
+                                <div class="task-content-section">
+                                    <div class="section-header">
+                                        <i class="fas fa-align-left"></i>
+                                        <h3>Description</h3>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="taskDescriptionEditor">Description</label>
-                                        <div id="taskDescriptionEditor" role="textbox" aria-multiline="true"></div>
+                                    <div class="description-container">
+                                        <div id="taskDescriptionEditor" class="description-editor"></div>
+                                        <div class="description-display" id="descriptionDisplay"></div>
                                     </div>
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="taskStatus">Status</label>
-                                            <select id="taskStatus" aria-label="Task status">
-                                                <option value="todo">To Do</option>
-                                                <option value="progress">In Progress</option>
-                                                <option value="done">Done</option>
-                                                <option value="blocked">Blocked</option>
-                                            </select>
+                                </div>
+                                
+                                <div class="task-details-grid">
+                                    <div class="detail-card">
+                                        <div class="detail-header">
+                                            <i class="fas fa-user-tag"></i>
+                                            <h4>Assignees</h4>
+                                            <button class="btn-add-assignee" aria-label="Add assignee">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
                                         </div>
-                                        <div class="form-group">
-                                            <label for="taskPriority">Priority</label>
-                                            <select id="taskPriority" aria-label="Task priority">
-                                                <option value="high">High</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="low">Low</option>
-                                            </select>
+                                        <div class="assignees-list" id="assigneesList">
+                                            <div class="empty-state">No assignees</div>
                                         </div>
+                                        <div class="assignee-dropdown" id="assigneeDropdown" style="display: none;"></div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="taskDueDate">Due Date</label>
-                                        <input type="text" id="taskDueDate" class="date-picker" aria-label="Task due date">
+                                    
+                                    <div class="detail-card">
+                                        <div class="detail-header">
+                                            <i class="fas fa-flag"></i>
+                                            <h4>Priority</h4>
+                                        </div>
+                                        <div class="priority-selector">
+                                            <button class="priority-option high" data-priority="high" aria-label="High priority">
+                                                <i class="fas fa-flag"></i> High
+                                            </button>
+                                            <button class="priority-option medium" data-priority="medium" aria-label="Medium priority">
+                                                <i class="fas fa-flag"></i> Medium
+                                            </button>
+                                            <button class="priority-option low" data-priority="low" aria-label="Low priority">
+                                                <i class="fas fa-flag"></i> Low
+                                            </button>
+                                        </div>
+                                        <input type="hidden" id="taskPriority" value="low">
                                     </div>
-                                    <div class="form-group">
-                                        <label for="assigneeList">Assignees</label>
-                                        <div class="assignees-container">
-                                            <div class="assignee-list" id="assigneeList" aria-live="polite"></div>
-                                            <div class="assignee-selector">
-                                                <button type="button" class="add-assignee-btn" aria-label="Add assignee">
-                                                    <i class="fas fa-plus"></i>
+                                    
+                                    <div class="detail-card">
+                                        <div class="detail-header">
+                                            <i class="far fa-calendar-alt"></i>
+                                            <h4>Due Date</h4>
+                                        </div>
+                                        <input type="text" id="taskDueDate" class="date-picker" placeholder="Select date">
+                                    </div>
+                                    
+                                    <div class="detail-card">
+                                        <div class="detail-header">
+                                            <i class="fas fa-columns"></i>
+                                            <h4>Status</h4>
+                                        </div>
+                                        <select id="taskStatus" class="status-select" aria-label="Task status">
+                                            <option value="todo">To Do</option>
+                                            <option value="progress">In Progress</option>
+                                            <option value="done">Done</option>
+                                            <option value="blocked">Blocked</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="comments-section">
+                                    <div class="section-header">
+                                        <i class="far fa-comments"></i>
+                                        <h3>Comments</h3>
+                                    </div>
+                                    
+                                    <div class="comment-input-container">
+                                        <div class="user-avatar">
+                                            <img src="${currentUser?.profile_picture || '../Images/profile.PNG'}" 
+                                                alt="Your profile picture"
+                                                onerror="this.src='../Images/profile.PNG'">
+                                        </div>
+                                        <div class="comment-input-wrapper">
+                                            <div class="comment-toolbar">
+                                                <button class="toolbar-btn attach-file" aria-label="Attach file">
+                                                    <i class="fas fa-paperclip"></i>
                                                 </button>
-                                                <div class="assignee-dropdown" id="assigneeDropdown" role="listbox"></div>
+                                                <button class="toolbar-btn add-link" aria-label="Add link">
+                                                    <i class="fas fa-link"></i>
+                                                </button>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="taskComment">Add Comment</label>
-                                        <div class="comment-input">
-                                            <textarea id="taskComment" placeholder="Write a comment..." aria-label="Comment input"></textarea>
-                                            <button type="button" id="addCommentBtn" class="btn-primary" aria-label="Add comment">
-                                                <i class="fas fa-comment"></i> Comment
+                                            <textarea id="taskComment" class="comment-input" placeholder="Write a comment..." aria-label="Comment input"></textarea>
+                                            <button id="addCommentBtn" class="btn-send-comment" aria-label="Send comment">
+                                                <i class="fas fa-paper-plane"></i>
                                             </button>
                                         </div>
-                                        <div class="comment-list" id="commentList" aria-live="polite"></div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="taskLink">Attach Link</label>
-                                        <div class="link-input">
-                                            <input type="text" id="taskLink" placeholder="Paste a link..." aria-label="Link input">
-                                            <button type="button" id="addLinkBtn" class="btn-primary" aria-label="Attach link">
-                                                <i class="fas fa-link"></i> Attach
-                                            </button>
-                                        </div>
-                                        <div class="link-list" id="linkList" aria-live="polite"></div>
+                                    
+                                    <div class="comments-list" id="commentList"></div>
+                                </div>
+                                
+                                <div class="activity-section">
+                                    <div class="section-header">
+                                        <i class="fas fa-history"></i>
+                                        <h3>Activity</h3>
                                     </div>
-                                    <div class="form-actions">
-                                        <button type="button" class="btn-danger" id="deleteTaskBtn" aria-label="Delete task">
-                                            <i class="fas fa-trash"></i> Delete Task
-                                        </button>
-                                        <button type="submit" class="btn-primary" aria-label="Save changes">
-                                            <i class="fas fa-save"></i> Save Changes
-                                        </button>
-                                    </div>
-                                </form>
-                                <div class="task-activity">
-                                    <h4>Activity Log</h4>
-                                    <div class="activity-list" id="activityList" aria-live="polite"></div>
+                                    <div class="activity-list" id="activityList"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="panel-footer">
+                                <button id="deleteTaskBtn" class="btn-delete-task" aria-label="Delete task">
+                                    <i class="fas fa-trash"></i> Delete Task
+                                </button>
+                                <div class="last-updated">
+                                    Last updated: <span id="lastUpdated">Just now</span>
                                 </div>
                             </div>
                         </div>
                     `;
+                    
                     document.body.appendChild(panel);
-                    return panel;
-                }
-            
-                // Initialize Quill editor and Flatpickr
-                function initializeEditors(panel) {
-                    const quill = new Quill('#taskDescriptionEditor', {
+                    
+                    // Initialize Quill editor
+                    quill = new Quill('#taskDescriptionEditor', {
                         theme: 'snow',
                         modules: {
                             toolbar: [
@@ -2747,443 +2818,593 @@ document.addEventListener("DOMContentLoaded", function () {
                                 ['link'],
                                 ['clean']
                             ]
+                        },
+                        placeholder: 'Add a detailed description...'
+                    });
+                    
+                    // Initialize Flatpickr for date picker
+                    datePicker = flatpickr('#taskDueDate', {
+                        dateFormat: 'Y-m-d',
+                        allowInput: true,
+                        onChange: function(selectedDates, dateStr) {
+                            saveTaskChanges();
                         }
                     });
-            
-                    const datePicker = flatpickr('#taskDueDate', {
-                        dateFormat: 'Y-m-d',
-                        allowInput: true
+                    
+                    // Setup event listeners
+                    setupEventListeners();
+                    
+                    return {
+                        show: showTaskDetails,
+                        close: closePanel
+                    };
+                }
+                
+                // Event listeners
+                function setupEventListeners() {
+                    if (!panel) return;
+                    
+                    // Close panel
+                    panel.querySelector('.btn-close-panel').addEventListener('click', closePanel);
+                    panel.querySelector('.panel-overlay').addEventListener('click', closePanel);
+                    
+                    // Title auto-save
+                    const titleInput = panel.querySelector('#taskTitle');
+                    titleInput.addEventListener('blur', debounce(saveTaskChanges, 500));
+                    titleInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            titleInput.blur();
+                        }
                     });
-                    flatpickrInstances.push(datePicker);
-            
-                    return { quill, datePicker };
+                    
+                    // Description auto-save
+                    quill.on('text-change', debounce(() => {
+                        if (quill.getLength() > 1) { // More than just the default newline
+                            saveTaskChanges();
+                        }
+                    }, 1000));
+                    
+                    // Priority selection
+                    panel.querySelectorAll('.priority-option').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            panel.querySelectorAll('.priority-option').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            document.getElementById('taskPriority').value = btn.dataset.priority;
+                            saveTaskChanges();
+                        });
+                    });
+                    
+                    // Status change
+                    panel.querySelector('#taskStatus').addEventListener('change', saveTaskChanges);
+                    
+                    // Add assignee
+                    panel.querySelector('.btn-add-assignee').addEventListener('click', toggleAssigneeDropdown);
+                    
+                    // Comment submission
+                    panel.querySelector('#addCommentBtn').addEventListener('click', addComment);
+                    panel.querySelector('#taskComment').addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            addComment();
+                        }
+                    });
+                    
+                    // Comment input focus/blur
+                    const commentInput = panel.querySelector('#taskComment');
+                    commentInput.addEventListener('focus', () => {
+                        commentInputFocused = true;
+                        panel.querySelector('.comment-input-wrapper').classList.add('focused');
+                    });
+                    commentInput.addEventListener('blur', () => {
+                        commentInputFocused = false;
+                        panel.querySelector('.comment-input-wrapper').classList.remove('focused');
+                    });
+                    
+                    // Delete task
+                    panel.querySelector('#deleteTaskBtn').addEventListener('click', deleteTask);
+                    
+                    // Keyboard shortcuts
+                    document.addEventListener('keydown', (e) => {
+                        if (panel.classList.contains('open') && e.key === 'Escape') {
+                            closePanel();
+                        }
+                    });
                 }
-            
-                // Close modal
-                function closeModal(panel) {
-                    panel.classList.remove('active');
-                    panel.setAttribute('aria-hidden', 'true');
-                    document.body.style.overflow = '';
-                    currentTaskId = null;
-                    currentAssignees = [];
-                    quill.root.innerHTML = '';
+                
+                // Toggle assignee dropdown
+                function toggleAssigneeDropdown() {
+                    const dropdown = panel.querySelector('#assigneeDropdown');
+                    if (dropdown.style.display === 'block') {
+                        dropdown.style.display = 'none';
+                    } else {
+                        loadAssigneeDropdown();
+                    }
                 }
-            
+                
                 // Load assignee dropdown
-                async function loadAssigneeDropdown(panel) {
+                async function loadAssigneeDropdown() {
                     try {
                         const response = await fetch('../Controller/projectController.php?action=getFacilityMembers');
                         const data = await response.json();
-            
+                        
                         if (data.success) {
-                            const dropdown = document.getElementById('assigneeDropdown');
-                            dropdown.innerHTML = data.members.map(member => `
-                                <div class="dropdown-item" data-user-id="${member.id}" role="option">
-                                    <img src="../${member.profile_picture}" alt="${member.name}">
-                                    <span>${member.name}</span>
-                                </div>
-                            `).join('');
+                            const dropdown = panel.querySelector('#assigneeDropdown');
+                            dropdown.innerHTML = data.members.map(member => {
+                                // Fix profile picture path
+                                let profilePic = member.profile_picture || 'Images/profile.PNG';
+                                if (!profilePic.startsWith('../')) {
+                                    profilePic = '../' + profilePic;
+                                }
+                                
+                                return `
+                                    <div class="dropdown-item" data-user-id="${member.id}" role="option">
+                                        <img src="${profilePic}" 
+                                             alt="${member.name}"
+                                             onerror="this.src='../Images/profile.PNG'">
+                                        <span>${member.name}</span>
+                                    </div>
+                                `;
+                            }).join('');
+                            
                             dropdown.style.display = 'block';
-            
-                            document.querySelectorAll('.dropdown-item').forEach(item => {
+                            
+                            // Position dropdown near the button
+                            const addBtn = panel.querySelector('.btn-add-assignee');
+                            const btnRect = addBtn.getBoundingClientRect();
+                            dropdown.style.top = `${btnRect.bottom + window.scrollY}px`;
+                            dropdown.style.left = `${btnRect.left + window.scrollX}px`;
+                            
+                            // Handle item selection
+                            panel.querySelectorAll('.dropdown-item').forEach(item => {
                                 item.addEventListener('click', () => {
                                     const userId = parseInt(item.dataset.userId);
                                     if (!currentAssignees.includes(userId)) {
                                         currentAssignees.push(userId);
-                                        renderAssignees();
+                                        updateAssigneesList();
+                                        saveAssignees();
                                     }
                                     dropdown.style.display = 'none';
                                 });
                             });
-            
-                            document.addEventListener('click', function outsideClickHandler(e) {
-                                if (!dropdown.contains(e.target) && e.target !== panel.querySelector('.add-assignee-btn')) {
+                            
+                            // Close dropdown when clicking outside
+                            const clickHandler = (e) => {
+                                if (!dropdown.contains(e.target)) {
                                     dropdown.style.display = 'none';
-                                    document.removeEventListener('click', outsideClickHandler);
+                                    document.removeEventListener('click', clickHandler);
                                 }
-                            });
-                        } else {
-                            throw new Error(data.message || 'Failed to load assignees');
+                            };
+                            document.addEventListener('click', clickHandler);
                         }
                     } catch (error) {
                         console.error('Error loading assignees:', error);
                         showErrorNotification('Failed to load assignees. Please try again.');
                     }
                 }
-            
-                // Render assignees list
-                async function renderAssignees() {
-                    const assigneeList = document.getElementById('assigneeList');
-                    assigneeList.innerHTML = '';
-            
-                    if (currentAssignees.length === 0) return;
-            
+                
+                // Update assignees list with actual data
+                async function updateAssigneesList() {
+                    if (!currentTaskId) return;
+                    
                     try {
-                        const response = await fetch(`../Controller/projectController.php?action=getFacilityMembers`);
+                        const response = await fetch(`../Controller/projectController.php?action=getAssignees&taskId=${currentTaskId}`);
                         const data = await response.json();
-            
+                        
                         if (data.success) {
-                            currentAssignees.forEach(userId => {
-                                const user = data.members.find(m => m.id === userId);
-                                if (user) {
-                                    const assigneeItem = document.createElement('div');
-                                    assigneeItem.className = 'assignee-item';
-                                    assigneeItem.dataset.userId = userId;
-                                    assigneeItem.innerHTML = `
-                                        <img src="../${user.profile_picture}" alt="${user.name}">
-                                        <span class="remove-assignee" aria-label="Remove assignee">&times;</span>
-                                    `;
-                                    assigneeList.appendChild(assigneeItem);
+                            currentAssignees = data.assignees.map(a => a.id) || [];
+                            const assigneesList = panel.querySelector('#assigneesList');
+                            assigneesList.innerHTML = '';
+                            
+                            if (data.assignees.length === 0) {
+                                assigneesList.innerHTML = '<div class="empty-state">No assignees</div>';
+                                return;
+                            }
+                            
+                            data.assignees.forEach(assignee => {
+                                // Fix profile picture path
+                                let profilePic = assignee.profile_picture || 'Images/profile.PNG';
+                                if (!profilePic.startsWith('../')) {
+                                    profilePic = '../' + profilePic;
                                 }
-                            });
-            
-                            document.querySelectorAll('.remove-assignee').forEach(btn => {
-                                btn.addEventListener('click', (e) => {
+                                
+                                const assigneeItem = document.createElement('div');
+                                assigneeItem.className = 'assignee-item';
+                                assigneeItem.innerHTML = `
+                                    <img src="${profilePic}" 
+                                         alt="${assignee.name}"
+                                         onerror="this.src='../Images/profile.PNG'">
+                                    <span class="assignee-name">${assignee.name}</span>
+                                    <button class="btn-remove-assignee" data-user-id="${assignee.id}" aria-label="Remove assignee">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                `;
+                                assigneesList.appendChild(assigneeItem);
+                                
+                                // Add remove assignee handler
+                                assigneeItem.querySelector('.btn-remove-assignee').addEventListener('click', async (e) => {
                                     e.stopPropagation();
-                                    const userId = parseInt(btn.closest('.assignee-item').dataset.userId);
+                                    const userId = parseInt(e.currentTarget.dataset.userId);
                                     currentAssignees = currentAssignees.filter(id => id !== userId);
-                                    renderAssignees();
+                                    await saveAssignees();
+                                    updateAssigneesList();
                                 });
                             });
-                        } else {
-                            throw new Error(data.message || 'Failed to render assignees');
                         }
                     } catch (error) {
-                        console.error('Error rendering assignees:', error);
-                        showErrorNotification('Failed to render assignees. Please try again.');
+                        console.error('Error loading assignees:', error);
+                        showErrorNotification('Failed to load assignees. Please try again.');
                     }
                 }
-            
-                // Load comments
-                async function loadComments(taskId) {
+                
+                // Save assignees to database
+                async function saveAssignees() {
+                    if (!currentTaskId) return;
+                    
                     try {
-                        const response = await fetch(`../Controller/projectController.php?action=getComments&taskId=${taskId}`);
+                        const response = await fetch('../Controller/projectController.php?action=updateAssignees', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({
+                                taskId: currentTaskId,
+                                assignees: currentAssignees
+                            })
+                        });
+                        
                         const data = await response.json();
-            
+                        if (!data.success) {
+                            throw new Error(data.message || 'Failed to update assignees');
+                        }
+                    } catch (error) {
+                        console.error('Error saving assignees:', error);
+                        showErrorNotification('Failed to save assignees. Please try again.');
+                    }
+                }
+                
+                // Save task changes
+                async function saveTaskChanges() {
+                    if (!currentTaskId) return;
+                    
+                    try {
+                        const taskData = {
+                            taskId: currentTaskId,
+                            title: panel.querySelector('#taskTitle').value.trim(),
+                            description: quill.root.innerHTML,
+                            status: panel.querySelector('#taskStatus').value,
+                            priority: panel.querySelector('.priority-option.active')?.dataset.priority || 
+                                     document.getElementById('taskPriority').value || 'low',
+                            due_date: datePicker.selectedDates[0] ? datePicker.formatDate(datePicker.selectedDates[0], 'Y-m-d') : null
+                        };
+                        
+                        // Validate
+                        if (!taskData.title || taskData.title.length < 3) {
+                            showErrorNotification('Task title must be at least 3 characters');
+                            return;
+                        }
+                        
+                        const response = await fetch('../Controller/projectController.php?action=updateTask', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify(taskData)
+                        });
+                        
+                        const data = await response.json();
+                        if (!data.success) {
+                            throw new Error(data.message || 'Failed to update task');
+                        }
+                        
+                        // Update last updated time
+                        updateLastUpdated();
+                        loadActivityLog();
+                    } catch (error) {
+                        console.error('Error saving task:', error);
+                        showErrorNotification('Failed to save task. Please try again.');
+                    }
+                }
+                
+                // Add comment
+                async function addComment() {
+                    const commentInput = panel.querySelector('#taskComment');
+                    const commentContent = commentInput.value.trim();
+                    
+                    if (!commentContent || !currentTaskId) {
+                        showErrorNotification('Please enter a comment');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch('../Controller/projectController.php?action=addComment', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({
+                                taskId: currentTaskId,
+                                content: commentContent
+                            })
+                        });
+                        
+                        const data = await response.json();
                         if (data.success) {
-                            const commentList = document.getElementById('commentList');
-                            commentList.innerHTML = data.comments.map(comment => `
-                                <div class="comment-item">
-                                    <div class="comment-meta">
-                                        <span class="user-name">${comment.user_name}</span>
-                                        <span class="comment-time">${formatActivityTime(comment.created_at)}</span>
-                                    </div>
-                                    <div class="comment-content">${comment.content}</div>
-                                </div>
-                            `).join('');
+                            commentInput.value = '';
+                            loadComments();
+                            loadActivityLog();
+                            showSuccessNotification('Comment added');
                         } else {
-                            throw new Error(data.message || 'Failed to load comments');
+                            throw new Error(data.message || 'Failed to add comment');
+                        }
+                    } catch (error) {
+                        console.error('Error adding comment:', error);
+                        showErrorNotification('Failed to add comment. Please try again.');
+                    }
+                }
+                
+                // Load comments
+                async function loadComments() {
+                    if (!currentTaskId) return;
+                    
+                    try {
+                        const response = await fetch(`../Controller/projectController.php?action=getComments&taskId=${currentTaskId}`);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            const commentList = panel.querySelector('#commentList');
+                            commentList.innerHTML = data.comments.map(comment => {
+                                // Fix profile picture path
+                                let profilePic = comment.profile_picture || 'Images/profile.PNG';
+                                if (!profilePic.startsWith('../')) {
+                                    profilePic = '../' + profilePic;
+                                }
+                                
+                                return `
+                                    <div class="comment-item">
+                                        <div class="comment-author">
+                                           <img src="${profilePic}" 
+                                                alt="${comment.user_name}"
+                                                onerror="this.src='../Images/profile.PNG'">
+                                        </div>
+                                        <div class="comment-content">
+                                            <div class="comment-header">
+                                                <span class="comment-author-name">${comment.user_name}</span>
+                                                <span class="comment-time">${formatTimeAgo(comment.created_at)}</span>
+                                            </div>
+                                            <div class="comment-text">${comment.content}</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('');
                         }
                     } catch (error) {
                         console.error('Error loading comments:', error);
-                        showErrorNotification('Failed to load comments. Please try again.');
                     }
                 }
-            
+                
                 // Load activity log
-                async function loadActivityLog(taskId) {
+                async function loadActivityLog() {
+                    if (!currentTaskId) return;
+                    
                     try {
-                        const response = await fetch(`../Controller/projectController.php?action=getTaskActivity&taskId=${taskId}`);
+                        const response = await fetch(`../Controller/projectController.php?action=getTaskActivity&taskId=${currentTaskId}`);
                         const data = await response.json();
-            
+                        
                         if (data.success) {
-                            const activityList = document.getElementById('activityList');
-                            activityList.innerHTML = data.activity.map(activity => `
-                                <div class="activity-item">
-                                    <div class="activity-meta">
-                                        <span class="user-name">${activity.user_name}</span>
-                                        <span class="activity-action">${formatActivityAction(activity.action)}</span>
-                                        <span class="activity-time">${formatActivityTime(activity.created_at)}</span>
+                            const activityList = panel.querySelector('#activityList');
+                            activityList.innerHTML = data.activity.map(activity => {
+                                // Fix profile picture path if needed
+                                let profilePic = activity.profile_picture || 'Images/profile.PNG';
+                                if (profilePic && !profilePic.startsWith('../')) {
+                                    profilePic = '../' + profilePic;
+                                }
+                                
+                                return `
+                                    <div class="activity-item">
+                                        <div class="activity-icon">
+                                            <i class="fas fa-${getActivityIcon(activity.action)}"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <div class="activity-header">
+                                                <span class="activity-user">${activity.user_name}</span>
+                                                <span class="activity-time">${formatTimeAgo(activity.created_at)}</span>
+                                            </div>
+                                            <div class="activity-text">${formatActivityText(activity)}</div>
+                                        </div>
                                     </div>
-                                    ${activity.details ? `<div class="activity-details">${activity.details}</div>` : ''}
-                                </div>
-                            `).join('');
-                        } else {
-                            throw new Error(data.message || 'Failed to load activity log');
+                                `;
+                            }).join('');
                         }
                     } catch (error) {
-                        console.error('Error loading activity log:', error);
-                        showErrorNotification('Failed to load activity log. Please try again.');
+                        console.error('Error loading activity:', error);
                     }
                 }
-            
-                // Format activity action
-                function formatActivityAction(action) {
-                    const actionMap = {
-                        'comment_added': 'added a comment',
-                        'assignee_added': 'added an assignee',
-                        'assignee_removed': 'removed an assignee',
-                        'status_updated': 'updated status',
-                        'priority_updated': 'updated priority'
+                
+                // Format activity text
+                function formatActivityText(activity) {
+                    switch (activity.action) {
+                        case 'status_updated':
+                            const details = JSON.parse(activity.details || '{}');
+                            return `changed status from <strong>${details.old_status}</strong> to <strong>${details.new_status}</strong>`;
+                        case 'priority_updated':
+                            const priorityDetails = JSON.parse(activity.details || '{}');
+                            return `changed priority from <strong>${priorityDetails.old_priority}</strong> to <strong>${priorityDetails.new_priority}</strong>`;
+                        case 'comment_added':
+                            return 'added a comment';
+                        case 'assignee_added':
+                            return 'added an assignee';
+                        case 'assignee_removed':
+                            return 'removed an assignee';
+                        default:
+                            return activity.action.replace(/_/g, ' ');
+                    }
+                }
+                
+                // Get activity icon
+                function getActivityIcon(action) {
+                    const icons = {
+                        'status_updated': 'exchange-alt',
+                        'priority_updated': 'flag',
+                        'comment_added': 'comment',
+                        'assignee_added': 'user-plus',
+                        'assignee_removed': 'user-minus',
+                        'task_created': 'plus',
+                        'task_updated': 'edit'
                     };
-                    return actionMap[action] || action.replace(/_/g, ' ');
+                    return icons[action] || 'history';
                 }
-            
-                // Format activity time
-                function formatActivityTime(timestamp) {
+                
+                // Format time ago
+                function formatTimeAgo(timestamp) {
+                    const now = new Date();
                     const date = new Date(timestamp);
-                    return date.toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                    });
+                    const seconds = Math.floor((now - date) / 1000);
+                    
+                    if (seconds < 60) return 'just now';
+                    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+                    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+                    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 }
-            
+                
+                // Update last updated time
+                function updateLastUpdated() {
+                    panel.querySelector('#lastUpdated').textContent = 'Just now';
+                }
+                
+                // Delete task
+                async function deleteTask() {
+                    if (!currentTaskId) return;
+                    
+                    const confirmed = await showConfirmModal(
+                        'Delete Task',
+                        'Are you sure you want to delete this task? This action cannot be undone.',
+                        'Delete',
+                        'Cancel'
+                    );
+                    
+                    if (confirmed) {
+                        try {
+                            const response = await fetch('../Controller/projectController.php?action=deleteTask', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                                },
+                                body: JSON.stringify({ taskId: currentTaskId })
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                showSuccessNotification('Task deleted successfully');
+                                closePanel();
+                                if (typeof loadCategories === 'function') {
+                                    loadCategories();
+                                }
+                            } else {
+                                throw new Error(data.message || 'Failed to delete task');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting task:', error);
+                            showErrorNotification('Failed to delete task. Please try again.');
+                        }
+                    }
+                }
+                
                 // Show task details
                 async function showTaskDetails(task) {
                     if (!task || !task.id) {
-                        showErrorNotification('Invalid task data. Please try again.');
+                        showErrorNotification('Invalid task data');
                         return;
                     }
-            
+                    
                     currentTaskId = task.id;
-            
-                    // Set form values with fallback
-                    document.getElementById('taskTitle').value = task.title || '';
-                    quill.root.innerHTML = task.description || '';
-                    document.getElementById('taskStatus').value = task.status || 'todo';
-                    document.getElementById('taskPriority').value = task.priority || 'low';
-                    document.getElementById('taskDueDate').value = task.due_date || '';
-            
-                    // Load assignees
-                    try {
-                        const response = await fetch(`../Controller/projectController.php?action=getAssignees&taskId=${task.id}`);
-                        const data = await response.json();
-            
-                        if (data.success) {
-                            currentAssignees = data.assignees.map(a => a.id) || [];
-                            renderAssignees();
-                        } else {
-                            throw new Error(data.message || 'Failed to load assignees');
-                        }
-                    } catch (error) {
-                        console.error('Error loading assignees:', error);
-                        showErrorNotification('Failed to load assignees. Please try again.');
+                    
+                    // Set basic task info
+                    panel.querySelector('#taskTitle').value = task.title || '';
+                    panel.querySelector('#taskStatus').value = task.status || 'todo';
+                    panel.querySelector('.task-id').textContent = `#${task.id}`;
+                    
+                    // Set description
+                    if (task.description) {
+                        quill.root.innerHTML = task.description;
+                        panel.querySelector('#descriptionDisplay').innerHTML = task.description;
+                        panel.querySelector('#descriptionDisplay').style.display = 'block';
+                        panel.querySelector('#taskDescriptionEditor').style.display = 'none';
+                    } else {
+                        quill.root.innerHTML = '';
+                        panel.querySelector('#descriptionDisplay').style.display = 'none';
+                        panel.querySelector('#taskDescriptionEditor').style.display = 'block';
                     }
-            
-                    // Load comments
-                    loadComments(task.id);
-            
-                    // Load activity log
-                    loadActivityLog(task.id);
-            
-                    // Show modal
-                    panel.classList.add('active');
-                    panel.setAttribute('aria-hidden', 'false');
+                    
+                    // Set priority
+                    panel.querySelectorAll('.priority-option').forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.dataset.priority === (task.priority || 'low')) {
+                            btn.classList.add('active');
+                            document.getElementById('taskPriority').value = task.priority || 'low';
+                        }
+                    });
+                    
+                    // Set due date
+                    if (task.due_date) {
+                        datePicker.setDate(task.due_date);
+                    } else {
+                        datePicker.clear();
+                    }
+                    
+                    // Set status badge
+                    const statusBadge = panel.querySelector('.task-status-badge');
+                    statusBadge.className = `task-status-badge ${task.status || 'todo'}`;
+                    statusBadge.textContent = (task.status || 'todo').charAt(0).toUpperCase() + (task.status || 'todo').slice(1);
+                    
+                    // Load assignees, comments, and activity
+                    await updateAssigneesList();
+                    loadComments();
+                    loadActivityLog();
+                    
+                    // Show panel
+                    panel.classList.add('open');
                     document.body.style.overflow = 'hidden';
+                    
+                    // Focus title if it's empty
+                    if (!task.title) {
+                        setTimeout(() => {
+                            panel.querySelector('#taskTitle').focus();
+                        }, 100);
+                    }
                 }
-            
-                // Initialize modal and editors
-                const panel = initializeModal();
-                const { quill, datePicker } = initializeEditors(panel);
-                let currentTaskId = null;
-                let currentAssignees = [];
-            
-                // Setup event listeners
-                function setupEventListeners() {
-                    // Close modal
-                    panel.querySelector('.modal-close').addEventListener('click', () => closeModal(panel));
-                    panel.querySelector('.modal-overlay').addEventListener('click', () => closeModal(panel));
-            
-                    // Keyboard shortcuts
-                    document.addEventListener('keydown', (e) => {
-                        if (panel.classList.contains('active')) {
-                            if (e.key === 'Escape') {
-                                closeModal(panel);
-                            }
-                            if (e.ctrlKey && e.key === 'Enter') {
-                                panel.querySelector('#taskDetailForm').dispatchEvent(new Event('submit'));
-                            }
-                        }
-                    });
-            
-                    // Add assignee button
-                    panel.querySelector('.add-assignee-btn').addEventListener('click', () => loadAssigneeDropdown(panel));
-            
-                    // Add comment
-                    panel.querySelector('#addCommentBtn').addEventListener('click', async () => {
-                        const commentContent = document.getElementById('taskComment').value.trim();
-                        if (!commentContent || !currentTaskId) {
-                            showErrorNotification('Comment or task ID is missing.');
-                            return;
-                        }
-            
-                        try {
-                            panel.classList.add('loading');
-                            const response = await fetch('../Controller/projectController.php?action=addComment', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                                },
-                                body: JSON.stringify({
-                                    taskId: currentTaskId,
-                                    content: commentContent
-                                })
-                            });
-            
-                            const data = await response.json();
-                            if (data.success) {
-                                document.getElementById('taskComment').value = '';
-                                loadComments(currentTaskId);
-                                loadActivityLog(currentTaskId);
-                                showSuccessNotification('Comment added successfully');
-                            } else {
-                                throw new Error(data.message || 'Failed to add comment');
-                            }
-                        } catch (error) {
-                            console.error('Error adding comment:', error);
-                            showErrorNotification(error.message || 'Failed to add comment');
-                        } finally {
-                            panel.classList.remove('loading');
-                        }
-                    });
-            
-                    // Delete task
-                    panel.querySelector('#deleteTaskBtn').addEventListener('click', async () => {
-                        if (!currentTaskId) {
-                            showErrorNotification('Task ID is missing.');
-                            return;
-                        }
-            
-                        const confirmed = await showConfirmModal(
-                            'Delete Task',
-                            'Are you sure you want to delete this task? This action cannot be undone.',
-                            'Delete',
-                            'Cancel'
-                        );
-            
-                        if (confirmed) {
-                            try {
-                                panel.classList.add('loading');
-                                const response = await fetch('../Controller/projectController.php?action=deleteTask', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                                    },
-                                    body: JSON.stringify({ taskId: currentTaskId })
-                                });
-            
-                                const data = await response.json();
-            
-                                if (data.success) {
-                                    showSuccessNotification('Task deleted successfully');
-                                    closeModal(panel);
-                                    loadCategories(); // Assuming loadCategories is defined elsewhere
-                                } else {
-                                    throw new Error(data.message || 'Failed to delete task');
-                                }
-                            } catch (error) {
-                                console.error('Error deleting task:', error);
-                                showErrorNotification(error.message || 'Failed to delete task. Please try again.');
-                            } finally {
-                                panel.classList.remove('loading');
-                            }
-                        }
-                    });
-            
-                    // Form submission (debounced)
-                    const debouncedSubmit = debounce(async (e) => {
-                        e.preventDefault();
-            
-                        if (!currentTaskId) {
-                            showErrorNotification('Task ID is missing. Please try reopening the task.');
-                            return;
-                        }
-            
-                        try {
-                            panel.classList.add('loading');
-                            const taskData = {
-                                taskId: currentTaskId,
-                                title: document.getElementById('taskTitle').value.trim(),
-                                description: DOMPurify.sanitize(quill.root.innerHTML),
-                                status: document.getElementById('taskStatus').value,
-                                priority: document.getElementById('taskPriority').value,
-                                due_date: document.getElementById('taskDueDate').value || null
-                            };
-            
-                            // Client-side validation
-                            if (!taskData.title || taskData.title.length < 3 || taskData.title.length > 100) {
-                                showErrorNotification('Task title must be between 3 and 100 characters.');
-                                return;
-                            }
-                            if (taskData.description.length > 500) {
-                                showErrorNotification('Task description cannot exceed 500 characters.');
-                                return;
-                            }
-                            if (!['todo', 'progress', 'done', 'blocked'].includes(taskData.status)) {
-                                showErrorNotification('Invalid task status.');
-                                return;
-                            }
-                            if (!['high', 'medium', 'low'].includes(taskData.priority)) {
-                                showErrorNotification('Invalid task priority.');
-                                return;
-                            }
-                            if (taskData.due_date && !/^\d{4}-\d{2}-\d{2}$/.test(taskData.due_date)) {
-                                showErrorNotification('Invalid due date format.');
-                                return;
-                            }
-            
-                            const response = await fetch('../Controller/projectController.php?action=updateTask', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                                },
-                                body: JSON.stringify(taskData)
-                            });
-            
-                            const data = await response.json();
-            
-                            if (data.success) {
-                                const assigneeResponse = await fetch('../Controller/projectController.php?action=updateAssignees', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                                    },
-                                    body: JSON.stringify({
-                                        taskId: currentTaskId,
-                                        assignees: currentAssignees
-                                    })
-                                });
-            
-                                const assigneeData = await assigneeResponse.json();
-            
-                                if (assigneeData.success) {
-                                    showSuccessNotification('Task updated successfully');
-                                    closeModal(panel);
-                                    loadCategories();
-                                } else {
-                                    throw new Error(assigneeData.message || 'Failed to update assignees');
-                                }
-                            } else {
-                                throw new Error(data.message || 'Failed to update task');
-                            }
-                        } catch (error) {
-                            console.error('Error updating task:', error);
-                            showErrorNotification(error.message || 'Failed to update task. Please try again.');
-                        } finally {
-                            panel.classList.remove('loading');
-                        }
-                    }, 300);
-            
-                    panel.querySelector('#taskDetailForm').addEventListener('submit', function(e) {
-                        e.preventDefault(); // Add this to prevent default form submission
-                        debouncedSubmit(e);
-                    });
+                
+                // Close panel
+                function closePanel() {
+                    if (!panel) return;
+                    
+                    panel.classList.remove('open');
+                    document.body.style.overflow = '';
+                    
+                    // Reset some state
+                    currentTaskId = null;
+                    currentAssignees = [];
                 }
-            
-                setupEventListeners();
-            
-                return {
-                    show: showTaskDetails,
-                    close: () => closeModal(panel)
-                };
+                
+                // Debounce function
+                function debounce(func, wait) {
+                    let timeout;
+                    return function() {
+                        const context = this, args = arguments;
+                        clearTimeout(timeout);
+                        timeout = setTimeout(() => {
+                            func.apply(context, args);
+                        }, wait);
+                    };
+                }
+                
+                // Initialize the panel
+                return initializePanel();
             }
         
             const taskDetailPanel = setupTaskDetailPanel();

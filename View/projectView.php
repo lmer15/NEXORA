@@ -19,7 +19,9 @@ if (!$project) die('Project not found');
 // Check access
 if ($project['owner_id'] !== $_SESSION['user_id']) die('Access denied');
 if ($project['status'] === 'archived') die('This project is archived');
+
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -116,7 +118,6 @@ if ($project['status'] === 'archived') die('This project is archived');
             </div>
         </section>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.min.js"></script>
     <script defer src="../JSFolder/facility.js"></script>
