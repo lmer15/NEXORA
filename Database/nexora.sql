@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 06, 2025 at 11:19 AM
+-- Generation Time: May 08, 2025 at 07:56 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -60,7 +60,8 @@ INSERT INTO `facilities` (`id`, `name`, `code`, `owner_id`, `created_at`, `updat
 (29, 'Rafael Guy\'s Facility', '9H4U06U3', 42, '2025-04-25 06:48:31', '2025-04-27 18:57:19'),
 (30, 'Rosalyn Harmon\'s Facility', 'JEWD8OI7', 43, '2025-04-25 09:34:49', '2025-04-27 02:11:10'),
 (31, 'Mechelle Rutledge\'s Facility', '91ZKCDMO', 44, '2025-04-25 09:37:42', '2025-04-29 07:46:47'),
-(32, 'Rhoda Christensen\'s Facility', 'BR1IVN5U', 45, '2025-04-26 11:04:13', '2025-04-26 11:04:13');
+(32, 'Rhoda Christensen\'s Facility', 'BR1IVN5U', 45, '2025-04-26 11:04:13', '2025-04-26 11:04:13'),
+(33, 'Ross Erickson\'s Facility', '6SRW58SJ', 46, '2025-05-06 14:48:19', '2025-05-06 14:48:19');
 
 -- --------------------------------------------------------
 
@@ -87,7 +88,8 @@ INSERT INTO `facility_admins` (`id`, `facility_id`, `user_id`, `assigned_by`, `a
 (16, 30, 43, 43, '2025-04-25 09:34:49'),
 (17, 31, 44, 44, '2025-04-25 09:37:42'),
 (21, 32, 45, 45, '2025-04-26 11:04:13'),
-(49, 29, 40, 42, '2025-04-29 14:09:58');
+(49, 29, 40, 42, '2025-04-29 14:09:58'),
+(51, 33, 46, 46, '2025-05-06 14:48:19');
 
 -- --------------------------------------------------------
 
@@ -140,7 +142,9 @@ INSERT INTO `facility_members` (`id`, `facility_id`, `user_id`, `joined_at`) VAL
 (35, 27, 41, '2025-04-29 00:18:12'),
 (37, 31, 41, '2025-04-29 14:06:12'),
 (38, 30, 44, '2025-04-29 14:06:55'),
-(42, 32, 43, '2025-05-06 04:22:29');
+(42, 32, 43, '2025-05-06 04:22:29'),
+(43, 33, 46, '2025-05-06 14:48:19'),
+(44, 33, 42, '2025-05-06 14:49:10');
 
 -- --------------------------------------------------------
 
@@ -181,9 +185,9 @@ INSERT INTO `projects` (`id`, `name`, `description`, `priority`, `due_date`, `co
 (191, 'Kirsten Barrs', 'Aut cupiditate dolor', 'low', '0000-00-00', '#323ba3', 'todo', 43, '2025-04-27 19:09:14', 0),
 (192, 'Callum Sanders', 'Labore ipsum dolorem', 'high', '2025-05-05', '#613f14', 'progress', 43, '2025-04-27 19:09:22', 0),
 (194, 'Cheryl Cummings', 'Architecto et doloru', 'low', '2025-05-30', '#357b96', 'todo', 42, '2025-04-27 19:09:52', 0),
-(197, 'Lilah Meadows', 'Quis qui illo sit in', 'low', '2025-05-05', '#4bdfdc', 'done', 42, '2025-04-27 19:10:07', 0),
+(197, 'Lilah Meadowss', 'Quis qui illo sit inssss', 'low', '2025-05-15', '#4bdfdc', 'done', 42, '2025-04-27 19:10:07', 0),
 (198, 'Eveniet, autem invens.', 'ELMER RAPONNN            ', 'low', '2025-05-17', '#e0f78a', 'todo', 42, '2025-04-27 19:10:11', 0),
-(199, 'Gisela Kirkland', 'Sint impedit sunt m', 'high', '2025-05-05', '#4455e2', 'done', 42, '2025-04-27 19:10:15', 0),
+(199, 'Gisela Kirklands', 'Sint impedit sunt m', 'high', '0000-00-00', '#4455e2', 'done', 42, '2025-04-27 19:10:15', 0),
 (200, 'Todd Kidd', 'Sit dolorem consequ', 'medium', '2025-05-20', '#2d2a35', 'todo', 41, '2025-04-27 19:10:44', 0),
 (201, 'Abdul Young', 'Fuga Aut et ipsam e', 'high', '2025-05-05', '#6e7756', 'todo', 41, '2025-04-27 19:10:47', 0),
 (202, 'TaShya Holden', 'Nihil esse officiis', 'high', '2025-05-05', '#690e09', 'progress', 41, '2025-04-27 19:10:51', 0),
@@ -203,7 +207,7 @@ INSERT INTO `projects` (`id`, `name`, `description`, `priority`, `due_date`, `co
 (216, 'Judah Malone', 'Vel magni irure ea s', 'medium', '2025-05-23', '#bd8a51', 'todo', 45, '2025-04-29 04:12:56', 1),
 (220, 'Paul Miles', 'Aute praesentium aut', 'high', '2025-11-28', '#aa403f', 'progress', 42, '2025-04-29 13:33:31', 0),
 (222, 'McKenzie Newman', 'Dolore sit cum et of', 'low', '2025-06-27', '#dc4c6b', 'todo', 42, '2025-04-29 14:56:33', 1),
-(224, 'Plato Ratliff', 'Eu voluptatibus sedS', 'low', '2025-05-06', '#ff96a4', 'done', 42, '2025-04-29 14:57:05', 0),
+(224, 'Plato Ratliffs', 'Eu voluptatibus sedS', 'low', '2025-05-06', '#ff96a4', 'done', 42, '2025-04-29 14:57:05', 0),
 (225, 'ILABYOU', 'Mollit in explicabo edkfjhnrfgoljrtgohthypk[typh', 'high', '2025-05-06', '#382a3e', 'progress', 42, '2025-04-29 14:57:36', 0),
 (227, 'Odette Lowe', 'Enim aliquip iure qu', 'medium', '2025-05-29', '#5adce0', 'todo', 42, '2025-04-30 06:49:06', 1),
 (228, 'Tobias Foley', 'Perspiciatis qui ea', 'high', '2025-06-18', '#d189b3', 'todo', 43, '2025-04-30 08:28:30', 0),
@@ -219,7 +223,8 @@ INSERT INTO `projects` (`id`, `name`, `description`, `priority`, `due_date`, `co
 (239, 'Brock Boyer', 'Quae et quia amet i', 'medium', '2025-10-24', '#31ceab', 'progress', 44, '2025-05-01 17:19:30', 1),
 (240, 'Ciaran Pope', 'Cupidatat aliquip qu', 'medium', '2025-05-09', '#27e009', 'todo', 44, '2025-05-02 02:27:12', 1),
 (241, 'Tyler Espinoza', 'Veniam fuga Quasi', 'low', '2025-05-13', '#27cdbc', 'progress', 43, '2025-05-04 14:52:24', 0),
-(242, 'Adria Armstrong', 'Do quia veniam fugi', 'medium', '2025-05-31', '#390f6a', 'todo', 43, '2025-05-04 15:01:17', 0);
+(242, 'Adria Armstrong', 'Do quia veniam fugi', 'medium', '2025-05-31', '#390f6a', 'todo', 43, '2025-05-04 15:01:17', 0),
+(243, 'Alfreda Cobb', 'Temporibus laboriosa', 'high', '2025-08-13', '#fed2a6', 'todo', 46, '2025-05-06 14:48:33', 0);
 
 -- --------------------------------------------------------
 
@@ -247,7 +252,15 @@ INSERT INTO `project_categories` (`id`, `project_id`, `name`, `color`, `position
 (65, 204, 'MAMA', '#3b82f6', 1, '2025-05-06 07:56:41', '2025-05-06 07:56:41'),
 (66, 197, 'MAMA', '#3b82f6', 1, '2025-05-06 08:01:56', '2025-05-06 08:01:56'),
 (67, 197, 'Design Development', '#3b82f6', 2, '2025-05-06 08:01:59', '2025-05-06 08:01:59'),
-(68, 197, 'ELMER GWAPA', '#3b82f6', 3, '2025-05-06 08:02:04', '2025-05-06 08:02:04');
+(68, 197, 'ELMER GWAPA', '#3b82f6', 3, '2025-05-06 08:02:04', '2025-05-06 08:02:04'),
+(69, 243, 'Design Development', '#3b82f6', 1, '2025-05-06 14:48:38', '2025-05-06 14:48:38'),
+(70, 203, 'ewftwe', '#3b82f6', 1, '2025-05-06 23:06:57', '2025-05-06 23:06:57'),
+(71, 231, 'jajajajjajajjjaaa', '#3b82f6', 1, '2025-05-06 23:59:30', '2025-05-06 23:59:30'),
+(72, 197, 'MAMA', '#3b82f6', 4, '2025-05-07 00:24:26', '2025-05-07 00:24:26'),
+(73, 225, 'egtrjdfgtrh', '#3b82f6', 1, '2025-05-07 22:41:32', '2025-05-07 22:41:32'),
+(74, 230, 'sddfgtrhy', '#3b82f6', 1, '2025-05-08 00:46:10', '2025-05-08 00:46:10'),
+(75, 230, 'ghftrytuyu', '#3b82f6', 2, '2025-05-08 00:46:19', '2025-05-08 00:46:19'),
+(76, 199, 'dsffdffddfdftrgj', '#3b82f6', 1, '2025-05-08 00:46:30', '2025-05-08 00:54:15');
 
 -- --------------------------------------------------------
 
@@ -313,9 +326,18 @@ CREATE TABLE `tasks` (
 
 INSERT INTO `tasks` (`id`, `category_id`, `project_id`, `title`, `description`, `status`, `priority`, `due_date`, `assignee_id`, `position`, `created_by`, `created_at`, `updated_at`) VALUES
 (55, 63, 182, 'FDHFG', '', 'todo', 'medium', NULL, NULL, 1, 45, '2025-05-06 06:41:54', '2025-05-06 06:41:54'),
-(58, 67, 197, 'fdgt', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-06 08:02:10', '2025-05-06 09:17:05'),
-(59, 66, 197, 'tryrt', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-06 08:02:12', '2025-05-06 09:17:08'),
-(60, 64, 202, 'reyu', '', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-06 09:17:39', '2025-05-06 09:17:39');
+(59, 66, 197, 'tryrt', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-06 08:02:12', '2025-05-08 00:44:03'),
+(60, 64, 202, 'reyu', '', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-06 09:17:39', '2025-05-06 09:17:39'),
+(61, 69, 243, 'frdgf', '', 'todo', 'medium', NULL, NULL, 1, 46, '2025-05-06 14:48:40', '2025-05-06 14:48:40'),
+(62, 70, 203, 'eret', '', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-06 23:07:01', '2025-05-06 23:07:01'),
+(63, 71, 231, 'degftrfh', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-06 23:59:33', '2025-05-06 23:59:33'),
+(64, 71, 231, 'uyjgh', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-06 23:59:35', '2025-05-06 23:59:35'),
+(65, 71, 231, 'tyyhhj', '', 'todo', 'medium', NULL, NULL, 3, 42, '2025-05-06 23:59:38', '2025-05-06 23:59:38'),
+(66, 73, 225, 'dgfdg', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-07 22:41:40', '2025-05-07 22:41:40'),
+(68, 67, 197, 'fhrt', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-08 00:44:38', '2025-05-08 00:44:42'),
+(69, 67, 197, 'sdfg', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-08 00:44:45', '2025-05-08 00:44:45'),
+(71, 76, 199, 'hjirthoty\\', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-08 00:53:58', '2025-05-08 00:54:06'),
+(72, 76, 199, 'rgsdrfgh', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-08 00:54:02', '2025-05-08 00:54:06');
 
 -- --------------------------------------------------------
 
@@ -331,6 +353,19 @@ CREATE TABLE `task_activities` (
   `details` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `task_activities`
+--
+
+INSERT INTO `task_activities` (`id`, `task_id`, `user_id`, `action`, `details`, `created_at`) VALUES
+(1, 62, 41, 'comment_added', NULL, '2025-05-06 23:07:17'),
+(2, 62, 41, 'comment_added', NULL, '2025-05-06 23:07:27'),
+(3, 62, 41, 'comment_added', NULL, '2025-05-06 23:07:32'),
+(4, 62, 41, 'comment_added', NULL, '2025-05-06 23:07:36'),
+(5, 62, 41, 'comment_added', NULL, '2025-05-06 23:08:33'),
+(6, 63, 42, 'comment_added', NULL, '2025-05-06 23:59:46'),
+(7, 63, 42, 'comment_added', NULL, '2025-05-06 23:59:54');
 
 -- --------------------------------------------------------
 
@@ -377,6 +412,19 @@ CREATE TABLE `task_comments` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `task_comments`
+--
+
+INSERT INTO `task_comments` (`id`, `task_id`, `user_id`, `content`, `created_at`, `updated_at`) VALUES
+(1, 62, 41, 'regt', '2025-05-06 23:07:17', '2025-05-06 23:07:17'),
+(2, 62, 41, 'rr', '2025-05-06 23:07:27', '2025-05-06 23:07:27'),
+(3, 62, 41, 'rrgt', '2025-05-06 23:07:32', '2025-05-06 23:07:32'),
+(4, 62, 41, 'mama', '2025-05-06 23:07:36', '2025-05-06 23:07:36'),
+(5, 62, 41, 'naunsa naman tawon ta ani', '2025-05-06 23:08:33', '2025-05-06 23:08:33'),
+(6, 63, 42, 'gtghj', '2025-05-06 23:59:46', '2025-05-06 23:59:46'),
+(7, 63, 42, 'rfgfh', '2025-05-06 23:59:54', '2025-05-06 23:59:54');
+
 -- --------------------------------------------------------
 
 --
@@ -418,7 +466,8 @@ INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `updated_a
 (42, 'Rafael Guy', 'typuk@mailinator.com', '$2y$10$79AN8f0yA/wfD7Fu4rlNJ.lu2RM8VlT.gOJ1UIuIipz4W/490ZdFi', '2025-04-25 06:48:31', '2025-04-25 06:52:30', 'uploads/profile_pictures/user_42_1745563950.jpg', 29),
 (43, 'Rosalyn Harmon', 'dimeto@mailinator.com', '$2y$10$tmRp4fhAUdkWN6L0C3.3yu6KiRI7KWgxm232P.etGSyGCW3GH.FGS', '2025-04-25 09:34:49', '2025-04-25 09:35:00', 'Images/profile.PNG', 30),
 (44, 'Mechelle Rutledge', 'kykebe@mailinator.com', '$2y$10$t8pFlZLsBvsn6FPAB56M7uK3ZjC/2dbMaAXWrGFp5fmdfbkTrWt/K', '2025-04-25 09:37:42', '2025-04-29 14:06:30', 'uploads/profile_pictures/user_44_1745935590.jpg', 31),
-(45, 'Rhoda Christensen', 'gona@mailinator.com', '$2y$10$h4omxnZkMkasb3ajpCwAieK4ABMCMXw.5H20Wn8m1.WhAjw9xSmoW', '2025-04-26 11:04:13', '2025-04-26 11:04:26', 'Images/profile.PNG', 32);
+(45, 'Rhoda Christensen', 'gona@mailinator.com', '$2y$10$h4omxnZkMkasb3ajpCwAieK4ABMCMXw.5H20Wn8m1.WhAjw9xSmoW', '2025-04-26 11:04:13', '2025-04-26 11:04:26', 'Images/profile.PNG', 32),
+(46, 'Ross Erickson', 'ceto@mailinator.com', '$2y$10$OyPdLjYcAB3ErOjnRD6/Y.EUtnWAApmngEPB5abeQcxC517atMVvS', '2025-05-06 14:48:19', '2025-05-06 14:49:04', 'Images/profile.PNG', 33);
 
 --
 -- Indexes for dumped tables
@@ -567,13 +616,13 @@ ALTER TABLE `email_confirmations`
 -- AUTO_INCREMENT for table `facilities`
 --
 ALTER TABLE `facilities`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT for table `facility_admins`
 --
 ALTER TABLE `facility_admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
 
 --
 -- AUTO_INCREMENT for table `facility_invitations`
@@ -585,19 +634,19 @@ ALTER TABLE `facility_invitations`
 -- AUTO_INCREMENT for table `facility_members`
 --
 ALTER TABLE `facility_members`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT for table `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=243;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=244;
 
 --
 -- AUTO_INCREMENT for table `project_categories`
 --
 ALTER TABLE `project_categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
 
 --
 -- AUTO_INCREMENT for table `remember_tokens`
@@ -615,13 +664,13 @@ ALTER TABLE `security_questions`
 -- AUTO_INCREMENT for table `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 
 --
 -- AUTO_INCREMENT for table `task_activities`
 --
 ALTER TABLE `task_activities`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `task_assignments`
@@ -639,7 +688,7 @@ ALTER TABLE `task_attachments`
 -- AUTO_INCREMENT for table `task_comments`
 --
 ALTER TABLE `task_comments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `task_links`
@@ -651,7 +700,7 @@ ALTER TABLE `task_links`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
 
 --
 -- Constraints for dumped tables
