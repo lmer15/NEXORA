@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 08, 2025 at 07:56 AM
+-- Generation Time: May 08, 2025 at 01:51 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -337,7 +337,8 @@ INSERT INTO `tasks` (`id`, `category_id`, `project_id`, `title`, `description`, 
 (68, 67, 197, 'fhrt', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-08 00:44:38', '2025-05-08 00:44:42'),
 (69, 67, 197, 'sdfg', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-08 00:44:45', '2025-05-08 00:44:45'),
 (71, 76, 199, 'hjirthoty\\', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-08 00:53:58', '2025-05-08 00:54:06'),
-(72, 76, 199, 'rgsdrfgh', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-08 00:54:02', '2025-05-08 00:54:06');
+(72, 76, 199, 'rgsdrfgh', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-08 00:54:02', '2025-05-08 00:54:06'),
+(74, 73, 225, 'kftgbk', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-08 06:44:28', '2025-05-08 06:44:28');
 
 -- --------------------------------------------------------
 
@@ -365,7 +366,22 @@ INSERT INTO `task_activities` (`id`, `task_id`, `user_id`, `action`, `details`, 
 (4, 62, 41, 'comment_added', NULL, '2025-05-06 23:07:36'),
 (5, 62, 41, 'comment_added', NULL, '2025-05-06 23:08:33'),
 (6, 63, 42, 'comment_added', NULL, '2025-05-06 23:59:46'),
-(7, 63, 42, 'comment_added', NULL, '2025-05-06 23:59:54');
+(7, 63, 42, 'comment_added', NULL, '2025-05-06 23:59:54'),
+(8, 73, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"high\"}', '2025-05-08 06:38:19'),
+(9, 73, 42, 'priority_updated', '{\"old_priority\":\"high\",\"new_priority\":\"medium\"}', '2025-05-08 06:38:20'),
+(10, 73, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-08 06:38:21'),
+(11, 73, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"high\"}', '2025-05-08 06:38:22'),
+(12, 73, 42, 'priority_updated', '{\"old_priority\":\"high\",\"new_priority\":\"medium\"}', '2025-05-08 06:38:23'),
+(13, 73, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-08 06:38:24'),
+(14, 73, 42, 'comment_added', NULL, '2025-05-08 06:38:47'),
+(15, 73, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"medium\"}', '2025-05-08 06:39:07'),
+(16, 73, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"progress\"}', '2025-05-08 06:40:05'),
+(17, 73, 42, 'status_updated', '{\"old_status\":\"progress\",\"new_status\":\"todo\"}', '2025-05-08 06:41:07'),
+(18, 73, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"high\"}', '2025-05-08 06:41:14'),
+(19, 73, 42, 'priority_updated', '{\"old_priority\":\"high\",\"new_priority\":\"medium\"}', '2025-05-08 06:41:17'),
+(20, 73, 42, 'comment_added', NULL, '2025-05-08 06:42:21'),
+(21, 66, 42, 'comment_added', NULL, '2025-05-08 08:42:52'),
+(22, 66, 42, 'comment_added', NULL, '2025-05-08 08:43:02');
 
 -- --------------------------------------------------------
 
@@ -423,7 +439,9 @@ INSERT INTO `task_comments` (`id`, `task_id`, `user_id`, `content`, `created_at`
 (4, 62, 41, 'mama', '2025-05-06 23:07:36', '2025-05-06 23:07:36'),
 (5, 62, 41, 'naunsa naman tawon ta ani', '2025-05-06 23:08:33', '2025-05-06 23:08:33'),
 (6, 63, 42, 'gtghj', '2025-05-06 23:59:46', '2025-05-06 23:59:46'),
-(7, 63, 42, 'rfgfh', '2025-05-06 23:59:54', '2025-05-06 23:59:54');
+(7, 63, 42, 'rfgfh', '2025-05-06 23:59:54', '2025-05-06 23:59:54'),
+(10, 66, 42, 'rfhgbf', '2025-05-08 08:42:52', '2025-05-08 08:42:52'),
+(11, 66, 42, 'dgfrdg', '2025-05-08 08:43:02', '2025-05-08 08:43:02');
 
 -- --------------------------------------------------------
 
@@ -664,13 +682,13 @@ ALTER TABLE `security_questions`
 -- AUTO_INCREMENT for table `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
 
 --
 -- AUTO_INCREMENT for table `task_activities`
 --
 ALTER TABLE `task_activities`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `task_assignments`
@@ -688,7 +706,7 @@ ALTER TABLE `task_attachments`
 -- AUTO_INCREMENT for table `task_comments`
 --
 ALTER TABLE `task_comments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `task_links`
