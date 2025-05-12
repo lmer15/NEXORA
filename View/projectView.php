@@ -32,6 +32,8 @@ if ($project['status'] === 'archived') die('This project is archived');
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css">
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="../CSS_Files/views/projectView.css">
 </head>
 <body data-project-id="<?= htmlspecialchars($projectId) ?>" data-user-id="<?= $_SESSION['user_id'] ?>">
@@ -44,9 +46,6 @@ if ($project['status'] === 'archived') die('This project is archived');
                 <h1 class="project-title" contenteditable="true" aria-label="Project Title">
                     <?= htmlspecialchars($project['name']) ?>
                 </h1>
-                <span class="project-status-badge <?= htmlspecialchars($project['status']) ?>" role="status">
-                    <?= ucfirst(htmlspecialchars($project['status'])) ?>
-                </span>
             </div>
             <div class="project-meta">
                 <div class="project-due-date">

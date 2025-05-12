@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 08, 2025 at 01:51 PM
+-- Generation Time: May 12, 2025 at 09:22 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -134,7 +134,6 @@ INSERT INTO `facility_members` (`id`, `facility_id`, `user_id`, `joined_at`) VAL
 (18, 28, 43, '2025-04-26 01:08:41'),
 (19, 28, 40, '2025-04-26 04:03:29'),
 (20, 28, 42, '2025-04-26 04:03:29'),
-(21, 29, 41, '2025-04-26 04:05:45'),
 (27, 29, 40, '2025-04-26 10:59:35'),
 (28, 32, 45, '2025-04-26 11:04:13'),
 (30, 32, 41, '2025-04-26 11:05:13'),
@@ -144,7 +143,9 @@ INSERT INTO `facility_members` (`id`, `facility_id`, `user_id`, `joined_at`) VAL
 (38, 30, 44, '2025-04-29 14:06:55'),
 (42, 32, 43, '2025-05-06 04:22:29'),
 (43, 33, 46, '2025-05-06 14:48:19'),
-(44, 33, 42, '2025-05-06 14:49:10');
+(44, 33, 42, '2025-05-06 14:49:10'),
+(45, 29, 41, '2025-05-09 12:49:02'),
+(46, 33, 41, '2025-05-10 00:31:58');
 
 -- --------------------------------------------------------
 
@@ -186,8 +187,8 @@ INSERT INTO `projects` (`id`, `name`, `description`, `priority`, `due_date`, `co
 (192, 'Callum Sanders', 'Labore ipsum dolorem', 'high', '2025-05-05', '#613f14', 'progress', 43, '2025-04-27 19:09:22', 0),
 (194, 'Cheryl Cummings', 'Architecto et doloru', 'low', '2025-05-30', '#357b96', 'todo', 42, '2025-04-27 19:09:52', 0),
 (197, 'Lilah Meadowss', 'Quis qui illo sit inssss', 'low', '2025-05-15', '#4bdfdc', 'done', 42, '2025-04-27 19:10:07', 0),
-(198, 'Eveniet, autem invens.', 'ELMER RAPONNN            ', 'low', '2025-05-17', '#e0f78a', 'todo', 42, '2025-04-27 19:10:11', 0),
-(199, 'Gisela Kirklands', 'Sint impedit sunt m', 'high', '0000-00-00', '#4455e2', 'done', 42, '2025-04-27 19:10:15', 0),
+(198, 'Eveniet, autem invens.', 'ELMER RAPONNN            ', 'low', '2025-05-30', '#e0f78a', 'todo', 42, '2025-04-27 19:10:11', 0),
+(199, 'Gisela Kirklands', 'Sint impedit sunt m', 'high', '2025-05-31', '#4455e2', 'done', 42, '2025-04-27 19:10:15', 0),
 (200, 'Todd Kidd', 'Sit dolorem consequ', 'medium', '2025-05-20', '#2d2a35', 'todo', 41, '2025-04-27 19:10:44', 0),
 (201, 'Abdul Young', 'Fuga Aut et ipsam e', 'high', '2025-05-05', '#6e7756', 'todo', 41, '2025-04-27 19:10:47', 0),
 (202, 'TaShya Holden', 'Nihil esse officiis', 'high', '2025-05-05', '#690e09', 'progress', 41, '2025-04-27 19:10:51', 0),
@@ -208,10 +209,10 @@ INSERT INTO `projects` (`id`, `name`, `description`, `priority`, `due_date`, `co
 (220, 'Paul Miles', 'Aute praesentium aut', 'high', '2025-11-28', '#aa403f', 'progress', 42, '2025-04-29 13:33:31', 0),
 (222, 'McKenzie Newman', 'Dolore sit cum et of', 'low', '2025-06-27', '#dc4c6b', 'todo', 42, '2025-04-29 14:56:33', 1),
 (224, 'Plato Ratliffs', 'Eu voluptatibus sedS', 'low', '2025-05-06', '#ff96a4', 'done', 42, '2025-04-29 14:57:05', 0),
-(225, 'ILABYOU', 'Mollit in explicabo edkfjhnrfgoljrtgohthypk[typh', 'high', '2025-05-06', '#382a3e', 'progress', 42, '2025-04-29 14:57:36', 0),
-(227, 'Odette Lowe', 'Enim aliquip iure qu', 'medium', '2025-05-29', '#5adce0', 'todo', 42, '2025-04-30 06:49:06', 1),
+(225, 'Merry Christmas', 'Mollit in explicabo edkfjhnrfgoljrtgohthypk[typh', 'high', '2025-05-06', '#382a3e', 'progress', 42, '2025-04-29 14:57:36', 0),
+(227, 'Odette Lowe', 'Enim aliquip iure qu', 'medium', '2025-05-29', '#5adce0', 'todo', 42, '2025-04-30 06:49:06', 0),
 (228, 'Tobias Foley', 'Perspiciatis qui ea', 'high', '2025-06-18', '#d189b3', 'todo', 43, '2025-04-30 08:28:30', 0),
-(230, 'Quintessa Whitaker', 'Aut tempore qui cor', 'high', '2025-05-07', '#ffffff', 'todo', 42, '2025-04-30 10:20:33', 0),
+(230, 'Sit omnis quia esse .', 'Aut tempore qui cor', 'high', '2025-05-31', '#ffffff', 'todo', 42, '2025-04-30 10:20:33', 0),
 (231, 'Matthew Larson', 'Amet neque tempor d', 'medium', '2025-05-17', '#000000', 'progress', 42, '2025-04-30 11:16:14', 0),
 (232, 'Garth Weeks', 'Vitae id numquam dol', 'low', '2025-12-25', '#f0de46', 'progress', 44, '2025-04-30 11:38:39', 1),
 (233, 'Yeo Torres', 'Minim voluptas ea od', 'high', '2025-10-29', '#db165c', 'todo', 44, '2025-04-30 13:08:20', 1),
@@ -247,20 +248,11 @@ CREATE TABLE `project_categories` (
 --
 
 INSERT INTO `project_categories` (`id`, `project_id`, `name`, `color`, `position`, `created_at`, `updated_at`) VALUES
-(63, 182, 'DFSGGH', '#3b82f6', 1, '2025-05-06 06:41:52', '2025-05-06 06:41:52'),
-(64, 202, 'MAMA', '#3b82f6', 1, '2025-05-06 07:42:37', '2025-05-06 07:42:37'),
-(65, 204, 'MAMA', '#3b82f6', 1, '2025-05-06 07:56:41', '2025-05-06 07:56:41'),
-(66, 197, 'MAMA', '#3b82f6', 1, '2025-05-06 08:01:56', '2025-05-06 08:01:56'),
-(67, 197, 'Design Development', '#3b82f6', 2, '2025-05-06 08:01:59', '2025-05-06 08:01:59'),
-(68, 197, 'ELMER GWAPA', '#3b82f6', 3, '2025-05-06 08:02:04', '2025-05-06 08:02:04'),
-(69, 243, 'Design Development', '#3b82f6', 1, '2025-05-06 14:48:38', '2025-05-06 14:48:38'),
-(70, 203, 'ewftwe', '#3b82f6', 1, '2025-05-06 23:06:57', '2025-05-06 23:06:57'),
-(71, 231, 'jajajajjajajjjaaa', '#3b82f6', 1, '2025-05-06 23:59:30', '2025-05-06 23:59:30'),
-(72, 197, 'MAMA', '#3b82f6', 4, '2025-05-07 00:24:26', '2025-05-07 00:24:26'),
-(73, 225, 'egtrjdfgtrh', '#3b82f6', 1, '2025-05-07 22:41:32', '2025-05-07 22:41:32'),
-(74, 230, 'sddfgtrhy', '#3b82f6', 1, '2025-05-08 00:46:10', '2025-05-08 00:46:10'),
-(75, 230, 'ghftrytuyu', '#3b82f6', 2, '2025-05-08 00:46:19', '2025-05-08 00:46:19'),
-(76, 199, 'dsffdffddfdftrgj', '#3b82f6', 1, '2025-05-08 00:46:30', '2025-05-08 00:54:15');
+(90, 224, 'CAT1', '#3b82f6', 1, '2025-05-11 16:06:50', '2025-05-12 16:08:02'),
+(91, 224, 'CAT2', '#3b82f6', 2, '2025-05-11 16:09:09', '2025-05-12 16:09:08'),
+(92, 224, 'CAT3', '#3b82f6', 3, '2025-05-11 16:12:44', '2025-05-12 16:09:53'),
+(93, 224, 'CAT4', '#3b82f6', 4, '2025-05-12 15:47:05', '2025-05-12 16:09:57'),
+(96, 224, 'GHGF', '#3b82f6', 5, '2025-05-12 16:14:03', '2025-05-12 16:14:03');
 
 -- --------------------------------------------------------
 
@@ -325,20 +317,18 @@ CREATE TABLE `tasks` (
 --
 
 INSERT INTO `tasks` (`id`, `category_id`, `project_id`, `title`, `description`, `status`, `priority`, `due_date`, `assignee_id`, `position`, `created_by`, `created_at`, `updated_at`) VALUES
-(55, 63, 182, 'FDHFG', '', 'todo', 'medium', NULL, NULL, 1, 45, '2025-05-06 06:41:54', '2025-05-06 06:41:54'),
-(59, 66, 197, 'tryrt', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-06 08:02:12', '2025-05-08 00:44:03'),
-(60, 64, 202, 'reyu', '', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-06 09:17:39', '2025-05-06 09:17:39'),
-(61, 69, 243, 'frdgf', '', 'todo', 'medium', NULL, NULL, 1, 46, '2025-05-06 14:48:40', '2025-05-06 14:48:40'),
-(62, 70, 203, 'eret', '', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-06 23:07:01', '2025-05-06 23:07:01'),
-(63, 71, 231, 'degftrfh', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-06 23:59:33', '2025-05-06 23:59:33'),
-(64, 71, 231, 'uyjgh', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-06 23:59:35', '2025-05-06 23:59:35'),
-(65, 71, 231, 'tyyhhj', '', 'todo', 'medium', NULL, NULL, 3, 42, '2025-05-06 23:59:38', '2025-05-06 23:59:38'),
-(66, 73, 225, 'dgfdg', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-07 22:41:40', '2025-05-07 22:41:40'),
-(68, 67, 197, 'fhrt', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-08 00:44:38', '2025-05-08 00:44:42'),
-(69, 67, 197, 'sdfg', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-08 00:44:45', '2025-05-08 00:44:45'),
-(71, 76, 199, 'hjirthoty\\', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-08 00:53:58', '2025-05-08 00:54:06'),
-(72, 76, 199, 'rgsdrfgh', '', 'todo', 'medium', NULL, NULL, 1, 42, '2025-05-08 00:54:02', '2025-05-08 00:54:06'),
-(74, 73, 225, 'kftgbk', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-08 06:44:28', '2025-05-08 06:44:28');
+(96, 92, 224, 'TASK G', 'fgxgfh', 'done', 'low', '2025-05-30', NULL, 2, 42, '2025-05-11 16:06:53', '2025-05-12 16:10:25'),
+(97, 90, 224, 'TASK D', 'sfgfgnh', 'todo', 'medium', '2025-05-30', NULL, 3, 42, '2025-05-11 16:07:12', '2025-05-12 19:14:43'),
+(98, 91, 224, 'TASK E', 'rytrhytr', 'blocked', 'high', '2025-05-31', NULL, 2, 42, '2025-05-11 16:08:07', '2025-05-12 19:14:47'),
+(99, 91, 224, 'TASK C', '', 'todo', 'medium', '2025-05-31', NULL, 3, 42, '2025-05-11 16:08:12', '2025-05-12 19:14:47'),
+(100, 93, 224, 'TASK I', 'SDFSHDJGF', 'todo', 'medium', '2025-05-31', NULL, 1, 42, '2025-05-11 16:09:13', '2025-05-12 16:11:37'),
+(101, 91, 224, 'TASK C', 'EFHSTRY', 'todo', 'high', '2025-05-24', NULL, 1, 42, '2025-05-11 16:09:17', '2025-05-12 19:14:45'),
+(102, 92, 224, 'TASK H', '', 'done', 'high', '2025-05-12', NULL, 3, 42, '2025-05-11 16:12:08', '2025-05-12 16:10:45'),
+(103, 90, 224, 'TASK A', 'DGHXH', 'blocked', 'high', '2025-04-25', NULL, 1, 42, '2025-05-12 10:07:48', '2025-05-12 19:12:54'),
+(104, 92, 224, 'TASK F', 'SDGGH', 'progress', 'medium', '2025-05-24', NULL, 1, 42, '2025-05-12 10:07:50', '2025-05-12 16:10:07'),
+(105, 90, 224, 'TASK B', 'VFBHGF', 'done', 'low', '2025-05-31', NULL, 2, 42, '2025-05-12 10:07:51', '2025-05-12 16:08:33'),
+(106, 93, 224, 'TASK K', '', 'todo', 'low', '2025-05-14', NULL, 3, 42, '2025-05-12 10:08:55', '2025-05-12 19:17:23'),
+(107, 93, 224, 'TASK J', 'FRBHDKLBMHJFGERYERYERYERYERYERYERYERYERYERYERYERYERYERYERY', 'done', 'low', '2025-05-24', NULL, 2, 42, '2025-05-12 10:08:57', '2025-05-12 16:13:23');
 
 -- --------------------------------------------------------
 
@@ -360,28 +350,61 @@ CREATE TABLE `task_activities` (
 --
 
 INSERT INTO `task_activities` (`id`, `task_id`, `user_id`, `action`, `details`, `created_at`) VALUES
-(1, 62, 41, 'comment_added', NULL, '2025-05-06 23:07:17'),
-(2, 62, 41, 'comment_added', NULL, '2025-05-06 23:07:27'),
-(3, 62, 41, 'comment_added', NULL, '2025-05-06 23:07:32'),
-(4, 62, 41, 'comment_added', NULL, '2025-05-06 23:07:36'),
-(5, 62, 41, 'comment_added', NULL, '2025-05-06 23:08:33'),
-(6, 63, 42, 'comment_added', NULL, '2025-05-06 23:59:46'),
-(7, 63, 42, 'comment_added', NULL, '2025-05-06 23:59:54'),
-(8, 73, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"high\"}', '2025-05-08 06:38:19'),
-(9, 73, 42, 'priority_updated', '{\"old_priority\":\"high\",\"new_priority\":\"medium\"}', '2025-05-08 06:38:20'),
-(10, 73, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-08 06:38:21'),
-(11, 73, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"high\"}', '2025-05-08 06:38:22'),
-(12, 73, 42, 'priority_updated', '{\"old_priority\":\"high\",\"new_priority\":\"medium\"}', '2025-05-08 06:38:23'),
-(13, 73, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-08 06:38:24'),
-(14, 73, 42, 'comment_added', NULL, '2025-05-08 06:38:47'),
-(15, 73, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"medium\"}', '2025-05-08 06:39:07'),
-(16, 73, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"progress\"}', '2025-05-08 06:40:05'),
-(17, 73, 42, 'status_updated', '{\"old_status\":\"progress\",\"new_status\":\"todo\"}', '2025-05-08 06:41:07'),
-(18, 73, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"high\"}', '2025-05-08 06:41:14'),
-(19, 73, 42, 'priority_updated', '{\"old_priority\":\"high\",\"new_priority\":\"medium\"}', '2025-05-08 06:41:17'),
-(20, 73, 42, 'comment_added', NULL, '2025-05-08 06:42:21'),
-(21, 66, 42, 'comment_added', NULL, '2025-05-08 08:42:52'),
-(22, 66, 42, 'comment_added', NULL, '2025-05-08 08:43:02');
+(136, 98, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-12 07:30:45'),
+(137, 98, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"high\"}', '2025-05-12 07:30:47'),
+(138, 98, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"blocked\"}', '2025-05-12 07:30:51'),
+(139, 99, 42, 'comment_added', NULL, '2025-05-12 08:45:03'),
+(140, 101, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"done\"}', '2025-05-12 08:51:06'),
+(141, 101, 42, 'status_updated', '{\"old_status\":\"done\",\"new_status\":\"todo\"}', '2025-05-12 08:51:07'),
+(142, 101, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-12 08:51:11'),
+(143, 101, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"high\"}', '2025-05-12 08:51:12'),
+(144, 101, 42, 'comment_added', NULL, '2025-05-12 08:51:22'),
+(145, 96, 42, 'comment_added', NULL, '2025-05-12 09:46:50'),
+(146, 96, 42, 'comment_added', NULL, '2025-05-12 09:46:52'),
+(147, 96, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"blocked\"}', '2025-05-12 09:46:57'),
+(148, 96, 42, 'status_updated', '{\"old_status\":\"blocked\",\"new_status\":\"todo\"}', '2025-05-12 09:46:58'),
+(149, 96, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"done\"}', '2025-05-12 09:47:00'),
+(150, 96, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-12 09:47:02'),
+(151, 102, 42, 'comment_added', NULL, '2025-05-12 10:02:19'),
+(152, 102, 42, 'comment_added', NULL, '2025-05-12 10:02:21'),
+(153, 102, 42, 'comment_added', NULL, '2025-05-12 10:02:23'),
+(154, 102, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"done\"}', '2025-05-12 10:02:35'),
+(155, 105, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-12 10:08:07'),
+(156, 105, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"done\"}', '2025-05-12 10:08:11'),
+(157, 105, 42, 'comment_added', NULL, '2025-05-12 10:08:16'),
+(158, 105, 42, 'comment_added', NULL, '2025-05-12 10:08:17'),
+(159, 105, 42, 'comment_added', NULL, '2025-05-12 10:25:15'),
+(160, 103, 42, 'comment_added', NULL, '2025-05-12 13:50:28'),
+(161, 102, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"high\"}', '2025-05-12 13:52:07'),
+(162, 102, 42, 'priority_updated', '{\"old_priority\":\"high\",\"new_priority\":\"low\"}', '2025-05-12 13:52:08'),
+(163, 102, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"medium\"}', '2025-05-12 13:52:09'),
+(164, 102, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"high\"}', '2025-05-12 13:52:10'),
+(165, 102, 42, 'priority_updated', '{\"old_priority\":\"high\",\"new_priority\":\"low\"}', '2025-05-12 13:52:11'),
+(166, 102, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"high\"}', '2025-05-12 13:52:19'),
+(167, 102, 42, 'status_updated', '{\"old_status\":\"done\",\"new_status\":\"progress\"}', '2025-05-12 13:52:21'),
+(168, 102, 42, 'status_updated', '{\"old_status\":\"progress\",\"new_status\":\"done\"}', '2025-05-12 13:52:24'),
+(169, 104, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"progress\"}', '2025-05-12 15:33:12'),
+(170, 103, 42, 'assignee_added', '{\"user_id\":41}', '2025-05-12 15:47:32'),
+(171, 103, 42, 'comment_added', NULL, '2025-05-12 15:50:18'),
+(172, 103, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-12 15:57:44'),
+(173, 103, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"high\"}', '2025-05-12 15:57:44'),
+(174, 103, 42, 'priority_updated', '{\"old_priority\":\"high\",\"new_priority\":\"medium\"}', '2025-05-12 15:57:45'),
+(175, 103, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"done\"}', '2025-05-12 15:57:47'),
+(176, 106, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-12 15:59:19'),
+(177, 106, 42, 'comment_added', NULL, '2025-05-12 15:59:22'),
+(178, 100, 42, 'comment_added', NULL, '2025-05-12 16:00:54'),
+(179, 103, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"high\"}', '2025-05-12 16:03:00'),
+(180, 103, 42, 'priority_updated', '{\"old_priority\":\"high\",\"new_priority\":\"low\"}', '2025-05-12 16:03:01'),
+(181, 103, 42, 'status_updated', '{\"old_status\":\"done\",\"new_status\":\"todo\"}', '2025-05-12 16:03:03'),
+(182, 103, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"done\"}', '2025-05-12 16:03:05'),
+(183, 107, 42, 'status_updated', '{\"old_status\":\"todo\",\"new_status\":\"done\"}', '2025-05-12 16:13:21'),
+(184, 107, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-12 16:13:23'),
+(185, 103, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"medium\"}', '2025-05-12 18:51:31'),
+(186, 103, 42, 'priority_updated', '{\"old_priority\":\"medium\",\"new_priority\":\"low\"}', '2025-05-12 19:12:45'),
+(187, 103, 42, 'priority_updated', '{\"old_priority\":\"low\",\"new_priority\":\"high\"}', '2025-05-12 19:12:47'),
+(188, 103, 42, 'status_updated', '{\"old_status\":\"done\",\"new_status\":\"progress\"}', '2025-05-12 19:12:52'),
+(189, 103, 42, 'status_updated', '{\"old_status\":\"progress\",\"new_status\":\"blocked\"}', '2025-05-12 19:12:54'),
+(190, 103, 42, 'comment_added', NULL, '2025-05-12 19:15:11');
 
 -- --------------------------------------------------------
 
@@ -395,6 +418,13 @@ CREATE TABLE `task_assignments` (
   `user_id` int(11) NOT NULL,
   `assigned_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `task_assignments`
+--
+
+INSERT INTO `task_assignments` (`id`, `task_id`, `user_id`, `assigned_at`) VALUES
+(1, 103, 41, '2025-05-12 15:47:32');
 
 -- --------------------------------------------------------
 
@@ -433,15 +463,21 @@ CREATE TABLE `task_comments` (
 --
 
 INSERT INTO `task_comments` (`id`, `task_id`, `user_id`, `content`, `created_at`, `updated_at`) VALUES
-(1, 62, 41, 'regt', '2025-05-06 23:07:17', '2025-05-06 23:07:17'),
-(2, 62, 41, 'rr', '2025-05-06 23:07:27', '2025-05-06 23:07:27'),
-(3, 62, 41, 'rrgt', '2025-05-06 23:07:32', '2025-05-06 23:07:32'),
-(4, 62, 41, 'mama', '2025-05-06 23:07:36', '2025-05-06 23:07:36'),
-(5, 62, 41, 'naunsa naman tawon ta ani', '2025-05-06 23:08:33', '2025-05-06 23:08:33'),
-(6, 63, 42, 'gtghj', '2025-05-06 23:59:46', '2025-05-06 23:59:46'),
-(7, 63, 42, 'rfgfh', '2025-05-06 23:59:54', '2025-05-06 23:59:54'),
-(10, 66, 42, 'rfhgbf', '2025-05-08 08:42:52', '2025-05-08 08:42:52'),
-(11, 66, 42, 'dgfrdg', '2025-05-08 08:43:02', '2025-05-08 08:43:02');
+(42, 99, 42, 'aerer', '2025-05-12 08:45:03', '2025-05-12 08:45:03'),
+(43, 101, 42, 'ZAETFRTY', '2025-05-12 08:51:22', '2025-05-12 08:51:22'),
+(44, 96, 42, 'SDFSD', '2025-05-12 09:46:50', '2025-05-12 09:46:50'),
+(45, 96, 42, 'YUHJIHJ', '2025-05-12 09:46:52', '2025-05-12 09:46:52'),
+(46, 102, 42, 'EQR', '2025-05-12 10:02:19', '2025-05-12 10:02:19'),
+(47, 102, 42, 'HJY', '2025-05-12 10:02:21', '2025-05-12 10:02:21'),
+(48, 102, 42, 'HG', '2025-05-12 10:02:23', '2025-05-12 10:02:23'),
+(49, 105, 42, 'XGT', '2025-05-12 10:08:16', '2025-05-12 10:08:16'),
+(50, 105, 42, 'GH', '2025-05-12 10:08:17', '2025-05-12 10:08:17'),
+(51, 105, 42, 'XXJCN', '2025-05-12 10:25:15', '2025-05-12 10:25:15'),
+(52, 103, 42, 'SFGDF', '2025-05-12 13:50:28', '2025-05-12 13:50:28'),
+(53, 103, 42, 'FDHXDGTH', '2025-05-12 15:50:18', '2025-05-12 15:50:18'),
+(54, 106, 42, 'DGTYH', '2025-05-12 15:59:22', '2025-05-12 15:59:22'),
+(55, 100, 42, 'SDGSERF', '2025-05-12 16:00:54', '2025-05-12 16:00:54'),
+(56, 103, 42, 'HGJCGH', '2025-05-12 19:15:11', '2025-05-12 19:15:11');
 
 -- --------------------------------------------------------
 
@@ -456,6 +492,14 @@ CREATE TABLE `task_links` (
   `created_by` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `task_links`
+--
+
+INSERT INTO `task_links` (`id`, `task_id`, `url`, `created_by`, `created_at`) VALUES
+(7, 100, 'http://localhost/nexora/View/facility.php', 42, '2025-05-12 09:58:31'),
+(8, 102, 'http://localhost/nexora/View/facility.php', 42, '2025-05-12 10:01:46');
 
 -- --------------------------------------------------------
 
@@ -652,7 +696,7 @@ ALTER TABLE `facility_invitations`
 -- AUTO_INCREMENT for table `facility_members`
 --
 ALTER TABLE `facility_members`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
 
 --
 -- AUTO_INCREMENT for table `projects`
@@ -664,7 +708,7 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT for table `project_categories`
 --
 ALTER TABLE `project_categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=97;
 
 --
 -- AUTO_INCREMENT for table `remember_tokens`
@@ -682,19 +726,19 @@ ALTER TABLE `security_questions`
 -- AUTO_INCREMENT for table `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=108;
 
 --
 -- AUTO_INCREMENT for table `task_activities`
 --
 ALTER TABLE `task_activities`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=191;
 
 --
 -- AUTO_INCREMENT for table `task_assignments`
 --
 ALTER TABLE `task_assignments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `task_attachments`
@@ -706,13 +750,13 @@ ALTER TABLE `task_attachments`
 -- AUTO_INCREMENT for table `task_comments`
 --
 ALTER TABLE `task_comments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT for table `task_links`
 --
 ALTER TABLE `task_links`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `users`

@@ -369,7 +369,12 @@ class TaskModel {
     public function getAssignees($taskId) {
         try {
             $stmt = $this->conn->prepare("
-                SELECT u.id, u.name, u.profile_picture 
+                SELECT u.id, u.name, 
+                    CASE 
+                        WHEN u.profile_picture IS NOT NULL AND u.profile_picture != '' 
+                        THEN CONCAT('../', u.profile_picture)
+                        ELSE '../Images/profile.PNG'
+                    END as profile_picture
                 FROM task_assignments ta
                 JOIN users u ON ta.user_id = u.id
                 WHERE ta.task_id = :taskId
@@ -451,10 +456,27 @@ class TaskModel {
     }
 
     public function getComments($taskId) {
-        $stmt = $this->conn->prepare("SELECT * FROM task_comments WHERE task_id = :taskId ORDER BY created_at DESC");
-        $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT tc.*, 
+                    u.name as user_name,
+                    CASE 
+                        WHEN u.profile_picture IS NOT NULL AND u.profile_picture != '' 
+                        THEN CONCAT('../', u.profile_picture)
+                        ELSE '../Images/profile.PNG'
+                    END as profile_picture
+                FROM task_comments tc
+                JOIN users u ON tc.user_id = u.id
+                WHERE tc.task_id = :taskId
+                ORDER BY tc.created_at DESC
+            ");
+            $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Error fetching comments: ' . $e->getMessage());
+            return [];
+        }
     }
 
     public function addComment($taskId, $userId, $content) {
@@ -491,7 +513,9 @@ class TaskModel {
     public function getLinks($taskId) {
         try {
             $stmt = $this->conn->prepare("
-                SELECT tl.id, tl.url, tl.created_at, u.name AS created_by
+                SELECT tl.id, tl.url, tl.title, tl.created_at, 
+                    u.name AS created_by,
+                    u.profile_picture as creator_picture
                 FROM task_links tl
                 JOIN users u ON tl.created_by = u.id
                 WHERE tl.task_id = :taskId
@@ -499,7 +523,16 @@ class TaskModel {
             ");
             $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $links = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Ensure profile pictures have correct paths
+            foreach ($links as &$link) {
+                if ($link['creator_picture'] && !str_starts_with($link['creator_picture'], '../')) {
+                    $link['creator_picture'] = '../' . $link['creator_picture'];
+                }
+            }
+            
+            return $links;
         } catch (PDOException $e) {
             error_log('Error fetching links: ' . $e->getMessage());
             return [];

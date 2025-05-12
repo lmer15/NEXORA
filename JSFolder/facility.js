@@ -1514,10 +1514,6 @@ document.addEventListener("DOMContentLoaded", function () {
             showNotification(message, 'success', 'check-circle', 5000);
         }
 
-        function showErrorNotification(message) {
-            showNotification(message, 'error', 'exclamation-circle', 8000);
-        }
-
         function showNotification(message, type, icon, duration) {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
@@ -2532,7 +2528,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let flatpickrInstances = [];
             let activeModals = [];
             let quillEditor = null;
-        
+
             // DOM elements
             const projectViewContainer = document.querySelector('.project-view-container');
             const categoriesContainer = document.querySelector('.categories-container');
@@ -2545,37 +2541,38 @@ document.addEventListener("DOMContentLoaded", function () {
             const projectDescription = document.querySelector('.project-description');
             const editDescriptionBtn = document.querySelector('.edit-description-btn');
             const projectDueDate = document.querySelector('.project-due-date input');
-        
+            const projectStatusSelect = document.querySelector('.project-status-select');
+
             // Current calendar state
             let currentCalendarMonth = new Date().getMonth();
             let currentCalendarYear = new Date().getFullYear();
-        
+
             // Initialize task detail panel
             const taskDetailPanel = setupTaskDetailPanel();
-        
+
             // Initialize the project view
             function initialize() {
                 if (!projectId) {
                     showErrorNotification('Project ID is missing');
                     return;
                 }
-        
+
                 setupEventListeners();
                 loadProjectData();
                 loadCategories();
             }
-        
+
             function setupEventListeners() {
                 backToDashboardBtn?.addEventListener('click', () => {
                     loadPage("../View/dashboard.php");
                 });
-        
+
                 // View toggle buttons
                 viewToggleBtns?.forEach(btn => {
                     btn.addEventListener('click', () => {
                         viewToggleBtns.forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
-        
+
                         if (btn.dataset.view === 'kanban') {
                             kanbanView.classList.add('active-view');
                             calendarView.classList.remove('active-view');
@@ -2586,15 +2583,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     });
                 });
-        
-                // Add category button
-                addCategoryBtn?.addEventListener('click', showCategoryModal);
-        
+
                 // Project title editing
                 projectTitle?.addEventListener('blur', () => {
                     updateProjectField('name', projectTitle.textContent);
                 });
-        
+
                 // Project description editing
                 editDescriptionBtn?.addEventListener('click', () => {
                     const isEditable = projectDescription.getAttribute('contenteditable') === 'true';
@@ -2608,7 +2602,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         editDescriptionBtn.innerHTML = '<i class="fas fa-check"></i> Save';
                     }
                 });
-        
+
+                // Project status change
+                projectStatusSelect?.addEventListener('change', (e) => {
+                    updateProjectField('status', e.target.value);
+                });
+
                 if (projectDueDate) {
                     const fp = flatpickr(projectDueDate, {
                         dateFormat: "Y-m-d",
@@ -2623,7 +2622,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     });
                     flatpickrInstances.push(fp);
-        
+
                     projectDueDate.addEventListener('blur', () => {
                         const dateStr = projectDueDate.value;
                         if (dateStr && fp.parseDate(dateStr, 'Y-m-d')) {
@@ -2634,11 +2633,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             });
                         }
                     });
-        
-                    loadProjectData();
                 }
             }
-        
+
             function setupTaskDetailPanel() {
                 let quill = null;
                 let currentTaskId = null;
@@ -2647,7 +2644,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 let currentUser = null;
                 let panel = null;
                 let datePicker = null;
-        
+
                 async function fetchCurrentUser() {
                     try {
                         const response = await fetch('../Controller/projectController.php?action=getCurrentUser');
@@ -2671,7 +2668,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         showErrorNotification('Failed to fetch user data. Please try again.');
                     }
                 }
-        
+
                 function initializePanel() {
                     panel = document.createElement('div');
                     panel.className = 'task-detail-panel';
@@ -2761,6 +2758,26 @@ document.addEventListener("DOMContentLoaded", function () {
                                     </div>
                                 </div>
                                 
+                                <div class="attachments-section">
+                                    <div class="section-header">
+                                        <i class="fas fa-paperclip"></i>
+                                        <h3>Attachments</h3>
+                                    </div>
+                                    <div class="files-container" id="filesContainer">
+                                        <div class="empty-state">No files attached</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="links-section">
+                                    <div class="section-header">
+                                        <i class="fas fa-link"></i>
+                                        <h3>Links</h3>
+                                    </div>
+                                    <div class="links-container" id="linksContainer">
+                                        <div class="empty-state">No links added</div>
+                                    </div>
+                                </div>
+                                
                                 <div class="comments-section">
                                     <div class="section-header">
                                         <i class="far fa-comments"></i>
@@ -2770,19 +2787,19 @@ document.addEventListener("DOMContentLoaded", function () {
                                     <div class="comment-input-container">
                                         <div class="user-avatar">
                                             <img src="../Images/profile.PNG" 
-                                                 alt="Your profile picture"
-                                                 onerror="this.src='../Images/profile.PNG'">
+                                                alt="Your profile picture"
+                                                onerror="this.src='../Images/profile.PNG'">
                                         </div>
                                         <div class="comment-input-wrapper">
+                                            <textarea id="taskComment" class="comment-input" placeholder="Write a comment..." aria-label="Comment input"></textarea>
                                             <div class="comment-toolbar">
-                                                <button class="toolbar-btn attach-file" aria-label="Attach file">
+                                                <button class="btn-attach-file" aria-label="Attach file">
                                                     <i class="fas fa-paperclip"></i>
                                                 </button>
-                                                <button class="toolbar-btn add-link" aria-label="Add link">
+                                                <button class="btn-add-link" aria-label="Add link">
                                                     <i class="fas fa-link"></i>
                                                 </button>
                                             </div>
-                                            <textarea id="taskComment" class="comment-input" placeholder="Write a comment..." aria-label="Comment input"></textarea>
                                             <button id="addCommentBtn" class="btn-send-comment" aria-label="Send comment">
                                                 <i class="fas fa-paper-plane"></i>
                                             </button>
@@ -2814,28 +2831,39 @@ document.addEventListener("DOMContentLoaded", function () {
                     
                     document.body.appendChild(panel);
                     
-                    // Initialize Quill editor
-                    quill = new Quill('#taskDescriptionEditor', {
-                        theme: 'snow',
-                        modules: {
-                            toolbar: [
-                                ['bold', 'italic', 'underline'],
-                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                ['link'],
-                                ['clean']
-                            ]
-                        },
-                        placeholder: 'Add a detailed description...'
-                    });
+                    try {
+                        quill = new Quill('#taskDescriptionEditor', {
+                            theme: 'snow',
+                            modules: {
+                                toolbar: [
+                                    ['bold', 'italic', 'underline'],
+                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                    ['link'],
+                                    ['clean']
+                                ]
+                            },
+                            placeholder: 'Add a detailed description...'
+                        });
+                    } catch (error) {
+                        console.error('Error initializing Quill editor:', error);
+                        showErrorNotification('Failed to initialize text editor. Please refresh the page.');
+                    }
                     
-                    // Initialize Flatpickr for date picker
-                    datePicker = flatpickr('#taskDueDate', {
-                        dateFormat: 'Y-m-d',
-                        allowInput: true,
-                        onChange: function(selectedDates, dateStr) {
-                            saveTaskChanges();
+                    try {
+                        const dateInput = panel.querySelector('#taskDueDate');
+                        if (dateInput) {
+                            datePicker = flatpickr(dateInput, {
+                                dateFormat: 'Y-m-d',
+                                allowInput: true,
+                                onChange: function(selectedDates, dateStr) {
+                                    saveTaskChanges();
+                                }
+                            });
                         }
-                    });
+                    } catch (error) {
+                        console.error('Error initializing date picker:', error);
+                        showErrorNotification('Failed to initialize date picker. Please refresh the page.');
+                    }
                     
                     // Setup event listeners
                     setupEventListeners();
@@ -2845,10 +2873,29 @@ document.addEventListener("DOMContentLoaded", function () {
                     
                     return {
                         show: showTaskDetails,
-                        close: closePanel
+                        close: closePanel,
+                        cleanup: function() {
+                            if (quill) {
+                                try {
+                                    quill = null;
+                                } catch (e) {
+                                    console.error('Error cleaning up Quill:', e);
+                                }
+                            }
+                            if (datePicker && typeof datePicker.destroy === 'function') {
+                                try {
+                                    datePicker.destroy();
+                                } catch (e) {
+                                    console.error('Error destroying date picker:', e);
+                                }
+                            }
+                            if (panel && panel.parentNode) {
+                                panel.remove();
+                            }
+                        }
                     };
                 }
-        
+
                 function setupEventListeners() {
                     if (!panel) return;
                     
@@ -2908,9 +2955,201 @@ document.addEventListener("DOMContentLoaded", function () {
                             closePanel();
                         }
                     });
+            
+                    // File attachment handler
+                    panel.querySelector('.btn-attach-file').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation(); // This prevents the panel from closing
+                        
+                        const fileInput = document.createElement('input');
+                        fileInput.type = 'file';
+                        fileInput.style.display = 'none';
+                        document.body.appendChild(fileInput);
+                        
+                        fileInput.click();
+                        
+                        fileInput.addEventListener('change', async () => {
+                            if (fileInput.files.length > 0) {
+                                const formData = new FormData();
+                                formData.append('file', fileInput.files[0]);
+                                formData.append('taskId', currentTaskId);
+                                formData.append('userId', currentUser.id);
+                                
+                                try {
+                                    const response = await fetch('../Controller/projectController.php?action=uploadFile', {
+                                        method: 'POST',
+                                        body: formData,
+                                        headers: {
+                                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                                        }
+                                    });
+                                    
+                                    const data = await response.json();
+                                    if (data.success) {
+                                        showSuccessNotification('File uploaded successfully');
+                                        loadTaskFiles();
+                                    } else {
+                                        throw new Error(data.message || 'Failed to upload file');
+                                    }
+                                } catch (error) {
+                                    console.error('Error uploading file:', error);
+                                    showErrorNotification('Failed to upload file. Please try again.');
+                                }
+                            }
+                            
+                            document.body.removeChild(fileInput);
+                        });
+                    });
+                                
+                    // Link addition handler
+                    panel.querySelector('.btn-add-link').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation(); // This should prevent the panel from closing
+                        
+                        const linkModal = document.createElement('div');
+                        linkModal.className = 'link-modal-overlay';
+                        linkModal.innerHTML = `
+                            <div class="modal-container">
+                                <div class="modal-header">
+                                    <h3>Add Link</h3>
+                                    <button class="btn-close-modal" aria-label="Close modal">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label for="linkUrl">URL</label>
+                                        <input type="url" id="linkUrl" placeholder="https://example.com" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn-cancel">Cancel</button>
+                                    <button class="btn-save">Add Link</button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        document.body.appendChild(linkModal);
+                        activeModals.push(linkModal);
+                        
+                        const closeModal = () => {
+                            linkModal.classList.remove('show');
+                            setTimeout(() => {
+                                linkModal.remove();
+                                activeModals = activeModals.filter(m => m !== linkModal);
+                            }, 300);
+                        };
+                        
+                        linkModal.querySelector('.btn-close-modal').addEventListener('click', closeModal);
+                        linkModal.querySelector('.btn-cancel').addEventListener('click', closeModal);
+                        
+                        linkModal.querySelector('.btn-save').addEventListener('click', async () => {
+                            const url = linkModal.querySelector('#linkUrl').value.trim();
+                            
+                            if (!url) {
+                                showErrorNotification('Please enter a URL');
+                                return;
+                            }
+                            
+                            try {
+                                // Validate URL first
+                                if (!isValidUrl(url)) {
+                                    throw new Error('Please enter a valid URL (e.g., https://example.com)');
+                                }
+                                
+                                const response = await fetch('../Controller/projectController.php?action=addLink', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                                    },
+                                    body: JSON.stringify({
+                                        taskId: currentTaskId,
+                                        url: url,
+                                        userId: currentUser.id
+                                    })
+                                });
+                                
+                                const data = await response.json();
+                                if (data.success) {
+                                    showSuccessNotification('Link added successfully');
+                                    closeModal();
+                                    loadTaskLinks();
+                                } else {
+                                    throw new Error(data.message || 'Failed to add link');
+                                }
+                            } catch (error) {
+                                console.error('Error adding link:', error);
+                                showErrorNotification(error.message || 'Failed to add link. Please try again.');
+                            }
+                        });
+                        
+                        setTimeout(() => {
+                            linkModal.classList.add('show');
+                            linkModal.querySelector('#linkUrl').focus();
+                        }, 10);
+                    });
+
+                    // Add URL validation function
+                    function isValidUrl(string) {
+                        try {
+                            new URL(string);
+                            return true;
+                        } catch (_) {
+                            return false;
+                        }
+                    }
+
+                    if (!quill) {
+                        quill = new Quill('#taskDescriptionEditor', {
+                            theme: 'snow',
+                            modules: {
+                                toolbar: [
+                                    ['bold', 'italic', 'underline'],
+                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                    ['link'],
+                                    ['clean']
+                                ]
+                            },
+                            placeholder: 'Add a detailed description...'
+                        });
+                        
+                        quill.on('text-change', debounce(() => {
+                            if (quill.getLength() > 1) {
+                                saveTaskChanges();
+                            }
+                        }, 1000));
+                    }
+
+                    if (!datePicker) {
+                        const dateInput = panel.querySelector('#taskDueDate');
+                        if (dateInput) {
+                            datePicker = flatpickr(dateInput, {
+                                dateFormat: 'Y-m-d',
+                                allowInput: true,
+                                onChange: function(selectedDates, dateStr) {
+                                    saveTaskChanges();
+                                }
+                            });
+                        }
+                    }
+
+                    const outsideClickListener = (event) => {
+                        if (!panel) return;
+                        const panelContent = panel.querySelector('.panel-content');
+                        const isModal = event.target.closest('.modal-overlay');
+                        
+                        if (panel.classList.contains('open') && panelContent && 
+                            !panelContent.contains(event.target) && !isModal) {
+                            closePanel();
+                        }
+                    };
                 }
-        
-                function toggleAssigneeDropdown() {
+
+                function toggleAssigneeDropdown(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
                     const dropdown = panel.querySelector('#assigneeDropdown');
                     if (dropdown.style.display === 'block') {
                         dropdown.style.display = 'none';
@@ -2918,7 +3157,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         loadAssigneeDropdown();
                     }
                 }
-        
+
                 async function loadAssigneeDropdown() {
                     try {
                         const response = await fetch('../Controller/projectController.php?action=getFacilityMembers');
@@ -2935,8 +3174,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                 return `
                                     <div class="dropdown-item" data-user-id="${member.id}" role="option">
                                         <img src="${profilePic}" 
-                                             alt="${member.name}"
-                                             onerror="this.src='../Images/profile.PNG'">
+                                            alt="${member.name}"
+                                            onerror="this.src='../Images/profile.PNG'">
                                         <span>${member.name}</span>
                                     </div>
                                 `;
@@ -2944,13 +3183,18 @@ document.addEventListener("DOMContentLoaded", function () {
                             
                             dropdown.style.display = 'block';
                             
+                            // Position the dropdown below the add button
                             const addBtn = panel.querySelector('.btn-add-assignee');
                             const btnRect = addBtn.getBoundingClientRect();
+                            dropdown.style.position = 'absolute';
                             dropdown.style.top = `${btnRect.bottom + window.scrollY}px`;
                             dropdown.style.left = `${btnRect.left + window.scrollX}px`;
+                            dropdown.style.zIndex = '1000'; // Ensure it's above other elements
                             
+                            // Add click handlers
                             panel.querySelectorAll('.dropdown-item').forEach(item => {
-                                item.addEventListener('click', () => {
+                                item.addEventListener('click', (e) => {
+                                    e.stopPropagation();
                                     const userId = parseInt(item.dataset.userId);
                                     if (!currentAssignees.includes(userId)) {
                                         currentAssignees.push(userId);
@@ -2961,8 +3205,9 @@ document.addEventListener("DOMContentLoaded", function () {
                                 });
                             });
                             
+                            // Close dropdown when clicking outside
                             const clickHandler = (e) => {
-                                if (!dropdown.contains(e.target)) {
+                                if (!dropdown.contains(e.target) && e.target !== addBtn) {
                                     dropdown.style.display = 'none';
                                     document.removeEventListener('click', clickHandler);
                                 }
@@ -2974,7 +3219,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         showErrorNotification('Failed to load assignees. Please try again.');
                     }
                 }
-        
+            
                 async function updateAssigneesList() {
                     if (!currentTaskId) return;
                     
@@ -3002,8 +3247,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                 assigneeItem.className = 'assignee-item';
                                 assigneeItem.innerHTML = `
                                     <img src="${profilePic}" 
-                                         alt="${assignee.name}"
-                                         onerror="this.src='../Images/profile.PNG'">
+                                        alt="${assignee.name}"
+                                        onerror="this.src='../Images/profile.PNG'">
                                     <span class="assignee-name">${assignee.name}</span>
                                     <button class="btn-remove-assignee" data-user-id="${assignee.id}" aria-label="Remove assignee">
                                         <i class="fas fa-times"></i>
@@ -3025,7 +3270,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         showErrorNotification('Failed to load assignees. Please try again.');
                     }
                 }
-        
+            
                 async function saveAssignees() {
                     if (!currentTaskId) return;
                     
@@ -3051,7 +3296,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         showErrorNotification('Failed to save assignees. Please try again.');
                     }
                 }
-        
+            
                 async function saveTaskChanges() {
                     if (!currentTaskId) return;
                     
@@ -3062,8 +3307,8 @@ document.addEventListener("DOMContentLoaded", function () {
                             description: quill.root.innerHTML,
                             status: panel.querySelector('#taskStatus').value,
                             priority: panel.querySelector('.priority-option.active')?.dataset.priority || 
-                                     document.getElementById('taskPriority').value || 'low',
-                            due_date: datePicker.selectedDates[0] ? datePicker.formatDate(datePicker.selectedDates[0], 'Y-m-d') : null
+                                    document.getElementById('taskPriority').value || 'low',
+                            due_date: panel.querySelector('#taskDueDate').value || null
                         };
                         
                         if (!taskData.title || taskData.title.length < 3) {
@@ -3087,12 +3332,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         
                         updateLastUpdated();
                         loadActivityLog();
+                        loadCategories(); // Refresh the task list
                     } catch (error) {
                         console.error('Error saving task:', error);
                         showErrorNotification('Failed to save task. Please try again.');
                     }
                 }
-        
+            
                 async function addComment() {
                     const commentInput = panel.querySelector('#taskComment');
                     const commentContent = commentInput.value.trim();
@@ -3129,7 +3375,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         showErrorNotification('Failed to add comment. Please try again.');
                     }
                 }
-        
+            
                 async function loadComments() {
                     if (!currentTaskId) return;
                     
@@ -3140,7 +3386,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         if (data.success) {
                             const commentList = panel.querySelector('#commentList');
                             commentList.innerHTML = data.comments.map(comment => {
-                                let profilePic = comment.profile_picture || 'Images/profile.PNG';
+                                let profilePic = comment.profile_picture || '../Images/profile.PNG';
                                 if (!profilePic.startsWith('../')) {
                                     profilePic = '../' + profilePic;
                                 }
@@ -3149,12 +3395,12 @@ document.addEventListener("DOMContentLoaded", function () {
                                     <div class="comment-item">
                                         <div class="comment-author">
                                             <img src="${profilePic}" 
-                                                 alt="${comment.user_name}"
-                                                 onerror="this.src='../Images/profile.PNG'">
+                                                alt="${comment.user_name || 'User'}"
+                                                onerror="this.src='../Images/profile.PNG'">
                                         </div>
                                         <div class="comment-content">
                                             <div class="comment-header">
-                                                <span class="comment-author-name">${comment.user_name}</span>
+                                                <span class="comment-author-name">${comment.user_name || 'Unknown User'}</span>
                                                 <span class="comment-time">${formatTimeAgo(comment.created_at)}</span>
                                             </div>
                                             <div class="comment-text">${comment.content}</div>
@@ -3165,9 +3411,82 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     } catch (error) {
                         console.error('Error loading comments:', error);
+                        showErrorNotification('Failed to load comments. Please try again.');
                     }
                 }
-        
+            
+                async function loadTaskFiles() {
+                    if (!currentTaskId) return;
+                    
+                    try {
+                        const response = await fetch(`../Controller/projectController.php?action=getFiles&taskId=${currentTaskId}`);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            const filesContainer = panel.querySelector('#filesContainer');
+                            filesContainer.innerHTML = '';
+                            
+                            if (data.files && data.files.length > 0) {
+                                filesContainer.innerHTML = `
+                                    ${data.files.map(file => `
+                                        <div class="file-item">
+                                            <a href="../uploads/${file.file_path}" target="_blank" download>
+                                                <i class="fas fa-file"></i>
+                                                ${file.original_name}
+                                            </a>
+                                            <span class="file-meta">${formatFileSize(file.file_size)} - ${formatTimeAgo(file.created_at)}</span>
+                                        </div>
+                                    `).join('')}
+                                `;
+                            } else {
+                                filesContainer.innerHTML = '<div class="empty-state">No files attached</div>';
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error loading files:', error);
+                    }
+                }
+            
+                function formatFileSize(bytes) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                }
+            
+                async function loadTaskLinks() {
+                    if (!currentTaskId) return;
+                    
+                    try {
+                        const response = await fetch(`../Controller/projectController.php?action=getLinks&taskId=${currentTaskId}`);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            const linksContainer = panel.querySelector('#linksContainer');
+                            linksContainer.innerHTML = '';
+                            
+                            if (data.links && data.links.length > 0) {
+                                linksContainer.innerHTML = `
+                                    ${data.links.map(link => `
+                                        <div class="link-item">
+                                            <a href="${link.url}" target="_blank" rel="noopener noreferrer">
+                                                <i class="fas fa-external-link-alt"></i>
+                                                ${link.title || link.url}
+                                            </a>
+                                            <span class="link-meta">Added by ${link.created_by} • ${formatTimeAgo(link.created_at)}</span>
+                                        </div>
+                                    `).join('')}
+                                `;
+                            } else {
+                                linksContainer.innerHTML = '<div class="empty-state">No links added</div>';
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error loading links:', error);
+                    }
+                }
+            
                 async function loadActivityLog() {
                     if (!currentTaskId) return;
                     
@@ -3178,7 +3497,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         if (data.success) {
                             const activityList = panel.querySelector('#activityList');
                             activityList.innerHTML = data.activity.map(activity => {
-                                let profilePic = activity.profile_picture || 'Images/profile.PNG';
+                                let profilePic = activity.profile_picture || '../Images/profile.PNG';
                                 if (profilePic && !profilePic.startsWith('../')) {
                                     profilePic = '../' + profilePic;
                                 }
@@ -3203,12 +3522,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         console.error('Error loading activity:', error);
                     }
                 }
-        
+            
                 function formatActivityText(activity) {
                     switch (activity.action) {
                         case 'status_updated':
-                            const details = JSON.parse(activity.details || '{}');
-                            return `changed status from <strong>${details.old_status}</strong> to <strong>${details.new_status}</strong>`;
+                            const statusDetails = JSON.parse(activity.details || '{}');
+                            return `changed status from <strong>${statusDetails.old_status}</strong> to <strong>${statusDetails.new_status}</strong>`;
                         case 'priority_updated':
                             const priorityDetails = JSON.parse(activity.details || '{}');
                             return `changed priority from <strong>${priorityDetails.old_priority}</strong> to <strong>${priorityDetails.new_priority}</strong>`;
@@ -3218,11 +3537,15 @@ document.addEventListener("DOMContentLoaded", function () {
                             return 'added an assignee';
                         case 'assignee_removed':
                             return 'removed an assignee';
+                        case 'file_uploaded':
+                            return 'uploaded a file';
+                        case 'link_added':
+                            return 'added a link';
                         default:
                             return activity.action.replace(/_/g, ' ');
                     }
                 }
-        
+            
                 function getActivityIcon(action) {
                     const icons = {
                         'status_updated': 'exchange-alt',
@@ -3230,12 +3553,14 @@ document.addEventListener("DOMContentLoaded", function () {
                         'comment_added': 'comment',
                         'assignee_added': 'user-plus',
                         'assignee_removed': 'user-minus',
+                        'file_uploaded': 'paperclip',
+                        'link_added': 'link',
                         'task_created': 'plus',
                         'task_updated': 'edit'
                     };
                     return icons[action] || 'history';
                 }
-        
+            
                 function formatTimeAgo(timestamp) {
                     const now = new Date();
                     const date = new Date(timestamp);
@@ -3247,11 +3572,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
                     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 }
-        
+            
                 function updateLastUpdated() {
                     panel.querySelector('#lastUpdated').textContent = 'Just now';
                 }
-        
+            
                 async function deleteTask() {
                     if (!currentTaskId) return;
                     
@@ -3289,14 +3614,59 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     }
                 }
-        
+            
                 async function showTaskDetails(task) {
+                    console.log('showTaskDetails called with task:', task);
                     if (!task || !task.id) {
                         showErrorNotification('Invalid task data');
                         return;
                     }
                     
                     currentTaskId = task.id;
+
+                    // Initialize Quill if not already done or reinitialize if destroyed
+                    if (!quill || !quill.root) {
+                        try {
+                            quill = new Quill('#taskDescriptionEditor', {
+                                theme: 'snow',
+                                modules: {
+                                    toolbar: [
+                                        ['bold', 'italic', 'underline'],
+                                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                        ['link'],
+                                        ['clean']
+                                    ]
+                                },
+                                placeholder: 'Add a detailed description...'
+                            });
+                            
+                            quill.on('text-change', debounce(() => {
+                                if (quill.getLength() > 1) {
+                                    saveTaskChanges();
+                                }
+                            }, 1000));
+                        } catch (error) {
+                            console.error('Error initializing Quill:', error);
+                        }
+                    }
+                    
+                    // Initialize datepicker if not already done or reinitialize if destroyed
+                    if (!datePicker || !datePicker.input) {
+                        try {
+                            const dateInput = panel.querySelector('#taskDueDate');
+                            if (dateInput) {
+                                datePicker = flatpickr(dateInput, {
+                                    dateFormat: 'Y-m-d',
+                                    allowInput: true,
+                                    onChange: function(selectedDates, dateStr) {
+                                        saveTaskChanges();
+                                    }
+                                });
+                            }
+                        } catch (error) {
+                            console.error('Error initializing date picker:', error);
+                        }
+                    }
                     
                     panel.querySelector('#taskTitle').value = task.title || '';
                     panel.querySelector('#taskStatus').value = task.status || 'todo';
@@ -3307,10 +3677,22 @@ document.addEventListener("DOMContentLoaded", function () {
                         panel.querySelector('#descriptionDisplay').innerHTML = task.description;
                         panel.querySelector('#descriptionDisplay').style.display = 'block';
                         panel.querySelector('#taskDescriptionEditor').style.display = 'none';
+
+                        // Add click event to descriptionDisplay to enable editing
+                        panel.querySelector('#descriptionDisplay').style.cursor = 'pointer';
+                        panel.querySelector('#descriptionDisplay').onclick = () => {
+                            panel.querySelector('#descriptionDisplay').style.display = 'none';
+                            panel.querySelector('#taskDescriptionEditor').style.display = 'block';
+                            quill.focus();
+                        };
                     } else {
                         quill.root.innerHTML = '';
                         panel.querySelector('#descriptionDisplay').style.display = 'none';
                         panel.querySelector('#taskDescriptionEditor').style.display = 'block';
+
+                        // Remove click event if no description
+                        panel.querySelector('#descriptionDisplay').style.cursor = 'default';
+                        panel.querySelector('#descriptionDisplay').onclick = null;
                     }
                     
                     panel.querySelectorAll('.priority-option').forEach(btn => {
@@ -3321,13 +3703,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     });
                     
-                    // Fix for datePicker.clear() issue
+                    // Set due date
                     if (datePicker) {
                         try {
                             if (task.due_date) {
                                 datePicker.setDate(task.due_date);
                             } else {
-                                // Clear the date picker safely
                                 if (datePicker.input) {
                                     datePicker.input.value = '';
                                 }
@@ -3358,27 +3739,60 @@ document.addEventListener("DOMContentLoaded", function () {
                     await updateAssigneesList();
                     loadComments();
                     loadActivityLog();
+                    loadTaskFiles();
+                    loadTaskLinks();
                     
                     panel.classList.add('open');
+                    console.log('Panel "open" class added');
                     document.body.style.overflow = 'hidden';
-                    
+
+                    // Add click listener to close panel if clicking outside panel-content
+                    const outsideClickListener = (event) => {
+                        if (!panel) return;
+                        const panelContent = panel.querySelector('.panel-content');
+                        if (panel.classList.contains('open') && panelContent && !panelContent.contains(event.target)) {
+                            closePanel();
+                        }
+                    };
+                    document.addEventListener('click', outsideClickListener);
+
+                    // Store the listener so it can be removed on close
+                    panel._outsideClickListener = outsideClickListener;
+
                     if (!task.title) {
                         setTimeout(() => {
                             panel.querySelector('#taskTitle').focus();
                         }, 100);
                     }
                 }
-        
+
                 function closePanel() {
+                    console.log('closePanel called');
                     if (!panel) return;
+
+                    // Remove the outside click listener when closing panel
+                    if (panel._outsideClickListener) {
+                        document.removeEventListener('click', panel._outsideClickListener);
+                        panel._outsideClickListener = null;
+                    }
+                    
+                    if (datePicker && typeof datePicker.destroy === 'function') {
+                        try {
+                            datePicker.destroy();
+                        } catch (error) {
+                            console.error('Error destroying date picker:', error);
+                        }
+                        datePicker = null;
+                    }
                     
                     panel.classList.remove('open');
+                    console.log('Panel "open" class removed');
                     document.body.style.overflow = '';
                     
                     currentTaskId = null;
                     currentAssignees = [];
                 }
-        
+            
                 function debounce(func, wait) {
                     let timeout;
                     return function() {
@@ -3389,10 +3803,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         }, wait);
                     };
                 }
-        
+            
                 return initializePanel();
             }
-        
+
             function loadProjectData() {
                 fetch(`../Controller/projectController.php?action=getProjectDetails&projectId=${projectId}`)
                     .then(response => response.json())
@@ -3412,31 +3826,31 @@ document.addEventListener("DOMContentLoaded", function () {
                         showErrorNotification(error.message);
                     });
             }
-        
+
             function updateProjectNavName(projectId, newName) {
                 const projectNavItem = document.querySelector(`.nav-item[data-view="project-${projectId}"] .nav-item-text`);
                 if (projectNavItem) {
                     projectNavItem.textContent = newName;
                 }
             }
-        
+
             function updateProjectUI(project) {
                 if (projectTitle) projectTitle.textContent = project.name;
                 if (projectDescription) projectDescription.textContent = project.description;
-        
+
                 const statusBadge = document.querySelector('.project-status-badge');
                 if (statusBadge) {
                     statusBadge.className = `project-status-badge ${project.status}`;
                     statusBadge.textContent = project.status.charAt(0).toUpperCase() + project.status.slice(1);
                 }
-        
+
                 const priorityBadge = document.querySelector('.project-priority');
                 if (priorityBadge) {
                     priorityBadge.className = `project-priority ${project.priority}`;
                     priorityBadge.textContent = project.priority.charAt(0).toUpperCase() + project.priority.slice(1);
                 }
             }
-        
+
             function loadCategories() {
                 fetch(`../Controller/projectController.php?action=getCategories&projectId=${projectId}`)
                     .then(response => response.json())
@@ -3465,18 +3879,24 @@ document.addEventListener("DOMContentLoaded", function () {
                         showErrorNotification(error.message);
                     });
             }
-        
+
             function renderCategories(categories) {
                 if (!categoriesContainer) return;
-        
+
+                // Clear existing categories but preserve the add button
+                const existingAddBtn = categoriesContainer.querySelector('.add-category-btn');
                 document.querySelectorAll('.category-column').forEach(el => el.remove());
-        
+                
+                if (existingAddBtn) {
+                    existingAddBtn.remove();
+                }
+
                 categories.forEach(category => {
                     const categoryColumn = document.createElement('div');
                     categoryColumn.className = 'category-column';
                     categoryColumn.dataset.categoryId = category.id;
                     categoryColumn.innerHTML = `
-                        <div class="category-header" style="border-color: ${category.color}">
+                        <div class="category-header" style="border-color: ${category.color || '#6c757d'}">
                             <h3 contenteditable="true" class="editable-category-name">${escapeHtml(category.name)}</h3>
                             <div class="category-actions">
                                 <button class="btn-icon add-task-btn" title="Add Task">
@@ -3494,30 +3914,30 @@ document.addEventListener("DOMContentLoaded", function () {
                             </div>
                         </div>
                     `;
-        
+
                     categoriesContainer.appendChild(categoryColumn);
-        
+
                     const categoryNameEl = categoryColumn.querySelector('.editable-category-name');
                     let isEditing = false;
                     let originalName = category.name;
-        
+
                     categoryNameEl.addEventListener('focus', () => {
                         isEditing = true;
                         originalName = categoryNameEl.textContent;
                         categoryNameEl.classList.add('editing');
                     });
-        
+
                     categoryNameEl.addEventListener('blur', async () => {
                         if (!isEditing) return;
                         isEditing = false;
                         categoryNameEl.classList.remove('editing');
-        
+
                         const newName = categoryNameEl.textContent.trim();
                         if (!newName) {
                             categoryNameEl.textContent = originalName;
                             return;
                         }
-        
+
                         if (newName !== originalName) {
                             try {
                                 const response = await fetch('../Controller/projectController.php?action=updateCategory', {
@@ -3531,7 +3951,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                         name: newName
                                     })
                                 });
-        
+
                                 const data = await response.json();
                                 if (data.success) {
                                     category.name = newName;
@@ -3546,14 +3966,14 @@ document.addEventListener("DOMContentLoaded", function () {
                             }
                         }
                     });
-        
+
                     categoryNameEl.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter') {
                             e.preventDefault();
                             categoryNameEl.blur();
                         }
                     });
-        
+
                     const addTaskBtn = categoryColumn.querySelector('.add-task-btn');
                     addTaskBtn.addEventListener('click', () => {
                         const taskList = categoryColumn.querySelector('.category-task-list');
@@ -3568,20 +3988,20 @@ document.addEventListener("DOMContentLoaded", function () {
                                 </button>
                             </div>
                         `;
-        
+
                         taskList.appendChild(addTaskForm);
                         updateEmptyState(taskList);
-        
+
                         const input = addTaskForm.querySelector('.add-task-input');
                         const saveBtn = addTaskForm.querySelector('.add-task-btn');
                         const cancelBtn = addTaskForm.querySelector('.cancel-add-task');
-        
+
                         setTimeout(() => input.focus(), 10);
-        
+
                         saveBtn.addEventListener('click', async () => {
                             const title = input.value.trim();
                             if (!title) return;
-        
+
                             try {
                                 const response = await fetch('../Controller/projectController.php?action=createTask', {
                                     method: 'POST',
@@ -3596,7 +4016,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                         status: 'todo'
                                     })
                                 });
-        
+
                                 const data = await response.json();
                                 if (data.success) {
                                     loadTasksForCategory(category.id);
@@ -3610,43 +4030,52 @@ document.addEventListener("DOMContentLoaded", function () {
                                 showErrorNotification(error.message);
                             }
                         });
-        
+
                         cancelBtn.addEventListener('click', () => {
                             addTaskForm.remove();
                             updateEmptyState(taskList);
                         });
-        
+
                         input.addEventListener('keydown', (e) => {
                             if (e.key === 'Enter') {
                                 saveBtn.click();
                             }
                         });
                     });
-        
+
                     categoryColumn.querySelector('.delete-category-btn').addEventListener('click', () => {
                         deleteCategory(category.id);
                     });
-        
+
                     const taskList = categoryColumn.querySelector('.category-task-list');
                     updateEmptyState(taskList);
                     
                     if (category.task_count > 0) {
                         loadTasksForCategory(category.id);
                     }
-        
+
                     initializeSortable(categoryColumn.querySelector('.category-task-list'));
                 });
-        
-                if (!document.querySelector('.add-category-btn')) {
-                    const addBtn = document.createElement('button');
-                    addBtn.className = 'add-category-btn';
-                    addBtn.innerHTML = '<i class="fas fa-plus"></i>';
-                    addBtn.title = 'Add Category';
-                    addBtn.addEventListener('click', showCategoryModal);
-                    categoriesContainer.appendChild(addBtn);
-                }
+
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-category-btn';
+                addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+                addBtn.title = 'Add Category';
+
+                addBtn.addEventListener('mouseover', () => {
+                    addBtn.style.transform = 'translateY(-2px)';
+                    addBtn.style.boxShadow = 'var(--shadow-hover)';
+                });
+
+                addBtn.addEventListener('mouseout', () => {
+                    addBtn.style.transform = '';
+                    addBtn.style.boxShadow = 'var(--shadow)';
+                });
+
+                addBtn.addEventListener('click', showCategoryModal);
+                categoriesContainer.appendChild(addBtn);
             }
-        
+
             async function loadTasksForCategory(categoryId) {
                 try {
                     const response = await fetch(`../Controller/projectController.php?action=getTasks&categoryId=${categoryId}&projectId=${projectId}`);
@@ -3676,13 +4105,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     showErrorNotification(error.message);
                 }
             }
-        
+
             function renderTasks(tasks, categoryId) {
                 const taskList = document.querySelector(`.category-column[data-category-id="${categoryId}"] .category-task-list`);
                 if (!taskList) return;
-        
+
                 taskList.innerHTML = '';
-        
+
                 if (tasks.length === 0) {
                     taskList.innerHTML = `
                         <div class="empty-state">
@@ -3692,26 +4121,58 @@ document.addEventListener("DOMContentLoaded", function () {
                     `;
                     return;
                 }
-        
+
                 tasks.forEach(task => {
+                    const dueDate = task.due_date ? new Date(task.due_date) : null;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    let daysLeft = '';
+                    if (dueDate) {
+                        const diffTime = dueDate - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays === 0) {
+                            daysLeft = 'Today';
+                        } else if (diffDays < 0) {
+                            daysLeft = `${Math.abs(diffDays)}d overdue`;
+                        } else {
+                            daysLeft = `${diffDays}d left`;
+                        }
+                    }
+
                     const taskCard = document.createElement('div');
-                    taskCard.className = `task-card ${task.priority}`;
+                    taskCard.className = `task-card ${task.priority || 'low'} ${task.status || 'todo'}`;
                     taskCard.dataset.taskId = task.id;
                     taskCard.draggable = true;
                     taskCard.innerHTML = `
                         <div class="task-content">
                             <h4>${escapeHtml(task.title)}</h4>
-                            ${task.description ? `<p>${escapeHtml(truncateText(task.description, 50))}</p>` : ''}
-                            ${task.due_date ? `
-                                <div class="task-due-date">
-                                    <i class="far fa-calendar-alt"></i>
-                                    ${new Date(task.due_date).toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric'
-                                    })}
+                            <div class="task-meta">
+                                <div class="task-assignees">
+                                    ${task.assignees && task.assignees.length > 0 ? `
+                                        ${task.assignees.slice(0, 3).map(assignee => `
+                                            <img src="${assignee.profile_picture || '../Images/profile.PNG'}" 
+                                                alt="${assignee.name}"
+                                                title="${assignee.name}"
+                                                onerror="this.src='../Images/profile.PNG'">
+                                        `).join('')}
+                                        ${task.assignees.length > 3 ? `
+                                            <div class="more-assignees">+${task.assignees.length - 3}</div>
+                                        ` : ''}
+                                    ` : '<span class="no-assignees">No assignees</span>'}
                                 </div>
-                            ` : ''}
+                                <div class="task-footer">
+                                    ${dueDate ? `
+                                        <div class="task-due-date ${dueDate < today ? 'overdue' : ''}">
+                                            <i class="far fa-calendar-alt"></i> ${daysLeft}
+                                        </div>
+                                    ` : ''}
+                                    <div class="task-status-badge ${task.status || 'todo'}">
+                                        ${(task.status || 'todo').charAt(0).toUpperCase() + (task.status || 'todo').slice(1)}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="task-actions">
                             <button class="btn-icon edit-task-btn" title="Edit Task">
@@ -3722,41 +4183,41 @@ document.addEventListener("DOMContentLoaded", function () {
                             </button>
                         </div>
                     `;
-        
+
                     taskCard.addEventListener('dragstart', () => {
                         taskCard.classList.add('dragging');
                     });
-        
+
                     taskCard.addEventListener('dragend', () => {
                         taskCard.classList.remove('dragging');
                         updateEmptyState(taskList);
                     });
-        
+
                     taskList.appendChild(taskCard);
-        
+
                     taskCard.addEventListener('click', (e) => {
                         if (!e.target.closest('.task-actions')) {
                             taskDetailPanel.show(task);
                         }
                     });
-        
+
                     taskCard.querySelector('.edit-task-btn').addEventListener('click', (e) => {
                         e.stopPropagation();
                         taskDetailPanel.show(task);
                     });
-        
+
                     taskCard.querySelector('.delete-task-btn').addEventListener('click', (e) => {
                         e.stopPropagation();
                         deleteTask(task.id, categoryId);
                     });
                 });
-        
+
                 const emptyState = taskList.querySelector('.empty-state');
                 if (emptyState) {
                     emptyState.remove();
                 }
             }
-        
+
             function initializeSortable(list) {
                 const categoryId = list.closest('.category-column').dataset.categoryId;
                 const emptyState = list.querySelector('.empty-state');
@@ -3765,42 +4226,42 @@ document.addEventListener("DOMContentLoaded", function () {
                     e.preventDefault();
                     const draggingTask = document.querySelector('.task-card.dragging');
                     if (!draggingTask) return;
-        
+
                     const afterElement = getDragAfterElement(list, e.clientY);
                     const placeholder = list.querySelector('.drop-placeholder') || document.createElement('div');
                     placeholder.className = 'drop-placeholder';
-        
+
                     if (afterElement) {
                         list.insertBefore(placeholder, afterElement);
                     } else {
                         list.appendChild(placeholder);
                     }
-        
+
                     if (emptyState) {
                         emptyState.style.display = 'none';
                     }
                 });
-        
+
                 list.addEventListener('dragleave', (e) => {
                     if (!list.contains(e.relatedTarget)) {
                         const placeholder = list.querySelector('.drop-placeholder');
                         if (placeholder) placeholder.remove();
                     }
                 });
-        
+
                 list.addEventListener('drop', async (e) => {
                     e.preventDefault();
                     const placeholder = list.querySelector('.drop-placeholder');
                     const draggingTask = document.querySelector('.task-card.dragging');
                     if (!draggingTask) return;
-        
+
                     const taskId = draggingTask.dataset.taskId;
                     const sourceTaskList = draggingTask.closest('.category-task-list');
                     const sourceCategoryId = sourceTaskList.closest('.category-column').dataset.categoryId;
-        
+
                     const tasks = Array.from(list.querySelectorAll('.task-card:not(.dragging)'));
                     let newPosition = tasks.length;
-        
+
                     if (placeholder) {
                         const placeholderIndex = Array.from(list.children).indexOf(placeholder);
                         if (placeholderIndex > -1) {
@@ -3808,7 +4269,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                         placeholder.remove();
                     }
-        
+
                     try {
                         const response = await fetch('../Controller/projectController.php?action=updateTaskPosition', {
                             method: 'POST',
@@ -3822,7 +4283,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 position: newPosition 
                             })
                         });
-        
+
                         const data = await response.json();
                         
                         if (data.success) {
@@ -3847,12 +4308,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 });
             }
-        
+
             function updateEmptyState(taskList) {
                 const tasks = taskList.querySelectorAll('.task-card');
                 const emptyState = taskList.querySelector('.empty-state');
                 const addTaskForm = taskList.querySelector('.add-task-form');
-        
+
                 if (tasks.length === 0 && !addTaskForm) {
                     if (!emptyState) {
                         const emptyDiv = document.createElement('div');
@@ -3871,14 +4332,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
             }
-        
+
             function getDragAfterElement(container, y) {
                 const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
-        
+
                 return draggableElements.reduce((closest, child) => {
                     const box = child.getBoundingClientRect();
                     const offset = y - box.top - box.height / 2;
-        
+
                     if (offset < 0 && offset > closest.offset) {
                         return { offset: offset, element: child };
                     } else {
@@ -3886,94 +4347,100 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }, { offset: Number.NEGATIVE_INFINITY }).element;
             }
-        
+
             function showCategoryModal() {
-                const modal = document.createElement('div');
-                modal.className = 'modal-overlay';
-                modal.innerHTML = `
-                    <div class="modal-container small">
-                        <div class="modal-header">
-                            <h3>Add New Category</h3>
-                            <button class="btn-close-modal" aria-label="Close modal">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label for="categoryName">Category Name</label>
-                                <input type="text" id="categoryName" placeholder="Enter category name" maxlength="50">
+                    const modal = document.createElement('div');
+                    modal.className = 'modal-overlay category-modal-overlay';
+                    modal.innerHTML = `
+                        <div class="modal-container small">
+                            <div class="modal-header category-modal-header">
+                                <i class="fas fa-folder-plus"></i>
+                                <h3>Add New Category</h3>
+                                <button class="btn-close-modal" aria-label="Close modal">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="categoryName">Category Name</label>
+                                    <input type="text" id="categoryName" placeholder="Enter category name" maxlength="50">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn-cancel">Cancel</button>
+                                <button class="btn-save">Add Category</button>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button class="btn-cancel">Cancel</button>
-                            <button class="btn-save">Add Category</button>
-                        </div>
-                    </div>
-                `;
-        
-                document.body.appendChild(modal);
-                activeModals.push(modal);
-        
-                const closeModal = () => {
-                    modal.classList.remove('show');
-                    setTimeout(() => {
-                        modal.remove();
-                        activeModals = activeModals.filter(m => m !== modal);
-                    }, 300);
-                };
-        
-                modal.querySelector('.btn-close-modal').addEventListener('click', closeModal);
-                modal.querySelector('.btn-cancel').addEventListener('click', closeModal);
-        
-                modal.querySelector('.btn-save').addEventListener('click', async () => {
-                    const categoryName = modal.querySelector('#categoryName').value.trim();
-        
-                    if (!categoryName) {
-                        showErrorNotification('Category name is required');
-                        return;
-                    }
-        
-                    try {
-                        const response = await fetch('../Controller/projectController.php?action=createCategory', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({
-                                projectId: projectId,
-                                name: categoryName,
-                            })
+                    `;
+
+                    document.body.appendChild(modal);
+                    activeModals.push(modal);
+
+                    const closeModal = () => {
+                        modal.classList.remove('show');
+                        setTimeout(() => {
+                            modal.remove();
+                            activeModals = activeModals.filter(m => m !== modal);
+                        }, 300);
+                    };
+
+                    // Add event listeners after the modal is in the DOM
+                    const closeBtn = modal.querySelector('.btn-close-modal');
+                    const cancelBtn = modal.querySelector('.btn-cancel');
+                    const saveBtn = modal.querySelector('.btn-save');
+                    
+                    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+                    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+                    
+                    if (saveBtn) {
+                        saveBtn.addEventListener('click', async () => {
+                            const categoryName = modal.querySelector('#categoryName').value.trim();
+                            
+                            if (!categoryName) {
+                                showErrorNotification('Category name is required');
+                                return;
+                            }
+
+                            try {
+                                const response = await fetch('../Controller/projectController.php?action=addCategory', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                                    },
+                                    body: JSON.stringify({
+                                        projectId: projectId,
+                                        name: categoryName
+                                    })
+                                });
+
+                                const data = await response.json();
+                                if (data.success) {
+                                    showSuccessNotification('Category created successfully');
+                                    closeModal();
+                                    loadCategories();
+                                } else {
+                                    throw new Error(data.message || 'Failed to create category');
+                                }
+                            } catch (error) {
+                                console.error('Error creating category:', error);
+                                showErrorNotification(error.message);
+                            }
                         });
-        
-                        const data = await response.json();
-                        if (data.success) {
-                            showSuccessNotification('Category created successfully');
-                            closeModal();
-                            loadCategories();
-                        } else {
-                            throw new Error(data.message || 'Failed to create category');
+                    }
+
+                    modal.querySelector('#categoryName').addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            saveBtn.click();
                         }
-                    } catch (error) {
-                        console.error('Error creating category:', error);
-                        showErrorNotification(error.message);
-                    }
-                });
-        
-                modal.querySelector('#categoryName').addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        modal.querySelector('.btn-save').click();
-                    }
-                });
-        
-                setTimeout(() => {
-                    modal.classList.add('show');
-                    modal.querySelector('#categoryName').focus();
-                }, 10);
-        
-                modal.querySelector('.modal-overlay').addEventListener('click', closeModal);
+                    });
+
+                    setTimeout(() => {
+                        modal.classList.add('show');
+                        modal.querySelector('#categoryName').focus();
+                    }, 10);
             }
-        
+
             async function deleteCategory(categoryId) {
                 const confirmed = await showConfirmModal(
                     'Delete Category',
@@ -3981,9 +4448,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     'Delete',
                     'Cancel'
                 );
-        
+
                 if (!confirmed) return;
-        
+
                 try {
                     const response = await fetch('../Controller/projectController.php?action=deleteCategory', {
                         method: 'POST',
@@ -3993,7 +4460,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                         body: JSON.stringify({ categoryId })
                     });
-        
+
                     const data = await response.json();
                     if (data.success) {
                         showSuccessNotification('Category deleted successfully');
@@ -4009,7 +4476,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     showErrorNotification(error.message);
                 }
             }
-        
+
             async function deleteTask(taskId, categoryId) {
                 const confirmed = await showConfirmModal(
                     'Delete Task',
@@ -4017,9 +4484,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     'Delete',
                     'Cancel'
                 );
-        
+
                 if (!confirmed) return;
-        
+
                 try {
                     const response = await fetch('../Controller/projectController.php?action=deleteTask', {
                         method: 'POST',
@@ -4029,7 +4496,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                         body: JSON.stringify({ taskId })
                     });
-        
+
                     const data = await response.json();
                     if (data.success) {
                         showSuccessNotification('Task deleted successfully');
@@ -4042,7 +4509,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     showErrorNotification(error.message);
                 }
             }
-        
+
             function updateDueDateUI(dateStr) {
                 if (projectDueDate) {
                     projectDueDate.value = dateStr;
@@ -4056,7 +4523,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 }
             }
-        
+
             async function updateProjectField(field, value) {
                 try {
                     const response = await fetch('../Controller/projectController.php?action=updateProject', {
@@ -4071,7 +4538,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             value: value
                         })
                     });
-        
+
                     const data = await response.json();
                     if (data.success) {
                         if (field === 'name') {
@@ -4088,16 +4555,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     return false;
                 }
             }
-        
+
             function updateCalendarView() {
                 if (!calendarView) return;
-        
+
                 calendarView.innerHTML = `
                     <div class="loading-container">
                         <i class="fas fa-spinner fa-spin"></i> Loading calendar...
                     </div>
                 `;
-        
+
                 fetch(`../Controller/projectController.php?action=getTasks&projectId=${projectId}`)
                     .then(response => response.json())
                     .then(data => {
@@ -4118,7 +4585,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         `;
                     });
             }
-        
+
             function setupCalendarNavigation() {
                 document.querySelector('.prev-month')?.addEventListener('click', () => {
                     currentCalendarMonth--;
@@ -4128,7 +4595,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     updateCalendarView();
                 });
-        
+
                 document.querySelector('.next-month')?.addEventListener('click', () => {
                     currentCalendarMonth++;
                     if (currentCalendarMonth > 11) {
@@ -4138,14 +4605,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     updateCalendarView();
                 });
             }
-        
+
             function renderCalendarView(tasks) {
                 const monthNames = ["January", "February", "March", "April", "May", "June",
                     "July", "August", "September", "October", "November", "December"];
-        
+
                 const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
                 const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
-        
+
                 calendarView.innerHTML = `
                     <div class="calendar-header">
                         <button class="calendar-nav-btn prev-month"><i class="fas fa-chevron-left"></i></button>
@@ -4175,33 +4642,33 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                     </div>
                 `;
-        
+
                 const dayElements = calendarView.querySelectorAll('.calendar-day');
                 let dayCount = 1;
                 const now = new Date();
-        
+
                 dayElements.forEach((dayEl, index) => {
                     dayEl.innerHTML = '';
                     dayEl.classList.remove('current-month', 'today');
-        
+
                     if (index >= firstDay && dayCount <= daysInMonth) {
                         dayEl.classList.add('current-month');
                         dayEl.innerHTML = `<div class="day-number">${dayCount}</div>`;
-        
+
                         if (dayCount === now.getDate() && currentCalendarMonth === now.getMonth() && currentCalendarYear === now.getFullYear()) {
                             dayEl.classList.add('today');
                         }
-        
+
                         const currentDate = new Date(currentCalendarYear, currentCalendarMonth, dayCount).toISOString().split('T')[0];
                         const dayTasks = tasks.filter(task => task.due_date === currentDate);
-        
+
                         if (dayTasks.length > 0) {
                             const tasksContainer = document.createElement('div');
                             tasksContainer.className = 'day-tasks';
-        
+
                             dayTasks.forEach(task => {
                                 const taskEl = document.createElement('div');
-                                taskEl.className = `calendar-task ${task.priority}`;
+                                taskEl.className = `calendar-task ${task.priority || 'low'}`;
                                 taskEl.textContent = task.title;
                                 taskEl.title = task.description || task.title;
                                 taskEl.addEventListener('click', () => {
@@ -4209,52 +4676,73 @@ document.addEventListener("DOMContentLoaded", function () {
                                 });
                                 tasksContainer.appendChild(taskEl);
                             });
-        
+
                             dayEl.appendChild(tasksContainer);
                         }
-        
+
                         dayCount++;
                     }
                 });
             }
-        
+
             function closeModal(modal) {
                 if (!modal) return;
-        
+
                 modal.classList.remove('show');
                 setTimeout(() => {
                     modal.remove();
                 }, 300);
             }
-        
+
             function cleanup() {
+                // Clean up sortable instances
                 sortableInstances.forEach(sortable => {
-                    if (sortable && sortable.destroy) {
-                        sortable.destroy();
+                    try {
+                        if (sortable && typeof sortable.destroy === 'function') {
+                            sortable.destroy();
+                        }
+                    } catch (e) {
+                        console.error('Error destroying sortable:', e);
                     }
                 });
-        
+
+                // Clean up flatpickr instances
                 flatpickrInstances.forEach(fp => {
-                    if (fp && fp.destroy) {
-                        fp.destroy();
+                    try {
+                        if (fp && typeof fp.destroy === 'function') {
+                            fp.destroy();
+                        }
+                    } catch (e) {
+                        console.error('Error destroying flatpickr:', e);
                     }
                 });
-        
+
+                // Clean up modals
                 activeModals.forEach(modal => {
-                    if (modal && modal.parentNode) {
-                        modal.remove();
+                    try {
+                        if (modal && modal.parentNode) {
+                            modal.remove();
+                        }
+                    } catch (e) {
+                        console.error('Error removing modal:', e);
                     }
                 });
-        
-                if (quillEditor) {
-                    quillEditor = null;
+
+                // Clean up Quill editor
+                if (quillEditor && typeof quillEditor.cleanup === 'function') {
+                    try {
+                        quillEditor.cleanup();
+                    } catch (e) {
+                        console.error('Error cleaning up Quill editor:', e);
+                    }
                 }
-        
+
+                // Reset arrays
                 sortableInstances = [];
                 flatpickrInstances = [];
                 activeModals = [];
             }
-        
+
             function showSuccessNotification(message, duration = 3000) {
                 const notification = document.createElement('div');
                 notification.className = 'notification success';
@@ -4275,7 +4763,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }, 300);
                 }, duration);
             }
-        
+
             function showErrorNotification(message, duration = 5000) {
                 const notification = document.createElement('div');
                 notification.className = 'notification error';
@@ -4296,7 +4784,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }, 300);
                 }, duration);
             }
-        
+
             function showConfirmModal(title, message, confirmText = 'Confirm', cancelText = 'Cancel') {
                 return new Promise((resolve) => {
                     const modal = document.createElement('div');
@@ -4331,7 +4819,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     modal.querySelector('.modal-overlay').addEventListener('click', cancelHandler);
                 });
             }
-        
+
             function escapeHtml(unsafe) {
                 return unsafe
                     .replace(/&/g, "&amp;")
@@ -4340,16 +4828,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     .replace(/"/g, "&quot;")
                     .replace(/'/g, "&#039;");
             }
-        
+
             function truncateText(text, maxLength) {
                 if (text.length > maxLength) {
                     return text.substring(0, maxLength - 3) + '...';
                 }
                 return text;
             }
-        
+
             initialize();
-        
+
             return {
                 cleanup: cleanup
             };

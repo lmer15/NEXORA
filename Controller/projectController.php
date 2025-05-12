@@ -3,6 +3,31 @@ require_once '../config/db.php';
 require_once '../Model/ProjectModel.php';
 require_once '../Model/TaskModel.php';
 
+// Set error handlers
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    error_log("PHP Error [$errno]: $errstr in $errfile on line $errline");
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'An unexpected error occurred',
+        'error' => $errstr,
+        'code' => $errno
+    ]);
+    exit;
+});
+
+set_exception_handler(function($exception) {
+    error_log("PHP Exception: " . $exception->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'An unexpected error occurred',
+        'error' => $exception->getMessage(),
+        'code' => $exception->getCode()
+    ]);
+    exit;
+});
+
 session_start();
 header('Content-Type: application/json');
 
@@ -120,27 +145,27 @@ try {
         case 'addCategory':
             $json = file_get_contents('php://input');
             $data = json_decode($json, true);
-        
+            
             if (!isset($data['projectId']) || !isset($data['name'])) {
                 throw new Exception('Missing required fields', 400);
             }
-        
+            
             $projectId = filter_var($data['projectId'], FILTER_VALIDATE_INT);
             $name = filter_var(trim($data['name']), FILTER_SANITIZE_STRING);
             if (strlen($name) < 2 || strlen($name) > 50) {
                 throw new Exception('Category name must be between 2-50 characters', 400);
             }
-        
+            
             $project = $projectModel->getById($projectId);
             if (!$project || $project['owner_id'] !== $userId) {
                 throw new Exception('Project not found or access denied', 404);
             }
-        
+            
             $categoryId = $projectModel->addCategory($projectId, $name);
             if (!$categoryId) {
                 throw new Exception('Failed to add category', 500);
             }
-        
+            
             echo json_encode([
                 'success' => true,
                 'categoryId' => $categoryId,
@@ -505,6 +530,12 @@ try {
             }
             
             $assignees = $taskModel->getAssignees($taskId);
+            // Ensure profile pictures have correct paths
+            foreach ($assignees as &$assignee) {
+                if ($assignee['profile_picture'] && !str_starts_with($assignee['profile_picture'], '../')) {
+                    $assignee['profile_picture'] = '../' . $assignee['profile_picture'];
+                }
+            }
             echo json_encode(['success' => true, 'assignees' => $assignees]);
             break;
         
@@ -718,6 +749,106 @@ try {
                 'success' => true,
                 'user' => $user
             ]);
+            break;
+            
+        case 'uploadFile':
+            if (!isset($_FILES['file']) || !isset($_POST['taskId']) || !isset($_POST['userId'])) {
+                throw new Exception('Missing required fields', 400);
+            }
+            
+            $taskId = filter_var($_POST['taskId'], FILTER_VALIDATE_INT);
+            $userId = filter_var($_POST['userId'], FILTER_VALIDATE_INT);
+            
+            if (!$taskId || !$userId) {
+                throw new Exception('Invalid task or user ID', 400);
+            }
+
+            $uploadDir = '../uploads/tasks/';
+            
+            $task = $taskModel->getById($taskId);
+            if (!$task) {
+                throw new Exception('Task not found', 404);
+            }
+            
+            $project = $projectModel->getById($task['project_id']);
+            if (!$project || $project['owner_id'] !== $userId) {
+                throw new Exception('Project not found or access denied', 404);
+            }
+            
+            $file = $_FILES['file'];
+            $maxSize = 5 * 1024 * 1024; // 5MB
+            $allowedTypes = [
+                'image/jpeg', 'image/png', 'application/pdf', 
+                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ];
+            
+            if ($file['size'] > $maxSize) {
+                throw new Exception('File size exceeds 5MB limit', 400);
+            }
+            
+            if (!in_array($file['type'], $allowedTypes)) {
+                throw new Exception('Invalid file type. Only JPG, PNG, PDF, and DOC/DOCX are allowed', 400);
+            }
+            
+            $uploadDir = '../uploads/tasks/';
+            if (!file_exists($uploadDir)) {
+                if (!mkdir($uploadDir, 0755, true)) {
+                    throw new Exception('Failed to create upload directory', 500);
+                }
+            }
+            
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $fileName = uniqid('task_') . '.' . $extension;
+            $filePath = 'tasks/' . $fileName;
+            
+            if (move_uploaded_file($file['tmp_name'], $uploadDir . $fileName)) {
+                $stmt = $conn->prepare("
+                    INSERT INTO task_attachments 
+                    (task_id, uploaded_by, file_name, file_path, file_size, file_type) 
+                    VALUES (:taskId, :userId, :originalName, :filePath, :fileSize, :fileType)
+                ");
+                $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
+                $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+                $stmt->bindParam(':originalName', $file['name'], PDO::PARAM_STR);
+                $stmt->bindParam(':filePath', $filePath, PDO::PARAM_STR);
+                $stmt->bindParam(':fileSize', $file['size'], PDO::PARAM_INT);
+                $stmt->bindParam(':fileType', $file['type'], PDO::PARAM_STR);
+                
+                if ($stmt->execute()) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'File uploaded successfully',
+                        'fileId' => $conn->lastInsertId()
+                    ]);
+                } else {
+                    // Delete the uploaded file if DB insert fails
+                    @unlink($uploadDir . $fileName);
+                    throw new Exception('Failed to save file information', 500);
+                }
+            } else {
+                throw new Exception('Failed to upload file', 500);
+            }
+            break;
+
+        case 'getFiles':
+            $taskId = filter_input(INPUT_GET, 'taskId', FILTER_VALIDATE_INT);
+            if (!$taskId) throw new Exception('Task ID is required', 400);
+            
+            $task = $taskModel->getById($taskId);
+            if (!$task) throw new Exception('Task not found', 404);
+            
+            $stmt = $conn->prepare("
+                SELECT tf.*, u.name as created_by 
+                FROM task_attachments tf
+                JOIN users u ON tf.uploaded_by = u.id
+                WHERE tf.task_id = :taskId
+                ORDER BY tf.uploaded_at DESC
+            ");
+            $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
+            $stmt->execute();
+            $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            echo json_encode(['success' => true, 'files' => $files]);
             break;
 
         default:
