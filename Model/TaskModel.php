@@ -513,26 +513,15 @@ class TaskModel {
     public function getLinks($taskId) {
         try {
             $stmt = $this->conn->prepare("
-                SELECT tl.id, tl.url, tl.title, tl.created_at, 
-                    u.name AS created_by,
-                    u.profile_picture as creator_picture
-                FROM task_links tl
-                JOIN users u ON tl.created_by = u.id
-                WHERE tl.task_id = :taskId
-                ORDER BY tl.created_at DESC
+                SELECT l.*, u.name as created_by
+                FROM task_links l
+                JOIN users u ON l.created_by = u.id
+                WHERE l.task_id = :taskId
+                ORDER BY l.created_at DESC
             ");
             $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
             $stmt->execute();
-            $links = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Ensure profile pictures have correct paths
-            foreach ($links as &$link) {
-                if ($link['creator_picture'] && !str_starts_with($link['creator_picture'], '../')) {
-                    $link['creator_picture'] = '../' . $link['creator_picture'];
-                }
-            }
-            
-            return $links;
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('Error fetching links: ' . $e->getMessage());
             return [];

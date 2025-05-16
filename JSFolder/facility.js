@@ -2491,13 +2491,19 @@ document.addEventListener("DOMContentLoaded", function () {
             return text.substring(0, maxLength) + '...';
         }
 
+        let currentTaskDetailPanel = null;
         function loadProjectView(projectId) {
+            if (currentTaskDetailPanel && typeof currentTaskDetailPanel.cleanup === 'function') {
+                currentTaskDetailPanel.cleanup();
+                currentTaskDetailPanel = null;
+            }
+
             contentContainer.innerHTML = `
                 <div class="loading-container">
                     <i class="fas fa-spinner fa-spin"></i> Loading project...
                 </div>
             `;
-        
+
             fetch(`../View/projectView.php?id=${projectId}`)
                 .then(response => {
                     if (!response.ok) {
@@ -2508,7 +2514,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(html => {
                     contentContainer.innerHTML = html;
                     document.body.dataset.projectId = projectId;
-                    initProjectView(projectId); // Call directly instead of loading projectView.js
+                    // Save the new panel instance globally
+                    currentTaskDetailPanel = initProjectView(projectId);
                 })
                 .catch(error => {
                     console.error('Error loading project:', error);
@@ -2542,7 +2549,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const editDescriptionBtn = document.querySelector('.edit-description-btn');
             const projectDueDate = document.querySelector('.project-due-date input');
             const projectStatusSelect = document.querySelector('.project-status-select');
-
+            
             // Current calendar state
             let currentCalendarMonth = new Date().getMonth();
             let currentCalendarYear = new Date().getFullYear();
@@ -2644,7 +2651,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 let currentUser = null;
                 let panel = null;
                 let datePicker = null;
-
+                let isInitialized = false;
+                let currentTaskData = null;
+                
+                // Track all event listeners for cleanup
+                let eventListeners = [];
+                
+                function cleanupEventListeners() {
+                    eventListeners.forEach(({element, type, handler}) => {
+                        element?.removeEventListener(type, handler);
+                    });
+                    eventListeners = [];
+                }
+                
                 async function fetchCurrentUser() {
                     try {
                         const response = await fetch('../Controller/projectController.php?action=getCurrentUser');
@@ -2655,21 +2674,25 @@ document.addEventListener("DOMContentLoaded", function () {
                             if (currentUser.profile_picture && !currentUser.profile_picture.startsWith('../')) {
                                 currentUser.profile_picture = '../' + currentUser.profile_picture;
                             }
-                            // Update panel with user data
-                            if (panel) {
-                                const avatar = panel.querySelector('.user-avatar img');
-                                if (avatar) {
-                                    avatar.src = currentUser.profile_picture || '../Images/profile.PNG';
-                                }
-                            }
+                            updateUserAvatar();
                         }
                     } catch (error) {
                         console.error('Error fetching user data:', error);
                         showErrorNotification('Failed to fetch user data. Please try again.');
                     }
                 }
+                
+                function updateUserAvatar() {
+                    if (!panel || !currentUser) return;
+                    const avatar = panel.querySelector('.user-avatar img');
+                    if (avatar) {
+                        avatar.src = currentUser.profile_picture || '../Images/profile.PNG';
+                    }
+                }
 
                 function initializePanel() {
+                    if (isInitialized) return;
+                    
                     panel = document.createElement('div');
                     panel.className = 'task-detail-panel';
                     panel.innerHTML = `
@@ -2831,6 +2854,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     
                     document.body.appendChild(panel);
                     
+                    // Initialize Quill editor
                     try {
                         quill = new Quill('#taskDescriptionEditor', {
                             theme: 'snow',
@@ -2849,6 +2873,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         showErrorNotification('Failed to initialize text editor. Please refresh the page.');
                     }
                     
+                    // Initialize date picker
                     try {
                         const dateInput = panel.querySelector('#taskDueDate');
                         if (dateInput) {
@@ -2865,16 +2890,20 @@ document.addEventListener("DOMContentLoaded", function () {
                         showErrorNotification('Failed to initialize date picker. Please refresh the page.');
                     }
                     
-                    // Setup event listeners
+                    // Setup all event listeners
                     setupEventListeners();
                     
                     // Fetch current user asynchronously
                     fetchCurrentUser();
                     
+                    isInitialized = true;
+                    
                     return {
                         show: showTaskDetails,
                         close: closePanel,
                         cleanup: function() {
+                            cleanupEventListeners();
+                            
                             if (quill) {
                                 try {
                                     quill = null;
@@ -2882,6 +2911,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     console.error('Error cleaning up Quill:', e);
                                 }
                             }
+                            
                             if (datePicker && typeof datePicker.destroy === 'function') {
                                 try {
                                     datePicker.destroy();
@@ -2889,262 +2919,324 @@ document.addEventListener("DOMContentLoaded", function () {
                                     console.error('Error destroying date picker:', e);
                                 }
                             }
+                            
                             if (panel && panel.parentNode) {
                                 panel.remove();
                             }
+                            
+                            isInitialized = false;
                         }
                     };
                 }
+                
+                function isValidUrl(url) {
+                    try {
+                        new URL(url);
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                }
 
                 function setupEventListeners() {
-                    if (!panel) return;
-                    
-                    panel.querySelector('.btn-close-panel').addEventListener('click', closePanel);
-                    panel.querySelector('.panel-overlay').addEventListener('click', closePanel);
-                    
-                    const titleInput = panel.querySelector('#taskTitle');
-                    titleInput.addEventListener('blur', debounce(saveTaskChanges, 500));
-                    titleInput.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            titleInput.blur();
+                        if (!panel) return;
+                        
+                        // Clean up any existing listeners first
+                        cleanupEventListeners();
+                        
+                        // Close panel handlers
+                        const closeBtn = panel.querySelector('.btn-close-panel');
+                        const overlay = panel.querySelector('.panel-overlay');
+                        
+                        const closeHandler = () => closePanel();
+                        const overlayHandler = (e) => {
+                            if (e.target === overlay) closePanel();
+                        };
+                        
+                        closeBtn.addEventListener('click', closeHandler);
+                        overlay.addEventListener('click', overlayHandler);
+                        
+                        eventListeners.push(
+                            { element: closeBtn, type: 'click', handler: closeHandler },
+                            { element: overlay, type: 'click', handler: overlayHandler }
+                        );
+                        
+                        // Title input handlers
+                        const titleInput = panel.querySelector('#taskTitle');
+                        const titleBlurHandler = debounce(saveTaskChanges, 500);
+                        const titleKeyHandler = (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                titleInput.blur();
+                            }
+                        };
+                        
+                        titleInput.addEventListener('blur', titleBlurHandler);
+                        titleInput.addEventListener('keydown', titleKeyHandler);
+                        
+                        eventListeners.push(
+                            { element: titleInput, type: 'blur', handler: titleBlurHandler },
+                            { element: titleInput, type: 'keydown', handler: titleKeyHandler }
+                        );
+                        
+                        // Quill editor handler
+                        if (quill) {
+                            const quillChangeHandler = debounce(() => {
+                                if (quill.getLength() > 1) {
+                                    saveTaskChanges();
+                                }
+                            }, 1000);
+                            
+                            quill.on('text-change', quillChangeHandler);
                         }
-                    });
-                    
-                    quill.on('text-change', debounce(() => {
-                        if (quill.getLength() > 1) {
-                            saveTaskChanges();
-                        }
-                    }, 1000));
-                    
-                    panel.querySelectorAll('.priority-option').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            panel.querySelectorAll('.priority-option').forEach(b => b.classList.remove('active'));
-                            btn.classList.add('active');
-                            document.getElementById('taskPriority').value = btn.dataset.priority;
-                            saveTaskChanges();
+                        
+                        // Priority selector
+                        panel.querySelectorAll('.priority-option').forEach(btn => {
+                            const priorityHandler = () => {
+                                panel.querySelectorAll('.priority-option').forEach(b => b.classList.remove('active'));
+                                btn.classList.add('active');
+                                document.getElementById('taskPriority').value = btn.dataset.priority;
+                                saveTaskChanges();
+                            };
+                            
+                            btn.addEventListener('click', priorityHandler);
+                            eventListeners.push(
+                                { element: btn, type: 'click', handler: priorityHandler }
+                            );
                         });
-                    });
-                    
-                    panel.querySelector('#taskStatus').addEventListener('change', saveTaskChanges);
-                    
-                    panel.querySelector('.btn-add-assignee').addEventListener('click', toggleAssigneeDropdown);
-                    
-                    panel.querySelector('#addCommentBtn').addEventListener('click', addComment);
-                    panel.querySelector('#taskComment').addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
+                        
+                        // Status change
+                        const statusSelect = panel.querySelector('#taskStatus');
+                        const statusChangeHandler = () => saveTaskChanges();
+                        statusSelect.addEventListener('change', statusChangeHandler);
+                        eventListeners.push(
+                            { element: statusSelect, type: 'change', handler: statusChangeHandler }
+                        );
+                        
+                        // Assignee dropdown
+                        const addAssigneeBtn = panel.querySelector('.btn-add-assignee');
+                        const assigneeHandler = (e) => {
                             e.preventDefault();
-                            addComment();
-                        }
-                    });
-                    
-                    const commentInput = panel.querySelector('#taskComment');
-                    commentInput.addEventListener('focus', () => {
-                        commentInputFocused = true;
-                        panel.querySelector('.comment-input-wrapper').classList.add('focused');
-                    });
-                    commentInput.addEventListener('blur', () => {
-                        commentInputFocused = false;
-                        panel.querySelector('.comment-input-wrapper').classList.remove('focused');
-                    });
-                    
-                    panel.querySelector('#deleteTaskBtn').addEventListener('click', deleteTask);
-                    
-                    document.addEventListener('keydown', (e) => {
-                        if (panel.classList.contains('open') && e.key === 'Escape') {
-                            closePanel();
-                        }
-                    });
-            
-                    // File attachment handler
-                    panel.querySelector('.btn-attach-file').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation(); // This prevents the panel from closing
+                            e.stopPropagation();
+                            toggleAssigneeDropdown(e);
+                        };
+                        addAssigneeBtn.addEventListener('click', assigneeHandler);
+                        eventListeners.push(
+                            { element: addAssigneeBtn, type: 'click', handler: assigneeHandler }
+                        );
                         
-                        const fileInput = document.createElement('input');
-                        fileInput.type = 'file';
-                        fileInput.style.display = 'none';
-                        document.body.appendChild(fileInput);
+                        // Comment submission
+                        const addCommentBtn = panel.querySelector('#addCommentBtn');
+                        const commentInput = panel.querySelector('#taskComment');
                         
-                        fileInput.click();
+                        const addCommentHandler = () => addComment();
+                        const commentKeyHandler = (e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                addComment();
+                            }
+                        };
                         
-                        fileInput.addEventListener('change', async () => {
-                            if (fileInput.files.length > 0) {
-                                const formData = new FormData();
-                                formData.append('file', fileInput.files[0]);
-                                formData.append('taskId', currentTaskId);
-                                formData.append('userId', currentUser.id);
+                        addCommentBtn.addEventListener('click', addCommentHandler);
+                        commentInput.addEventListener('keydown', commentKeyHandler);
+                        
+                        eventListeners.push(
+                            { element: addCommentBtn, type: 'click', handler: addCommentHandler },
+                            { element: commentInput, type: 'keydown', handler: commentKeyHandler }
+                        );
+                        
+                        // Comment input focus/blur
+                        const commentFocusHandler = () => {
+                            commentInputFocused = true;
+                            panel.querySelector('.comment-input-wrapper').classList.add('focused');
+                        };
+                        const commentBlurHandler = () => {
+                            commentInputFocused = false;
+                            panel.querySelector('.comment-input-wrapper').classList.remove('focused');
+                        };
+                        
+                        commentInput.addEventListener('focus', commentFocusHandler);
+                        commentInput.addEventListener('blur', commentBlurHandler);
+                        
+                        eventListeners.push(
+                            { element: commentInput, type: 'focus', handler: commentFocusHandler },
+                            { element: commentInput, type: 'blur', handler: commentBlurHandler }
+                        );
+                        
+                        // Delete task button
+                        const deleteBtn = panel.querySelector('#deleteTaskBtn');
+                        const deleteHandler = () => deleteTask();
+                        deleteBtn.addEventListener('click', deleteHandler);
+                        eventListeners.push(
+                            { element: deleteBtn, type: 'click', handler: deleteHandler }
+                        );
+                        
+                        // File attachment handler
+                        const attachFileBtn = panel.querySelector('.btn-attach-file');
+                        const attachFileHandler = async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const fileInput = document.createElement('input');
+                            fileInput.type = 'file';
+                            fileInput.style.display = 'none';
+                            document.body.appendChild(fileInput);
+                            
+                            fileInput.click();
+                            
+                            const fileChangeHandler = async () => {
+                                if (fileInput.files.length > 0) {
+                                    const formData = new FormData();
+                                    formData.append('file', fileInput.files[0]);
+                                    formData.append('taskId', currentTaskId);
+                                    formData.append('userId', currentUser.id);
+                                    
+                                    try {
+                                        const response = await fetch('projectController.php?action=uploadFile', {
+                                            method: 'POST',
+                                            body: formData,
+                                            headers: {
+                                                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                                            }
+                                        });
+                                        
+                                        const data = await response.json();
+                                        if (data.success) {
+                                            showSuccessNotification('File uploaded successfully');
+                                            loadTaskFiles();
+                                        } else {
+                                            throw new Error(data.message || 'Failed to upload file');
+                                        }
+                                    } catch (error) {
+                                        console.error('Error uploading file:', error);
+                                        showErrorNotification(error.message || 'Failed to upload file. Please try again.');
+                                    } finally {
+                                        document.body.removeChild(fileInput);
+                                    }
+                                }
+                            };
+                            
+                            fileInput.addEventListener('change', fileChangeHandler, { once: true });
+                        };
+                        
+                        attachFileBtn.addEventListener('click', attachFileHandler);
+                        
+                        // Link addition handler
+                        const addLinkBtn = panel.querySelector('.btn-add-link');
+                        const addLinkHandler = (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const linkModal = document.createElement('div');
+                            linkModal.className = 'link-modal-overlay';
+                            linkModal.innerHTML = `
+                                <div class="modal-container">
+                                    <div class="modal-header">
+                                        <h3>Add Link</h3>
+                                        <button class="btn-close-modal" aria-label="Close modal">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label for="linkUrl">URL</label>
+                                            <input type="url" id="linkUrl" placeholder="https://example.com" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="linkTitle">Title (optional)</label>
+                                            <input type="text" id="linkTitle" placeholder="Descriptive title">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn-cancel">Cancel</button>
+                                        <button class="btn-save">Add Link</button>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            document.body.appendChild(linkModal);
+                            activeModals.push(linkModal);
+                            
+                            const closeModal = () => {
+                                linkModal.classList.remove('show');
+                                setTimeout(() => {
+                                    linkModal.remove();
+                                    activeModals = activeModals.filter(m => m !== linkModal);
+                                }, 300);
+                            };
+                            
+                            const closeBtn = linkModal.querySelector('.btn-close-modal');
+                            const cancelBtn = linkModal.querySelector('.btn-cancel');
+                            
+                            closeBtn.addEventListener('click', closeModal);
+                            cancelBtn.addEventListener('click', closeModal);
+                            
+                            linkModal.querySelector('.btn-save').addEventListener('click', async () => {
+                                const url = linkModal.querySelector('#linkUrl').value.trim();
+                                const title = linkModal.querySelector('#linkTitle').value.trim();
+                                
+                                if (!url) {
+                                    showErrorNotification('Please enter a URL');
+                                    return;
+                                }
                                 
                                 try {
-                                    const response = await fetch('../Controller/projectController.php?action=uploadFile', {
+                                    if (!isValidUrl(url)) {
+                                        throw new Error('Please enter a valid URL (e.g., https://example.com)');
+                                    }
+                                    
+                                    const response = await fetch('../Controller/projectController.php?action=addLink', {
                                         method: 'POST',
-                                        body: formData,
                                         headers: {
+                                            'Content-Type': 'application/json',
                                             'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                                        }
+                                        },
+                                        body: JSON.stringify({
+                                            taskId: currentTaskId,
+                                            url: url,
+                                            title: title || null,
+                                            userId: currentUser.id
+                                        })
                                     });
                                     
                                     const data = await response.json();
                                     if (data.success) {
-                                        showSuccessNotification('File uploaded successfully');
-                                        loadTaskFiles();
+                                        showSuccessNotification('Link added successfully');
+                                        closeModal();
+                                        loadTaskLinks();
                                     } else {
-                                        throw new Error(data.message || 'Failed to upload file');
+                                        throw new Error(data.message || 'Failed to add link');
                                     }
                                 } catch (error) {
-                                    console.error('Error uploading file:', error);
-                                    showErrorNotification('Failed to upload file. Please try again.');
-                                }
-                            }
-                            
-                            document.body.removeChild(fileInput);
-                        });
-                    });
-                                
-                    // Link addition handler
-                    panel.querySelector('.btn-add-link').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation(); // This should prevent the panel from closing
-                        
-                        const linkModal = document.createElement('div');
-                        linkModal.className = 'link-modal-overlay';
-                        linkModal.innerHTML = `
-                            <div class="modal-container">
-                                <div class="modal-header">
-                                    <h3>Add Link</h3>
-                                    <button class="btn-close-modal" aria-label="Close modal">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="form-group">
-                                        <label for="linkUrl">URL</label>
-                                        <input type="url" id="linkUrl" placeholder="https://example.com" required>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button class="btn-cancel">Cancel</button>
-                                    <button class="btn-save">Add Link</button>
-                                </div>
-                            </div>
-                        `;
-                        
-                        document.body.appendChild(linkModal);
-                        activeModals.push(linkModal);
-                        
-                        const closeModal = () => {
-                            linkModal.classList.remove('show');
-                            setTimeout(() => {
-                                linkModal.remove();
-                                activeModals = activeModals.filter(m => m !== linkModal);
-                            }, 300);
-                        };
-                        
-                        linkModal.querySelector('.btn-close-modal').addEventListener('click', closeModal);
-                        linkModal.querySelector('.btn-cancel').addEventListener('click', closeModal);
-                        
-                        linkModal.querySelector('.btn-save').addEventListener('click', async () => {
-                            const url = linkModal.querySelector('#linkUrl').value.trim();
-                            
-                            if (!url) {
-                                showErrorNotification('Please enter a URL');
-                                return;
-                            }
-                            
-                            try {
-                                // Validate URL first
-                                if (!isValidUrl(url)) {
-                                    throw new Error('Please enter a valid URL (e.g., https://example.com)');
-                                }
-                                
-                                const response = await fetch('../Controller/projectController.php?action=addLink', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                                    },
-                                    body: JSON.stringify({
-                                        taskId: currentTaskId,
-                                        url: url,
-                                        userId: currentUser.id
-                                    })
-                                });
-                                
-                                const data = await response.json();
-                                if (data.success) {
-                                    showSuccessNotification('Link added successfully');
-                                    closeModal();
-                                    loadTaskLinks();
-                                } else {
-                                    throw new Error(data.message || 'Failed to add link');
-                                }
-                            } catch (error) {
-                                console.error('Error adding link:', error);
-                                showErrorNotification(error.message || 'Failed to add link. Please try again.');
-                            }
-                        });
-                        
-                        setTimeout(() => {
-                            linkModal.classList.add('show');
-                            linkModal.querySelector('#linkUrl').focus();
-                        }, 10);
-                    });
-
-                    // Add URL validation function
-                    function isValidUrl(string) {
-                        try {
-                            new URL(string);
-                            return true;
-                        } catch (_) {
-                            return false;
-                        }
-                    }
-
-                    if (!quill) {
-                        quill = new Quill('#taskDescriptionEditor', {
-                            theme: 'snow',
-                            modules: {
-                                toolbar: [
-                                    ['bold', 'italic', 'underline'],
-                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                    ['link'],
-                                    ['clean']
-                                ]
-                            },
-                            placeholder: 'Add a detailed description...'
-                        });
-                        
-                        quill.on('text-change', debounce(() => {
-                            if (quill.getLength() > 1) {
-                                saveTaskChanges();
-                            }
-                        }, 1000));
-                    }
-
-                    if (!datePicker) {
-                        const dateInput = panel.querySelector('#taskDueDate');
-                        if (dateInput) {
-                            datePicker = flatpickr(dateInput, {
-                                dateFormat: 'Y-m-d',
-                                allowInput: true,
-                                onChange: function(selectedDates, dateStr) {
-                                    saveTaskChanges();
+                                    console.error('Error adding link:', error);
+                                    showErrorNotification(error.message || 'Failed to add link. Please try again.');
                                 }
                             });
-                        }
-                    }
-
-                    const outsideClickListener = (event) => {
-                        if (!panel) return;
-                        const panelContent = panel.querySelector('.panel-content');
-                        const isModal = event.target.closest('.modal-overlay');
+                            
+                            setTimeout(() => {
+                                linkModal.classList.add('show');
+                                linkModal.querySelector('#linkUrl').focus();
+                            }, 10);
+                        };
                         
-                        if (panel.classList.contains('open') && panelContent && 
-                            !panelContent.contains(event.target) && !isModal) {
-                            closePanel();
-                        }
-                    };
+                        addLinkBtn.addEventListener('click', addLinkHandler);
+                        eventListeners.push(
+                            { element: addLinkBtn, type: 'click', handler: addLinkHandler }
+                        );
+                        
+                        // Escape key to close panel
+                        const escapeHandler = (e) => {
+                            if (panel.classList.contains('open') && e.key === 'Escape') {
+                                closePanel();
+                            }
+                        };
+                        
+                        document.addEventListener('keydown', escapeHandler);
+                        eventListeners.push(
+                            { element: document, type: 'keydown', handler: escapeHandler }
+                        );
                 }
+    
 
                 function toggleAssigneeDropdown(e) {
                     e.preventDefault();
@@ -3467,23 +3559,44 @@ document.addEventListener("DOMContentLoaded", function () {
                             linksContainer.innerHTML = '';
                             
                             if (data.links && data.links.length > 0) {
-                                linksContainer.innerHTML = `
-                                    ${data.links.map(link => `
+                                linksContainer.innerHTML = data.links.map(link => {
+                                    // Extract domain from URL for display if title is missing
+                                    let displayText = link.title || link.url;
+                                    try {
+                                        if (!link.title) {
+                                            const urlObj = new URL(link.url);
+                                            displayText = urlObj.hostname.replace('www.', '');
+                                        }
+                                    } catch (e) {
+                                        console.error('Error parsing URL:', e);
+                                    }
+                                    
+                                    return `
                                         <div class="link-item">
                                             <a href="${link.url}" target="_blank" rel="noopener noreferrer">
                                                 <i class="fas fa-external-link-alt"></i>
-                                                ${link.title || link.url}
+                                                ${escapeHtml(displayText)}
                                             </a>
-                                            <span class="link-meta">Added by ${link.created_by} • ${formatTimeAgo(link.created_at)}</span>
+                                            <span class="link-meta">
+                                                ${link.created_by ? `Added by ${link.created_by}` : ''}
+                                                ${link.created_at ? ` • ${formatTimeAgo(link.created_at)}` : ''}
+                                            </span>
                                         </div>
-                                    `).join('')}
-                                `;
+                                    `;
+                                }).join('');
                             } else {
                                 linksContainer.innerHTML = '<div class="empty-state">No links added</div>';
                             }
                         }
                     } catch (error) {
                         console.error('Error loading links:', error);
+                        const linksContainer = panel.querySelector('#linksContainer');
+                        linksContainer.innerHTML = `
+                            <div class="error-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>Failed to load links</p>
+                            </div>
+                        `;
                     }
                 }
             
@@ -3614,87 +3727,106 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     }
                 }
+                function updateTaskCardUI(task) {
+                    // Find the task card in the UI and update its appearance
+                    const taskCard = document.querySelector(`.task-card[data-task-id="${task.id}"]`);
+                    if (!taskCard) return;
+                    
+                    // Update priority class
+                    taskCard.classList.remove('high', 'medium', 'low');
+                    taskCard.classList.add(task.priority || 'low');
+                    
+                    // Update status badge
+                    const statusBadge = taskCard.querySelector('.task-status-badge');
+                    if (statusBadge) {
+                        statusBadge.className = `task-status-badge ${task.status || 'todo'}`;
+                        statusBadge.textContent = (task.status || 'todo').charAt(0).toUpperCase() + (task.status || 'todo').slice(1);
+                    }
+                    
+                    // Update due date display if exists
+                    if (task.due_date) {
+                        const dueDate = new Date(task.due_date);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        
+                        const diffTime = dueDate - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        let daysLeft = '';
+                        
+                        if (diffDays === 0) {
+                            daysLeft = 'Today';
+                        } else if (diffDays < 0) {
+                            daysLeft = `${Math.abs(diffDays)}d overdue`;
+                        } else {
+                            daysLeft = `${diffDays}d left`;
+                        }
+                        
+                        const dueDateElement = taskCard.querySelector('.task-due-date');
+                        if (dueDateElement) {
+                            dueDateElement.innerHTML = `<i class="far fa-calendar-alt"></i> ${daysLeft}`;
+                            dueDateElement.classList.toggle('overdue', diffDays < 0);
+                        }
+                    }
+                }
             
                 async function showTaskDetails(task) {
-                    console.log('showTaskDetails called with task:', task);
                     if (!task || !task.id) {
                         showErrorNotification('Invalid task data');
                         return;
                     }
                     
+                    // Store current task data
+                    currentTaskData = task;
                     currentTaskId = task.id;
-
-                    // Initialize Quill if not already done or reinitialize if destroyed
-                    if (!quill || !quill.root) {
-                        try {
-                            quill = new Quill('#taskDescriptionEditor', {
-                                theme: 'snow',
-                                modules: {
-                                    toolbar: [
-                                        ['bold', 'italic', 'underline'],
-                                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                        ['link'],
-                                        ['clean']
-                                    ]
-                                },
-                                placeholder: 'Add a detailed description...'
-                            });
-                            
-                            quill.on('text-change', debounce(() => {
-                                if (quill.getLength() > 1) {
-                                    saveTaskChanges();
-                                }
-                            }, 1000));
-                        } catch (error) {
-                            console.error('Error initializing Quill:', error);
-                        }
+                    
+                    // Initialize panel if not already done
+                    if (!isInitialized) {
+                        initializePanel();
                     }
                     
-                    // Initialize datepicker if not already done or reinitialize if destroyed
-                    if (!datePicker || !datePicker.input) {
-                        try {
-                            const dateInput = panel.querySelector('#taskDueDate');
-                            if (dateInput) {
-                                datePicker = flatpickr(dateInput, {
-                                    dateFormat: 'Y-m-d',
-                                    allowInput: true,
-                                    onChange: function(selectedDates, dateStr) {
-                                        saveTaskChanges();
-                                    }
-                                });
-                            }
-                        } catch (error) {
-                            console.error('Error initializing date picker:', error);
-                        }
-                    }
-                    
+                    // Reset panel state
                     panel.querySelector('#taskTitle').value = task.title || '';
                     panel.querySelector('#taskStatus').value = task.status || 'todo';
                     panel.querySelector('.task-id').textContent = `#${task.id}`;
-                    
-                    if (task.description) {
-                        quill.root.innerHTML = task.description;
-                        panel.querySelector('#descriptionDisplay').innerHTML = task.description;
-                        panel.querySelector('#descriptionDisplay').style.display = 'block';
-                        panel.querySelector('#taskDescriptionEditor').style.display = 'none';
 
-                        // Add click event to descriptionDisplay to enable editing
-                        panel.querySelector('#descriptionDisplay').style.cursor = 'pointer';
-                        panel.querySelector('#descriptionDisplay').onclick = () => {
-                            panel.querySelector('#descriptionDisplay').style.display = 'none';
-                            panel.querySelector('#taskDescriptionEditor').style.display = 'block';
+                    const descriptionDisplay = panel.querySelector('#descriptionDisplay');
+                    const descriptionEditor = panel.querySelector('#taskDescriptionEditor');
+                    const quillToolbar = panel.querySelector('.ql-toolbar');
+                    
+                    // Handle description
+                    if (task.description && task.description.trim() !== '') {
+                        quill.root.innerHTML = task.description;
+                        descriptionDisplay.innerHTML = task.description;
+                        descriptionDisplay.style.display = 'block';
+                        descriptionEditor.style.display = 'none';
+                        if (quillToolbar) quillToolbar.style.display = 'none';
+
+                        // Add click event to enable editing
+                        descriptionDisplay.style.cursor = 'pointer';
+                        descriptionDisplay.onclick = () => {
+                            descriptionDisplay.style.display = 'none';
+                            descriptionEditor.style.display = 'block';
+                            if (quillToolbar) quillToolbar.style.display = '';
                             quill.focus();
                         };
                     } else {
                         quill.root.innerHTML = '';
-                        panel.querySelector('#descriptionDisplay').style.display = 'none';
-                        panel.querySelector('#taskDescriptionEditor').style.display = 'block';
+                        descriptionDisplay.innerHTML = `<span class="empty-description">Add a new description</span>`;
+                        descriptionDisplay.style.display = 'block';
+                        descriptionEditor.style.display = 'none';
+                        if (quillToolbar) quillToolbar.style.display = 'none';
 
-                        // Remove click event if no description
-                        panel.querySelector('#descriptionDisplay').style.cursor = 'default';
-                        panel.querySelector('#descriptionDisplay').onclick = null;
+                        // Add click event to enable editing
+                        descriptionDisplay.style.cursor = 'pointer';
+                        descriptionDisplay.onclick = () => {
+                            descriptionDisplay.style.display = 'none';
+                            descriptionEditor.style.display = 'block';
+                            if (quillToolbar) quillToolbar.style.display = '';
+                            quill.focus();
+                        };
                     }
                     
+                    // Set priority
                     panel.querySelectorAll('.priority-option').forEach(btn => {
                         btn.classList.remove('active');
                         if (btn.dataset.priority === (task.priority || 'low')) {
@@ -3732,65 +3864,50 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     }
                     
+                    // Update status badge
                     const statusBadge = panel.querySelector('.task-status-badge');
                     statusBadge.className = `task-status-badge ${task.status || 'todo'}`;
                     statusBadge.textContent = (task.status || 'todo').charAt(0).toUpperCase() + (task.status || 'todo').slice(1);
                     
-                    await updateAssigneesList();
-                    loadComments();
-                    loadActivityLog();
-                    loadTaskFiles();
-                    loadTaskLinks();
+                    // Load all task data
+                    await Promise.all([
+                        updateAssigneesList(),
+                        loadComments(),
+                        loadActivityLog(),
+                        loadTaskFiles(),
+                        loadTaskLinks()
+                    ]);
                     
+                    // Show panel
                     panel.classList.add('open');
-                    console.log('Panel "open" class added');
                     document.body.style.overflow = 'hidden';
-
-                    // Add click listener to close panel if clicking outside panel-content
-                    const outsideClickListener = (event) => {
-                        if (!panel) return;
-                        const panelContent = panel.querySelector('.panel-content');
-                        if (panel.classList.contains('open') && panelContent && !panelContent.contains(event.target)) {
-                            closePanel();
-                        }
-                    };
-                    document.addEventListener('click', outsideClickListener);
-
-                    // Store the listener so it can be removed on close
-                    panel._outsideClickListener = outsideClickListener;
-
+                    
+                    // Focus title if empty
                     if (!task.title) {
                         setTimeout(() => {
                             panel.querySelector('#taskTitle').focus();
                         }, 100);
                     }
+                    
+                    // Update the corresponding task card in the UI
+                    updateTaskCardUI(task);
                 }
-
+                
                 function closePanel() {
-                    console.log('closePanel called');
                     if (!panel) return;
-
-                    // Remove the outside click listener when closing panel
-                    if (panel._outsideClickListener) {
-                        document.removeEventListener('click', panel._outsideClickListener);
-                        panel._outsideClickListener = null;
-                    }
                     
-                    if (datePicker && typeof datePicker.destroy === 'function') {
-                        try {
-                            datePicker.destroy();
-                        } catch (error) {
-                            console.error('Error destroying date picker:', error);
-                        }
-                        datePicker = null;
-                    }
+                    // Clean up any dropdowns or modals
+                    const assigneeDropdown = panel.querySelector('#assigneeDropdown');
+                    if (assigneeDropdown) assigneeDropdown.style.display = 'none';
                     
+                    // Reset panel state
                     panel.classList.remove('open');
-                    console.log('Panel "open" class removed');
                     document.body.style.overflow = '';
                     
+                    // Clear current task data
                     currentTaskId = null;
                     currentAssignees = [];
+                    currentTaskData = null;
                 }
             
                 function debounce(func, wait) {
@@ -4837,10 +4954,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             initialize();
+            return taskDetailPanel;
 
-            return {
-                cleanup: cleanup
-            };
         }
 
         loadPage("../View/dashboard.php");

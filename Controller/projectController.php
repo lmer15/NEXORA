@@ -389,7 +389,7 @@ try {
                 throw new Exception('Task ID or title is invalid', 400);
             }
         
-            $description = isset($data['description']) ? filter_var(trim($data['description']), FILTER_SANITIZE_STRING) : '';
+            $description = isset($data['description']) ? filter_var(trim($data['description'])) : '';
             if (strlen($description) > 500) {
                 throw new Exception('Description too long (max 500 chars)', 400);
             }
@@ -703,7 +703,8 @@ try {
             if (!$project || $project['owner_id'] !== $userId) {
                 throw new Exception('Project not found or access denied', 404);
             }
-            $linkId = $taskModel->addLink($taskId, $url, $userId);
+            $title = isset($data['title']) ? trim($data['title']) : null;
+            $linkId = $taskModel->addLink($taskId, $url, $userId, $title);
             if (!$linkId) {
                 throw new Exception('Failed to add link', 500);
             }
