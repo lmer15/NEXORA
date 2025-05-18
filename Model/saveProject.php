@@ -155,4 +155,31 @@ class Project {
             return false;
         }
     }
+
+    public function getAssignedProjects($userId) {
+        try {
+            $sql = "
+                SELECT DISTINCT p.*, u.name as owner_name,
+                       COUNT(DISTINCT t.id) as total_tasks,
+                       COUNT(DISTINCT CASE WHEN t.status = 'done' THEN t.id END) as done_tasks
+                FROM projects p
+                JOIN users u ON p.owner_id = u.id
+                JOIN tasks t ON t.project_id = p.id
+                JOIN task_assignments ta ON ta.task_id = t.id
+                WHERE ta.user_id = :userId 
+                AND p.owner_id != :userId
+                AND p.is_archived = 0
+                GROUP BY p.id
+            ";
+            
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Error in getAssignedProjects: ' . $e->getMessage());
+            return [];
+        }
+    }
 }

@@ -29,9 +29,7 @@ if (!isset($_SESSION['user_id'])) {
                 <img src="../Images/Logo.png" alt="Nexora Facility Logo">
                 <span class="logo-text">NEXORA</span>
             </div>
-            <div class="searchbar">
-                <input type="text" placeholder="Search facilities, projects...">
-            </div>
+
             <div class="profile" id="profileDropdown">
                 <div class="profile-info">
                     <div class="profile-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'user_name'); ?></div>

@@ -9,6 +9,15 @@ if (empty($_SESSION['csrf_token'])) {
 require_once '../config/db.php';
 require_once '../Model/ProjectModel.php';
 
+$stmt = $conn->prepare("
+    SELECT DISTINCT p.*, u.name as owner_name
+    FROM projects p
+    JOIN tasks t ON t.project_id = p.id
+    JOIN users u ON p.owner_id = u.id
+    WHERE t.assignee_id = :user_id
+    AND (p.is_archived IS NULL OR p.is_archived = 0)
+");
+
 $projectId = $_GET['id'] ?? null;
 if (!$projectId) die('Project ID is required');
 
@@ -72,13 +81,43 @@ if ($project['status'] === 'archived') die('This project is archived');
             </div>
         </section>
 
-        <nav class="view-toggle" role="navigation">
-            <button class="toggle-btn active" data-view="kanban" aria-label="Kanban View" role="tab">
-                <i class="fas fa-table-columns"></i> Kanban
-            </button>
-            <button class="toggle-btn" data-view="calendar" aria-label="Calendar View" role="tab">
-                <i class="far fa-calendar-alt"></i> Calendar
-            </button>
+        <nav class="view-toolbar" role="navigation">
+            <div class="view-toggle">
+                <button class="toggle-btn active" data-view="kanban" aria-label="Kanban View" role="tab">
+                    <i class="fas fa-table-columns"></i> Kanban
+                </button>
+                <button class="toggle-btn" data-view="calendar" aria-label="Calendar View" role="tab">
+                    <i class="far fa-calendar-alt"></i> Calendar
+                </button>
+            </div>
+            <div class="tasks-toolbar">
+                <input type="text" id="taskSearchInput" class="tasks-searchbar" placeholder="Search tasks...">
+                <button class="filter-btn" id="taskFilterBtn" aria-label="Filter">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+                <div class="filter-dropdown" id="filterDropdown" style="display:none;">
+                    <div class="filter-group">
+                        <label for="statusFilter">Status</label>
+                        <select id="statusFilter">
+                            <option value="all">All</option>
+                            <option value="todo">To Do</option>
+                            <option value="progress">In Progress</option>
+                            <option value="done">Done</option>
+                            <option value="blocked">Blocked</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="priorityFilter">Priority</label>
+                        <select id="priorityFilter">
+                            <option value="all">All</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="applyFilterBtn">Apply</button>
+                </div>
+            </div>
         </nav>
 
         <main class="kanban-view active-view" role="main">

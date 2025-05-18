@@ -5,6 +5,7 @@ header('Content-Type: application/json');
 error_log('Session data: ' . print_r($_SESSION, true));
 
 require_once '../config/db.php'; 
+require_once '../Model/ProjectModel.php';
 
 try {
     if (!isset($_SESSION['user_id'])) {
@@ -20,11 +21,24 @@ try {
 
     switch ($_GET['action']) {
         case 'getAll':
-            $projects = $projectModel->getAll($_SESSION['user_id']);
-            echo json_encode([
-                'success' => true,
-                'projects' => $projects
-            ]);
+            try {
+                $userId = $_SESSION['user_id'];
+                $ownedProjects = $projectModel->getAll($userId);
+                
+                // Get projects where user is a task assignee
+                $assignedProjects = $projectModel->getAssignedProjects($userId);
+                
+                echo json_encode([
+                    'success' => true,
+                    'projects' => $ownedProjects,
+                    'assigned_projects' => $assignedProjects
+                ]);
+            } catch (Exception $e) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]);
+            }
             break;
 
         case 'create':

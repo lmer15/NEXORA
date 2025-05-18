@@ -171,6 +171,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
 }
 
 .nav-item i {
@@ -180,7 +181,13 @@ body {
 }
 
 .nav-item-text {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    max-width: 200px; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
 }
 
 .nav-item-actions {

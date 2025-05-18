@@ -11,6 +11,16 @@
     <div class="dashboard-view">
         <div class="dashboard-header">
             <h1 class="dashboard-title">Facility Dashboard</h1>
+            <div class="searchbar">
+                <input type="text" placeholder="Search facilities, projects...">
+            </div>
+            <div class="dashboard-filters">
+                <select class="filter-select" id="dashboardProjectFilter">
+                    <option value="all">All Projects</option>
+                    <option value="active">Active Projects</option>
+                    <option value="completed">Completed Projects</option>
+                </select>
+            </div>
             <div class="dashboard-actions">
                 <button class="btn btn-outline">
                     <i class="fas fa-download"></i> Export
@@ -23,7 +33,8 @@
         
         <div class="dashboard-scroll-container">
             <div class="dashboard-content">
-                <div class="kanban-board">
+                <!-- Main Kanban Board -->
+                <div id="main-kanban" class="kanban-board">
                     <h2><i class="fas fa-table-columns"></i> Project Status</h2>
                     <div class="kanban-container">
                         <!-- TO DO -->
@@ -33,20 +44,21 @@
                                 <span class="project-quantity">0</span>
                             </div>
                             <div class="column-content">
-                                <button class="btn btn-primary to-do new-project-btn">
+                                <!-- New Project button should be inside column-content -->
+                                <button class="new-project-btn btn btn-primary">
                                     <i class="fas fa-plus"></i> New Project
                                 </button>
                             </div>
                         </div>
                         
-                        <!-- PROGRESS -->
+                        <!-- IN PROGRESS -->
                         <div class="kanban-column" data-status="progress">
                             <div class="column-header">
                                 <span>In Progress</span>
                                 <span class="project-quantity">0</span>
                             </div>
                             <div class="column-content">
-                                <button class="btn btn-primary progress new-project-btn">
+                                <button class="new-project-btn btn btn-primary">
                                     <i class="fas fa-plus"></i> New Project
                                 </button>
                             </div>
@@ -59,10 +71,38 @@
                                 <span class="project-quantity">0</span>
                             </div>
                             <div class="column-content">
-                                <button class="btn btn-primary done new-project-btn">
+                                <button class="new-project-btn btn btn-primary">
                                     <i class="fas fa-plus"></i> New Project
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Joined Projects Kanban Board -->
+                <div id="joined-kanban" class="kanban-board">
+                    <h2><i class="fas fa-users"></i> Joined Projects</h2>
+                    <div class="kanban-container">
+                        <div class="kanban-column" data-status="todo">
+                            <div class="column-header">
+                                <span>To Do</span>
+                                <span class="project-quantity">0</span>
+                            </div>
+                            <div class="column-content"></div>
+                        </div>
+                        <div class="kanban-column" data-status="progress">
+                            <div class="column-header">
+                                <span>In Progress</span>
+                                <span class="project-quantity">0</span>
+                            </div>
+                            <div class="column-content"></div>
+                        </div>
+                        <div class="kanban-column" data-status="done">
+                            <div class="column-header">
+                                <span>Done</span>
+                                <span class="project-quantity">0</span>
+                            </div>
+                            <div class="column-content"></div>
                         </div>
                     </div>
                 </div>

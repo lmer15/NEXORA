@@ -708,7 +708,48 @@ try {
             if (!$linkId) {
                 throw new Exception('Failed to add link', 500);
             }
+            $taskModel->logActivity($taskId, $userId, 'link_added', json_encode([
+                'url' => $url,
+                'title' => $title
+            ]));
             echo json_encode(['success' => true, 'message' => 'Link added successfully']);
+            break;
+
+        case 'deleteLink':
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+
+            if (!isset($data['linkId'])) {
+                throw new Exception('Link ID is required', 400);
+            }
+
+            $linkId = filter_var($data['linkId'], FILTER_VALIDATE_INT);
+            // Get link info
+            $stmt = $conn->prepare("SELECT * FROM task_links WHERE id = :linkId");
+            $stmt->bindParam(':linkId', $linkId, PDO::PARAM_INT);
+            $stmt->execute();
+            $link = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$link) {
+                throw new Exception('Link not found', 404);
+            }
+
+            // Check project ownership
+            $task = $taskModel->getById($link['task_id']);
+            $project = $projectModel->getById($task['project_id']);
+            if (!$project || $project['owner_id'] !== $userId) {
+                throw new Exception('Project not found or access denied', 404);
+            }
+
+            // Delete from DB
+            $stmt = $conn->prepare("DELETE FROM task_links WHERE id = :linkId");
+            $stmt->bindParam(':linkId', $linkId, PDO::PARAM_INT);
+            $success = $stmt->execute();
+
+            echo json_encode([
+                'success' => $success,
+                'message' => $success ? 'Link deleted successfully' : 'Failed to delete link'
+            ]);
             break;
 
         case 'getLinks':
@@ -751,85 +792,185 @@ try {
                 'user' => $user
             ]);
             break;
-            
+
         case 'uploadFile':
-            if (!isset($_FILES['file']) || !isset($_POST['taskId']) || !isset($_POST['userId'])) {
-                throw new Exception('Missing required fields', 400);
+            header('Content-Type: application/json');
+            
+            try {
+                // Verify required data
+                if (!isset($_FILES['file'])) {
+                    throw new Exception('No file was selected for upload', 400);
+                }
+                
+                if (!isset($_POST['taskId'])) {
+                    throw new Exception('Task information is missing', 400);
+                }
+                
+                $taskId = (int)$_POST['taskId'];
+                $userId = $_SESSION['user_id'] ?? null;
+                
+                if (!$userId) {
+                    throw new Exception('You need to be logged in to upload files', 401);
+                }
+
+                $task = $taskModel->getById($taskId);
+                if (!$task) {
+                    throw new Exception('The task you\'re trying to upload to doesn\'t exist', 404);
+                }
+                
+                $file = $_FILES['file'];
+                $maxSize = 5 * 1024 * 1024; // 5MB
+                $allowedTypes = [
+                    'image/jpeg', 'image/png', 'image/gif',
+                    'application/pdf',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'text/plain'
+                ];
+                
+                // Check for upload errors
+                if ($file['error'] !== UPLOAD_ERR_OK) {
+                    $uploadErrors = [
+                        UPLOAD_ERR_INI_SIZE => 'File is too large (server limit)',
+                        UPLOAD_ERR_FORM_SIZE => 'File is too large (form limit)',
+                        UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                        UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                        UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                        UPLOAD_ERR_EXTENSION => 'File upload stopped by extension'
+                    ];
+                    $errorMsg = $uploadErrors[$file['error']] ?? 'Unknown upload error';
+                    throw new Exception($errorMsg, 400);
+                }
+                
+                if ($file['size'] > $maxSize) {
+                    throw new Exception('File size exceeds the 5MB limit', 400);
+                }
+                
+                if (!in_array($file['type'], $allowedTypes)) {
+                    $allowedExtensions = [
+                        'jpg', 'jpeg', 'png', 'gif', 
+                        'pdf', 'pptx',
+                        'doc', 'docx', 
+                        'xls', 'xlsx',
+                        'txt'
+                    ];
+                    throw new Exception(
+                        'Only these file types are allowed: ' . 
+                        implode(', ', $allowedExtensions), 
+                        400
+                    );
+                }
+                
+                // Validate file content (basic check for images)
+                if (strpos($file['type'], 'image/') === 0) {
+                    $imageInfo = @getimagesize($file['tmp_name']);
+                    if (!$imageInfo) {
+                        throw new Exception('The uploaded file is not a valid image', 400);
+                    }
+                }
+                
+                // Create upload directory if needed
+                $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/nexora/uploads/tasks/';
+                if (!file_exists($uploadDir)) {
+                    if (!mkdir($uploadDir, 0755, true)) {
+                        throw new Exception('Could not create upload directory', 500);
+                    }
+                }
+                
+                // Generate unique filename while preserving extension
+                $fileInfo = pathinfo($file['name']);
+                $filename = uniqid('task_' . $taskId . '_') . '.' . strtolower($fileInfo['extension']);
+                $destination = $uploadDir . $filename;
+                
+                // Move uploaded file
+                if (!move_uploaded_file($file['tmp_name'], $destination)) {
+                    throw new Exception('Failed to save the uploaded file', 500);
+                }
+                
+                // Save to database
+                $relativePath = 'uploads/tasks/' . $filename;
+                $stmt = $conn->prepare("INSERT INTO task_attachments 
+                    (task_id, uploaded_by, file_name, file_path, file_size, file_type) 
+                    VALUES (?, ?, ?, ?, ?, ?)");
+                
+                $stmt->execute([
+                    $taskId,
+                    $userId,
+                    $file['name'],
+                    $relativePath,
+                    $file['size'],
+                    $file['type']
+                ]);
+                
+                // Log activity
+                $taskModel->logActivity($taskId, $userId, 'file_uploaded', json_encode([
+                    'file_name' => $file['name'],
+                    'file_size' => $file['size']
+                ]));
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'File "' . htmlspecialchars($file['name']) . '" was uploaded successfully',
+                    'filePath' => $relativePath
+                ]);
+                
+            } catch (Exception $e) {
+                $responseCode = is_numeric($e->getCode()) && $e->getCode() >= 100 && $e->getCode() < 600 ? 
+                    (int)$e->getCode() : 500;
+                http_response_code($responseCode);
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'code' => $responseCode
+                ]);
             }
-            
-            $taskId = filter_var($_POST['taskId'], FILTER_VALIDATE_INT);
-            $userId = filter_var($_POST['userId'], FILTER_VALIDATE_INT);
-            
-            if (!$taskId || !$userId) {
-                throw new Exception('Invalid task or user ID', 400);
+            break;
+
+        case 'deleteFile':
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+
+            if (!isset($data['fileId'])) {
+                throw new Exception('File ID is required', 400);
             }
 
-            $uploadDir = '../uploads/tasks/';
-            
-            $task = $taskModel->getById($taskId);
-            if (!$task) {
-                throw new Exception('Task not found', 404);
+            $fileId = filter_var($data['fileId'], FILTER_VALIDATE_INT);
+            // Get file info
+            $stmt = $conn->prepare("SELECT * FROM task_attachments WHERE id = :fileId");
+            $stmt->bindParam(':fileId', $fileId, PDO::PARAM_INT);
+            $stmt->execute();
+            $file = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$file) {
+                throw new Exception('File not found', 404);
             }
-            
+
+            // Check project ownership
+            $task = $taskModel->getById($file['task_id']);
             $project = $projectModel->getById($task['project_id']);
             if (!$project || $project['owner_id'] !== $userId) {
                 throw new Exception('Project not found or access denied', 404);
             }
-            
-            $file = $_FILES['file'];
-            $maxSize = 5 * 1024 * 1024; // 5MB
-            $allowedTypes = [
-                'image/jpeg', 'image/png', 'application/pdf', 
-                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            ];
-            
-            if ($file['size'] > $maxSize) {
-                throw new Exception('File size exceeds 5MB limit', 400);
+
+            // Delete file from disk
+            $filePath = $_SERVER['DOCUMENT_ROOT'] . '/nexora/' . $file['file_path'];
+            if (file_exists($filePath)) {
+                @unlink($filePath);
             }
-            
-            if (!in_array($file['type'], $allowedTypes)) {
-                throw new Exception('Invalid file type. Only JPG, PNG, PDF, and DOC/DOCX are allowed', 400);
-            }
-            
-            $uploadDir = '../uploads/tasks/';
-            if (!file_exists($uploadDir)) {
-                if (!mkdir($uploadDir, 0755, true)) {
-                    throw new Exception('Failed to create upload directory', 500);
-                }
-            }
-            
-            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $fileName = uniqid('task_') . '.' . $extension;
-            $filePath = 'tasks/' . $fileName;
-            
-            if (move_uploaded_file($file['tmp_name'], $uploadDir . $fileName)) {
-                $stmt = $conn->prepare("
-                    INSERT INTO task_attachments 
-                    (task_id, uploaded_by, file_name, file_path, file_size, file_type) 
-                    VALUES (:taskId, :userId, :originalName, :filePath, :fileSize, :fileType)
-                ");
-                $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
-                $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
-                $stmt->bindParam(':originalName', $file['name'], PDO::PARAM_STR);
-                $stmt->bindParam(':filePath', $filePath, PDO::PARAM_STR);
-                $stmt->bindParam(':fileSize', $file['size'], PDO::PARAM_INT);
-                $stmt->bindParam(':fileType', $file['type'], PDO::PARAM_STR);
-                
-                if ($stmt->execute()) {
-                    echo json_encode([
-                        'success' => true,
-                        'message' => 'File uploaded successfully',
-                        'fileId' => $conn->lastInsertId()
-                    ]);
-                } else {
-                    // Delete the uploaded file if DB insert fails
-                    @unlink($uploadDir . $fileName);
-                    throw new Exception('Failed to save file information', 500);
-                }
-            } else {
-                throw new Exception('Failed to upload file', 500);
-            }
-            break;
+
+            // Delete from DB
+            $stmt = $conn->prepare("DELETE FROM task_attachments WHERE id = :fileId");
+            $stmt->bindParam(':fileId', $fileId, PDO::PARAM_INT);
+            $success = $stmt->execute();
+
+            echo json_encode([
+                'success' => $success,
+                'message' => $success ? 'File deleted successfully' : 'Failed to delete file'
+            ]);
+            break;  
 
         case 'getFiles':
             $taskId = filter_input(INPUT_GET, 'taskId', FILTER_VALIDATE_INT);
