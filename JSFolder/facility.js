@@ -2565,35 +2565,45 @@ document.addEventListener("DOMContentLoaded", function () {
                     document.body.dataset.projectId = projectId;
                     currentTaskDetailPanel = initProjectView(projectId);
                     setupTaskSearchAndFilter();
-                })
-                .then(data => {
-                    if (data.success) {
-                        const isOwnedProject = data.project.owner_id == document.body.dataset.userId;
-                        
-                        // Modify the UI based on project ownership
-                        const projectControls = document.querySelectorAll('.project-controls .btn:not(.comment-btn):not(.attachment-btn)');
-                        const categoryControls = document.querySelectorAll('.category-controls');
-                        const taskControls = document.querySelectorAll('.task-controls:not(.status-control):not(.comment-control):not(.attachment-control)');
-                        
-                        if (!isOwnedProject) {
-                            // Hide project edit controls
-                            projectControls.forEach(control => control.style.display = 'none');
-                            
-                            // Hide category controls
-                            categoryControls.forEach(control => control.style.display = 'none');
-                            
-                            // Hide task controls except status, comments, and attachments
-                            taskControls.forEach(control => control.style.display = 'none');
-                            
-                            // Modify attachment deletion permissions
-                            document.querySelectorAll('.attachment-item .delete-btn').forEach(btn => {
-                                const attacherId = btn.dataset.attacherId;
-                                if (attacherId != document.body.dataset.userId) {
-                                    btn.style.display = 'none';
+
+                    // Fetch project data for ownership check and UI control
+                    fetch(`../Controller/projectController.php?action=getProjectDetails&projectId=${projectId}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                const isOwnedProject = data.project.owner_id == document.body.dataset.userId;
+
+                                // Modify the UI based on project ownership
+                                const projectControls = document.querySelectorAll('.project-controls .btn:not(.comment-btn):not(.attachment-btn)');
+                                const categoryControls = document.querySelectorAll('.category-controls');
+                                const taskControls = document.querySelectorAll('.task-controls:not(.status-control):not(.comment-control):not(.attachment-control)');
+
+                                if (!isOwnedProject) {
+                                    // Hide project edit controls
+                                    projectControls.forEach(control => control.style.display = 'none');
+                                    // Hide category controls
+                                    categoryControls.forEach(control => control.style.display = 'none');
+                                    // Hide task controls except status, comments, and attachments
+                                    taskControls.forEach(control => control.style.display = 'none');
+                                    // Modify attachment deletion permissions
+                                    document.querySelectorAll('.attachment-item .delete-btn').forEach(btn => {
+                                        const attacherId = btn.dataset.attacherId;
+                                        if (attacherId != document.body.dataset.userId) {
+                                            btn.style.display = 'none';
+                                        }
+                                    });
                                 }
-                            });
-                        }
-                    }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading project details:', error);
+                            showErrorNotification('Failed to load project details: ' + error.message);
+                        });
                 })
                 .catch(error => {
                     console.error('Error loading project:', error);
@@ -4191,21 +4201,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
             function loadProjectData() {
                 fetch(`../Controller/projectController.php?action=getProjectDetails&projectId=${projectId}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
+                        if (!data) {
+                            throw new Error('No data received');
+                        }
+                        
                         if (data.success) {
                             updateProjectUI(data.project);
-                            if (data.categories.length > 0) {
-                                document.getElementById('noCategoriesMessage')?.remove();
-                                renderCategories(data.categories);
-                            }
                         } else {
                             throw new Error(data.message || 'Failed to load project');
                         }
                     })
                     .catch(error => {
                         console.error('Error loading project:', error);
-                        showErrorNotification(error.message);
+                        showErrorNotification('Failed to load project: ' + error.message);
                     });
             }
 
@@ -4235,30 +4250,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
             function loadCategories() {
                 fetch(`../Controller/projectController.php?action=getCategories&projectId=${projectId}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
-                        if (data.success && data.categories) {
+                        if (!data) {
+                            throw new Error('No data received');
+                        }
+                        console.log('Categories response:', data);
+                        if (data.success) {
+                            document.getElementById('noCategoriesMessage')?.remove();
                             renderCategories(data.categories);
-                            if (data.categories.length > 0) {
-                                document.getElementById('noCategoriesMessage')?.remove();
-                            } else {
-                                if (!document.getElementById('noCategoriesMessage')) {
-                                    const noCategoriesMsg = document.createElement('div');
-                                    noCategoriesMsg.id = 'noCategoriesMessage';
-                                    noCategoriesMsg.innerHTML = `
-                                        <i class="fas fa-folder-open" aria-hidden="true"></i>
-                                        <p>No categories yet</p>
-                                    `;
-                                    categoriesContainer.appendChild(noCategoriesMsg);
-                                }
-                            }
                         } else {
                             throw new Error(data.message || 'Failed to load categories');
                         }
                     })
                     .catch(error => {
                         console.error('Error loading categories:', error);
-                        showErrorNotification(error.message);
+                        showErrorNotification('Failed to load categories: ' + error.message);
                     });
             }
 

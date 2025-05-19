@@ -38,7 +38,7 @@ class ProjectModel {
     
         try {
             $projectId = filter_var($projectId, FILTER_VALIDATE_INT);
-            $field = filter_var($field, FILTER_SANITIZE_STRING);
+            $field = filter_var($field, FILTER_DEFAULT); // FIXED
             if (!$projectId || !$field) return false;
     
             // Special handling for date fields
@@ -83,7 +83,7 @@ class ProjectModel {
     public function addCategory($projectId, $name) {
         try {
             $projectId = filter_var($projectId, FILTER_VALIDATE_INT);
-            $name = filter_var(trim($name), FILTER_SANITIZE_STRING);
+            $name = filter_var(trim($name), FILTER_DEFAULT); // FIXED
             if (!$projectId || !$name) {
                 return false;
             }
@@ -145,7 +145,7 @@ class ProjectModel {
     public function updateCategory($categoryId, $name) {
         try {
             $categoryId = filter_var($categoryId, FILTER_VALIDATE_INT);
-            $name = filter_var(trim($name), FILTER_SANITIZE_STRING);
+            $name = filter_var(trim($name), FILTER_DEFAULT); // FIXED
             if (!$categoryId || !$name) {
                 return false;
             }
