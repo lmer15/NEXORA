@@ -527,5 +527,41 @@ class TaskModel {
             return [];
         }
     }
+
+    public function canUserModifyTask($userId, $taskId) {
+        try {
+            // Get the project owner
+            $sql = "SELECT p.owner_id 
+                    FROM tasks t 
+                    JOIN projects p ON t.project_id = p.id 
+                    WHERE t.id = :taskId";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':taskId', $taskId);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$result) {
+                return false;
+            }
+
+            // Check if user is project owner
+            if ($result['owner_id'] == $userId) {
+                return true;
+            }
+
+            // For assignees, check if they're assigned to this task
+            $sql = "SELECT 1 FROM task_assignments 
+                    WHERE task_id = :taskId AND user_id = :userId";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':taskId', $taskId);
+            $stmt->bindParam(':userId', $userId);
+            $stmt->execute();
+            
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log('Error in canUserModifyTask: ' . $e->getMessage());
+            return false;
+        }
+    }
 }
 ?>

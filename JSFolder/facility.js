@@ -26,21 +26,136 @@ function escapeHtml(unsafe) {
 document.addEventListener("DOMContentLoaded", function () {
     initMainApp();
 
-    function initMainApp() {
-        function debounce(func, wait, immediate) {
-            let timeout;
-            return function() {
-                const context = this, args = arguments;
-                const later = function() {
-                    timeout = null;
-                    if (!immediate) func.apply(context, args);
-                };
-                const callNow = immediate && !timeout;
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-                if (callNow) func.apply(context, args);
-            };
+    
+    function setupProjectFilters() {
+        const filterToggle = document.getElementById('filterToggle');
+        const filterDropdown = document.getElementById('filterDropdown');
+        const searchInput = document.getElementById('projectSearch');
+        const clearFiltersBtn = document.getElementById('clearFilters');
+        const applyFiltersBtn = document.getElementById('applyFilters');
+        
+        let activeFilters = {
+            status: ['all'],
+            priority: []
+        };
+
+        // Toggle filter dropdown
+        filterToggle?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            filterToggle.classList.toggle('active');
+            filterDropdown.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!filterDropdown?.contains(e.target) && !filterToggle?.contains(e.target)) {
+                filterDropdown?.classList.remove('show');
+                filterToggle?.classList.remove('active');
+            }
+        });
+
+        // Handle checkbox changes
+        filterDropdown?.addEventListener('change', (e) => {
+            if (e.target.type === 'checkbox') {
+                const value = e.target.value;
+                const type = e.target.closest('.filter-section').querySelector('h4').textContent.toLowerCase();
+                
+                if (type === 'status' && value === 'all') {
+                    // Handle 'All' checkbox
+                    document.querySelectorAll('.filter-section:first-child input[type="checkbox"]')
+                        .forEach(cb => {
+                            if (cb.value !== 'all') cb.checked = false;
+                        });
+                    activeFilters.status = ['all'];
+                } else if (type === 'status') {
+                    // Uncheck 'All' when selecting specific status
+                    document.querySelector('input[value="all"]').checked = false;
+                    activeFilters.status = Array.from(
+                        document.querySelectorAll('.filter-section:first-child input[type="checkbox"]:checked')
+                    ).map(cb => cb.value);
+                } else if (type === 'priority') {
+                    activeFilters.priority = Array.from(
+                        document.querySelectorAll('.filter-section:last-child input[type="checkbox"]:checked')
+                    ).map(cb => cb.value);
+                }
+            }
+        });
+
+        // Search functionality
+        searchInput?.addEventListener('input', debounce(() => {
+            applyFilters();
+        }, 300));
+
+        // Clear filters
+        clearFiltersBtn?.addEventListener('click', () => {
+            document.querySelectorAll('.filter-dropdown input[type="checkbox"]')
+                .forEach(cb => cb.checked = false);
+            document.querySelector('input[value="all"]').checked = true;
+            activeFilters = { status: ['all'], priority: [] };
+            searchInput.value = '';
+            applyFilters();
+        });
+
+        // Apply filters
+        applyFiltersBtn?.addEventListener('click', () => {
+            applyFilters();
+            filterDropdown.classList.remove('show');
+            filterToggle.classList.remove('active');
+        });
+
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const projects = document.querySelectorAll('.kanban-task');
+
+            projects.forEach(project => {
+                const title = project.querySelector('.task-title').textContent.toLowerCase();
+                const description = project.querySelector('.task-description').textContent.toLowerCase();
+                const status = project.closest('.kanban-column').dataset.status;
+                const priority = project.querySelector('.task-priority').textContent.toLowerCase();
+
+                const matchesSearch = searchTerm === '' || 
+                    title.includes(searchTerm) || 
+                    description.includes(searchTerm);
+
+                const matchesStatus = activeFilters.status.includes('all') || 
+                    activeFilters.status.includes(status);
+
+                const matchesPriority = activeFilters.priority.length === 0 || 
+                    activeFilters.priority.includes(priority);
+
+                project.style.display = (matchesSearch && matchesStatus && matchesPriority) ? 
+                    'flex' : 'none';
+            });
+
+            // Update empty states
+            document.querySelectorAll('.kanban-column').forEach(column => {
+                const hasVisibleTasks = Array.from(column.querySelectorAll('.kanban-task'))
+                    .some(task => task.style.display !== 'none');
+                const emptyState = column.querySelector('.empty-state');
+                
+                if (emptyState) {
+                    emptyState.style.display = hasVisibleTasks ? 'none' : 'flex';
+                }
+            });
         }
+    }
+
+    function debounce(func, wait, immediate) {
+        let timeout;
+        return function() {
+            const context = this, args = arguments;
+            const later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            const callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    }
+
+    function initMainApp() {
 
         const navItems = document.querySelectorAll(".nav-item");
         const contentContainer = document.getElementById("dynamic-content");
@@ -202,6 +317,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         initProfileModal();
                         enhanceDashboardUI();
                         loadProjects();
+                        setupProjectFilters();
                     }
                     if (file.includes('members.php')) {
                         handleMembersPage();
@@ -2569,6 +2685,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     // Fetch project data for ownership check and UI control
                     fetch(`../Controller/projectController.php?action=getProjectDetails&projectId=${projectId}`)
                         .then(response => {
+                            if (response.status === 403) {
+                                throw new Error('Access denied. You do not have permission to view this project.');
+                            }
                             if (!response.ok) {
                                 throw new Error(`HTTP error! status: ${response.status}`);
                             }
@@ -2576,28 +2695,18 @@ document.addEventListener("DOMContentLoaded", function () {
                         })
                         .then(data => {
                             if (data.success) {
-                                const isOwnedProject = data.project.owner_id == document.body.dataset.userId;
-
-                                // Modify the UI based on project ownership
-                                const projectControls = document.querySelectorAll('.project-controls .btn:not(.comment-btn):not(.attachment-btn)');
-                                const categoryControls = document.querySelectorAll('.category-controls');
-                                const taskControls = document.querySelectorAll('.task-controls:not(.status-control):not(.comment-control):not(.attachment-control)');
-
-                                if (!isOwnedProject) {
-                                    // Hide project edit controls
-                                    projectControls.forEach(control => control.style.display = 'none');
-                                    // Hide category controls
-                                    categoryControls.forEach(control => control.style.display = 'none');
-                                    // Hide task controls except status, comments, and attachments
-                                    taskControls.forEach(control => control.style.display = 'none');
-                                    // Modify attachment deletion permissions
-                                    document.querySelectorAll('.attachment-item .delete-btn').forEach(btn => {
-                                        const attacherId = btn.dataset.attacherId;
-                                        if (attacherId != document.body.dataset.userId) {
-                                            btn.style.display = 'none';
-                                        }
-                                    });
+                                contentContainer.innerHTML = html;
+                                document.body.dataset.projectId = projectId;
+                                
+                                // Set permissions class on container
+                                const container = document.querySelector('.project-view-container');
+                                if (container) {
+                                    container.classList.toggle('is-owner', data.isOwner);
                                 }
+
+                                currentTaskDetailPanel = initProjectView(projectId);
+                                setupTaskSearchAndFilter();
+                                updateUIBasedOnPermissions(data.isOwner);
                             }
                         })
                         .catch(error => {
@@ -2605,29 +2714,58 @@ document.addEventListener("DOMContentLoaded", function () {
                             showErrorNotification('Failed to load project details: ' + error.message);
                         });
                 })
-                .catch(error => {
-                    console.error('Error loading project:', error);
-                    contentContainer.innerHTML = `
-                        <div class="error-state">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <p>Failed to load project</p>
-                            <p class="error-detail">${error.message}</p>
-                        </div>
-                    `;
+            .catch(error => {
+                console.error('Error loading project:', error);
+                contentContainer.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>${error.message}</p>
+                        <button class="btn btn-outline" onclick="loadPage('../View/dashboard.php')">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </button>
+                    </div>
+                `;
+            });
+        }
+        
+        function updateUIBasedOnPermissions(isOwner) {
+            const elements = {
+                projectControls: '.project-controls .btn:not(.comment-btn):not(.attachment-btn)',
+                categoryControls: '.category-controls',
+                taskControls: '.task-controls:not(.status-control):not(.comment-control):not(.attachment-control)',
+                deleteButtons: '.delete-project, .archive-project',
+                dragHandles: '.task-card',
+                editProjectDetails: '.project-title[contenteditable], .project-description[contenteditable], .edit-description-btn, .project-due-date input, .project-status-select',
+                addCategoryBtn: '.add-category-btn',
+                addTaskBtn: '.add-task-btn'
+            };
+
+            Object.entries(elements).forEach(([key, selector]) => {
+                document.querySelectorAll(selector).forEach(el => {
+                    if (!isOwner) {
+                        if (key === 'dragHandles') {
+                            el.draggable = false;
+                        } else {
+                            el.style.display = 'none';
+                        }
+                    }
                 });
+            });
+
+            // Disable editing for non-owners
+            if (!isOwner) {
+                document.querySelector('.project-title').removeAttribute('contenteditable');
+                document.querySelector('.project-description').removeAttribute('contenteditable');
+            }
         }
 
         function initProjectView(projectId) {
             // Initialize variables to track instances for cleanup
-            let sortableInstances = [];
             let flatpickrInstances = [];
             let activeModals = [];
-            let quillEditor = null;
 
             // DOM elements
-            const projectViewContainer = document.querySelector('.project-view-container');
             const categoriesContainer = document.querySelector('.categories-container');
-            const addCategoryBtn = document.querySelector('.add-category-btn');
             const backToDashboardBtn = document.querySelector('.back-to-dashboard');
             const viewToggleBtns = document.querySelectorAll('.toggle-btn');
             const kanbanView = document.querySelector('.kanban-view');
@@ -2735,7 +2873,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 let quill = null;
                 let currentTaskId = null;
                 let currentAssignees = [];
-                let commentInputFocused = false;
                 let currentUser = null;
                 let panel = null;
                 let datePicker = null;
@@ -2946,6 +3083,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     try {
                         quill = new Quill('#taskDescriptionEditor', {
                             theme: 'snow',
+                            placeholder: 'Add a detailed description...',
                             modules: {
                                 toolbar: [
                                     ['bold', 'italic', 'underline'],
@@ -2953,12 +3091,27 @@ document.addEventListener("DOMContentLoaded", function () {
                                     ['link'],
                                     ['clean']
                                 ]
-                            },
-                            placeholder: 'Add a detailed description...'
+                            }
                         });
+
+                        descriptionDisplay.addEventListener('click', (e) => {
+                            if (!isOwner) return;
+                            e.stopPropagation();
+                            showEditor();
+                        });
+                        quill.on('text-change', () => {
+                            if (quill.getLength() > 1) {
+                                saveTaskChanges();
+                            }
+                        });
+                        quill.on('selection-change', (range) => {
+                            if (range) {
+                                descriptionDisplay.innerHTML = quill.root.innerHTML;
+                            }
+                        });
+
                     } catch (error) {
-                        console.error('Error initializing Quill editor:', error);
-                        showErrorNotification('Failed to initialize text editor. Please refresh the page.');
+                        console.error('Error initializing Quill:', error);
                     }
                     
                     // Initialize date picker
@@ -3135,11 +3288,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         
                         // Comment input focus/blur
                         const commentFocusHandler = () => {
-                            commentInputFocused = true;
                             panel.querySelector('.comment-input-wrapper').classList.add('focused');
                         };
                         const commentBlurHandler = () => {
-                            commentInputFocused = false;
                             panel.querySelector('.comment-input-wrapper').classList.remove('focused');
                         };
                         
@@ -3539,43 +3690,40 @@ document.addEventListener("DOMContentLoaded", function () {
             
                 async function saveTaskChanges() {
                     if (!currentTaskId) return;
-                    
+
+                    const titleInput = panel.querySelector('#taskTitle');
+                    const statusSelect = panel.querySelector('#taskStatus');
+                    const priorityInput = panel.querySelector('#taskPriority');
+                    const description = quill ? quill.root.innerHTML : '';
+
                     try {
-                        const taskData = {
-                            taskId: currentTaskId,
-                            title: panel.querySelector('#taskTitle').value.trim(),
-                            description: quill.root.innerHTML,
-                            status: panel.querySelector('#taskStatus').value,
-                            priority: panel.querySelector('.priority-option.active')?.dataset.priority || 
-                                    document.getElementById('taskPriority').value || 'low',
-                            due_date: panel.querySelector('#taskDueDate').value || null
-                        };
-                        
-                        if (!taskData.title || taskData.title.length < 3) {
-                            showErrorNotification('Task title must be at least 3 characters');
-                            return;
-                        }
-                        
-                        const response = await fetch('../Controller/projectController.php?action=updateTask', {
+                        const response = await fetch('../Controller/taskController.php?action=updateTask', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
                             },
-                            body: JSON.stringify(taskData)
+                            body: JSON.stringify({
+                                taskId: currentTaskId,
+                                title: titleInput.value,
+                                status: statusSelect.value,
+                                priority: priorityInput.value,
+                                description: description
+                            })
                         });
-                        
+
+                        if (!response.ok) throw new Error('Failed to update task');
                         const data = await response.json();
-                        if (!data.success) {
+
+                        if (data.success) {
+                            updateLastUpdated();
+                            updateTaskCardUI(data.task);
+                        } else {
                             throw new Error(data.message || 'Failed to update task');
                         }
-                        
-                        updateLastUpdated();
-                        loadActivityLog();
-                        loadCategories(); // Refresh the task list
                     } catch (error) {
-                        console.error('Error saving task:', error);
-                        showErrorNotification('Failed to save task. Please try again.');
+                        console.error('Error saving task changes:', error);
+                        showErrorNotification(error.message);
                     }
                 }
             
@@ -4050,13 +4198,39 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
                     
-                    // Store current task data
                     currentTaskData = task;
                     currentTaskId = task.id;
+                    const isOwner = task.isOwner; 
                     
-                    // Initialize panel if not already done
                     if (!isInitialized) {
                         initializePanel();
+                    }
+
+                    if (!isOwner) {
+                        const disabledElements = [
+                            '#taskTitle',
+                            '#taskStatus',
+                            '#taskPriority',
+                            '#taskDueDate',
+                            '.btn-add-assignee',
+                            '.priority-option',
+                            '#deleteTaskBtn'
+                        ];
+                        
+                        disabledElements.forEach(selector => {
+                            const element = panel.querySelector(selector);
+                            if (element) {
+                                if (element.tagName === 'INPUT' || element.tagName === 'SELECT') {
+                                    element.disabled = true;
+                                } else {
+                                    element.style.display = 'none';
+                                }
+                            }
+                        });
+                        
+                        if (quill) {
+                            quill.enable(false);
+                        }
                     }
                     
                     // Reset panel state
@@ -4067,40 +4241,66 @@ document.addEventListener("DOMContentLoaded", function () {
                     const descriptionDisplay = panel.querySelector('#descriptionDisplay');
                     const descriptionEditor = panel.querySelector('#taskDescriptionEditor');
                     const quillToolbar = panel.querySelector('.ql-toolbar');
-                    
-                    // Handle description
-                    if (task.description && task.description.trim() !== '') {
-                        quill.root.innerHTML = task.description;
-                        descriptionDisplay.innerHTML = task.description;
-                        descriptionDisplay.style.display = 'block';
-                        descriptionEditor.style.display = 'none';
-                        if (quillToolbar) quillToolbar.style.display = 'none';
 
-                        // Add click event to enable editing
+                    // First, ensure proper initialization of Quill
+                    if (!quill && descriptionEditor) {
+                        try {
+                            quill = new Quill('#taskDescriptionEditor', {
+                                theme: 'snow',
+                                placeholder: 'Add a detailed description...',
+                                modules: {
+                                    toolbar: [
+                                        ['bold', 'italic', 'underline'],
+                                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                        ['link'],
+                                        ['clean']
+                                    ]
+                                }
+                            });
+
+                            // Add change handler
+                            quill.on('text-change', debounce(() => {
+                                if (currentTaskId) {
+                                    saveTaskChanges();
+                                }
+                            }, 1000));
+                        } catch (error) {
+                            console.error('Error initializing Quill:', error);
+                        }
+                    }
+
+                    // Set content and display state
+                    if (quill) {
+                        quill.enable(isOwner);
+                        quill.root.innerHTML = task.description || '';
+                    }
+
+                    descriptionDisplay.innerHTML = task.description || '<span class="empty-description">Add a description</span>';
+                    descriptionDisplay.style.display = 'block';
+                    descriptionEditor.style.display = 'none';
+                    if (quillToolbar) quillToolbar.style.display = 'none';
+
+                    if (isOwner) {
                         descriptionDisplay.style.cursor = 'pointer';
-                        descriptionDisplay.onclick = () => {
+                        const showEditor = () => {
                             descriptionDisplay.style.display = 'none';
                             descriptionEditor.style.display = 'block';
-                            if (quillToolbar) quillToolbar.style.display = '';
-                            quill.focus();
+                            if (quillToolbar) {
+                                quillToolbar.style.display = 'block';
+                                quillToolbar.style.visibility = 'visible';
+                            }
+                            if (quill) {
+                                quill.enable(true);
+                                quill.focus();
+                            }
                         };
-                    } else {
-                        quill.root.innerHTML = '';
-                        descriptionDisplay.innerHTML = `<span class="empty-description">Add a new description</span>`;
-                        descriptionDisplay.style.display = 'block';
-                        descriptionEditor.style.display = 'none';
-                        if (quillToolbar) quillToolbar.style.display = 'none';
 
-                        // Add click event to enable editing
-                        descriptionDisplay.style.cursor = 'pointer';
-                        descriptionDisplay.onclick = () => {
-                            descriptionDisplay.style.display = 'none';
-                            descriptionEditor.style.display = 'block';
-                            if (quillToolbar) quillToolbar.style.display = '';
-                            quill.focus();
+                        descriptionDisplay.onclick = (e) => {
+                            e.stopPropagation();
+                            showEditor();
                         };
                     }
-                    
+
                     // Set priority
                     panel.querySelectorAll('.priority-option').forEach(btn => {
                         btn.classList.remove('active');
@@ -4125,7 +4325,6 @@ document.addEventListener("DOMContentLoaded", function () {
                             }
                         } catch (error) {
                             console.error('Error handling date picker:', error);
-                            // Reinitialize date picker if needed
                             datePicker = flatpickr('#taskDueDate', {
                                 dateFormat: 'Y-m-d',
                                 allowInput: true,
@@ -4164,7 +4363,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         }, 100);
                     }
                     
-                    // Update the corresponding task card in the UI
+                    // Update task card UI
                     updateTaskCardUI(task);
                 }
                 
@@ -4208,15 +4407,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         return response.json();
                     })
                     .then(data => {
-                        if (!data) {
-                            throw new Error('No data received');
-                        }
-                        
-                        if (data.success) {
-                            updateProjectUI(data.project);
-                        } else {
+                        if (!data.success) {
                             throw new Error(data.message || 'Failed to load project');
                         }
+                        
+                        updateProjectUI(data.project);
+                        updateUIBasedOnPermissions(data.isOwner);
                     })
                     .catch(error => {
                         console.error('Error loading project:', error);
@@ -4469,31 +4665,42 @@ document.addEventListener("DOMContentLoaded", function () {
                     initializeSortable(categoryColumn.querySelector('.category-task-list'));
                 });
             }
-
+            
             async function loadTasksForCategory(categoryId) {
                 try {
                     const response = await fetch(`../Controller/projectController.php?action=getTasks&categoryId=${categoryId}&projectId=${projectId}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const data = await response.json();
                     
-                    if (data.success && data.tasks) {
-                        const tasksWithAssignees = await Promise.all(data.tasks.map(async task => {
+                    if (!data.success) throw new Error(data.message || 'Failed to load tasks');
+                    
+                    const tasksWithAssignees = await Promise.all(data.tasks.map(async task => {
+                        try {
                             const assigneeResponse = await fetch(`../Controller/projectController.php?action=getAssignees&taskId=${task.id}`);
+                            if (!assigneeResponse.ok) {
+                                console.warn(`Failed to load assignees for task ${task.id}`);
+                                return { ...task, assignees: [] };
+                            }
                             const assigneeData = await assigneeResponse.json();
-                            
                             return {
                                 ...task,
-                                assignees: assigneeData.success ? assigneeData.assignees : []
+                                assignees: assigneeData.success ? assigneeData.assignees : [],
+                                isOwner: data.isOwner
                             };
-                        }));
-                        
-                        renderTasks(tasksWithAssignees, categoryId);
-                        const taskList = document.querySelector(`.category-column[data-category-id="${categoryId}"] .category-task-list`);
-                        if (taskList) {
-                            updateEmptyState(taskList);
+                        } catch (error) {
+                            console.warn(`Error loading assignees for task ${task.id}:`, error);
+                            return { ...task, assignees: [] };
                         }
-                    } else {
-                        throw new Error(data.message || 'Failed to load tasks');
+                    }));
+                    
+                    renderTasks(tasksWithAssignees, categoryId);
+                    
+                    // Get the taskList element after rendering tasks
+                    const taskList = document.querySelector(`.category-column[data-category-id="${categoryId}"] .category-task-list`);
+                    if (taskList) {
+                        updateEmptyState(taskList);
                     }
+                    
                 } catch (error) {
                     console.error('Error loading tasks:', error);
                     showErrorNotification(error.message);
@@ -4710,7 +4917,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             }
 
-            function updateEmptyState(taskList) {
+            function updateEmptyState(taskListOrId) {
+                // Handle both DOM element and category ID
+                let taskList;
+                if (typeof taskListOrId === 'string' || typeof taskListOrId === 'number') {
+                    taskList = document.querySelector(`.category-column[data-category-id="${taskListOrId}"] .category-task-list`);
+                } else {
+                    taskList = taskListOrId;
+                }
+
+                // Guard clause if taskList is not found
+                if (!taskList) {
+                    console.warn('Task list container not found');
+                    return;
+                }
+
                 const tasks = taskList.querySelectorAll('.task-card');
                 const emptyState = taskList.querySelector('.empty-state');
                 const addTaskForm = taskList.querySelector('.add-task-form');
@@ -4727,10 +4948,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     } else {
                         emptyState.style.display = 'flex';
                     }
-                } else {
-                    if (emptyState) {
-                        emptyState.style.display = 'none';
-                    }
+                } else if (emptyState) {
+                    emptyState.style.display = 'none';
                 }
             }
 
@@ -4966,25 +5185,52 @@ document.addEventListener("DOMContentLoaded", function () {
                     </div>
                 `;
 
-                fetch(`../Controller/projectController.php?action=getTasks&projectId=${projectId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success && data.tasks) {
-                            renderCalendarView(data.tasks);
-                            setupCalendarNavigation();
-                        } else {
-                            throw new Error(data.message || 'Failed to load tasks for calendar');
+                // Add error handling and parameter validation
+                if (!projectId) {
+                    calendarView.innerHTML = `
+                        <div class="error-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Project ID is required</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                fetch(`../Controller/projectController.php?action=getTasks&projectId=${projectId}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 400) {
+                            throw new Error('Invalid project ID or parameters');
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error loading calendar tasks:', error);
-                        calendarView.innerHTML = `
-                            <div class="error-state">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <p>Failed to load calendar</p>
-                            </div>
-                        `;
-                    });
+                        throw new Error(`Server error: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success && Array.isArray(data.tasks)) {
+                        renderCalendarView(data.tasks);
+                        setupCalendarNavigation();
+                    } else {
+                        throw new Error(data.message || 'Failed to load tasks for calendar');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading calendar tasks:', error);
+                    calendarView.innerHTML = `
+                        <div class="error-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>${error.message}</p>
+                            <button class="btn-retry" onclick="updateCalendarView()">
+                                <i class="fas fa-sync-alt"></i> Retry
+                            </button>
+                        </div>
+                    `;
+                });
             }
 
             function setupCalendarNavigation() {
@@ -5095,55 +5341,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 }, 300);
             }
 
-            function cleanup() {
-                // Clean up sortable instances
-                sortableInstances.forEach(sortable => {
-                    try {
-                        if (sortable && typeof sortable.destroy === 'function') {
-                            sortable.destroy();
-                        }
-                    } catch (e) {
-                        console.error('Error destroying sortable:', e);
-                    }
-                });
-
-                // Clean up flatpickr instances
-                flatpickrInstances.forEach(fp => {
-                    try {
-                        if (fp && typeof fp.destroy === 'function') {
-                            fp.destroy();
-                        }
-                    } catch (e) {
-                        console.error('Error destroying flatpickr:', e);
-                    }
-                });
-
-                // Clean up modals
-                activeModals.forEach(modal => {
-                    try {
-                        if (modal && modal.parentNode) {
-                            modal.remove();
-                        }
-                    } catch (e) {
-                        console.error('Error removing modal:', e);
-                    }
-                });
-
-                // Clean up Quill editor
-                if (quillEditor && typeof quillEditor.cleanup === 'function') {
-                    try {
-                        quillEditor.cleanup();
-                    } catch (e) {
-                        console.error('Error cleaning up Quill editor:', e);
-                    }
-                }
-
-                // Reset arrays
-                sortableInstances = [];
-                flatpickrInstances = [];
-                activeModals = [];
-            }
-
             function showSuccessNotification(message, duration = 3000) {
                 const notification = document.createElement('div');
                 notification.className = 'notification success';
@@ -5229,14 +5426,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     .replace(/"/g, "&quot;")
                     .replace(/'/g, "&#039;");
             }
-
-            function truncateText(text, maxLength) {
-                if (text.length > maxLength) {
-                    return text.substring(0, maxLength - 3) + '...';
-                }
-                return text;
-            }
-
             initialize();
             return taskDetailPanel;
 

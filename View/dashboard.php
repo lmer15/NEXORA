@@ -11,21 +11,55 @@
     <div class="dashboard-view">
         <div class="dashboard-header">
             <h1 class="dashboard-title">Facility Dashboard</h1>
-            <div class="searchbar">
-                <input type="text" placeholder="Search facilities, projects...">
-            </div>
-            <div class="dashboard-filters">
-                <select class="filter-select" id="dashboardProjectFilter">
-                    <option value="all">All Projects</option>
-                    <option value="active">Active Projects</option>
-                    <option value="completed">Completed Projects</option>
-                </select>
-            </div>
-            <div class="dashboard-actions">
-                <button class="btn btn-outline">
-                    <i class="fas fa-download"></i> Export
-                </button>
-                <button class="btn btn-primary new-project-btn">
+            <div class="dashboard-controls">
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <input type="text" id="projectSearch" placeholder="Search projects...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+                
+                <!-- Filter Button -->
+                <div class="filter-container">
+                    <button id="filterToggle" class="filter-toggle">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <!-- Filter Dropdown -->
+                    <div id="filterDropdown" class="filter-dropdown">
+                        <div class="filter-section">
+                            <h4>Status</h4>
+                            <label class="filter-option">
+                                <input type="checkbox" value="all" checked> All
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="todo"> To Do
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="progress"> In Progress
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="done"> Done
+                            </label>
+                        </div>
+                        <div class="filter-section">
+                            <h4>Priority</h4>
+                            <label class="filter-option">
+                                <input type="checkbox" value="high"> High
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="medium"> Medium
+                            </label>
+                            <label class="filter-option">
+                                <input type="checkbox" value="low"> Low
+                            </label>
+                        </div>
+                        <div class="filter-actions">
+                            <button id="clearFilters" class="btn-secondary">Clear</button>
+                            <button id="applyFilters" class="btn-primary">Apply</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Add Project Button -->
+                <button class="new-project-btn btn btn-primary">
                     <i class="fas fa-plus"></i> New Project
                 </button>
             </div>

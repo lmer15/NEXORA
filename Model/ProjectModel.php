@@ -184,5 +184,73 @@ class ProjectModel {
             return false;
         }
     }
+
+    public function canUserAccessProject($userId, $projectId) {
+        try {
+            // First check if user is owner
+            $sql = "SELECT owner_id FROM projects WHERE id = :projectId";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':projectId', $projectId);
+            $stmt->execute();
+            $project = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$project) {
+                return false;
+            }
+            
+            if ($project['owner_id'] == $userId) {
+                return true;
+            }
+            
+            // Check if user is assigned to any task in the project
+            $sql = "SELECT 1 FROM task_assignments ta 
+                    JOIN tasks t ON ta.task_id = t.id 
+                    WHERE t.project_id = :projectId 
+                    AND ta.user_id = :userId 
+                    LIMIT 1";
+            
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':projectId', $projectId);
+            $stmt->bindParam(':userId', $userId);
+            $stmt->execute();
+            
+            return $stmt->rowCount() > 0;
+            
+        } catch (PDOException $e) {
+            error_log('Error in canUserAccessProject: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Add new method to check if user can modify project
+    public function canUserModifyProject($userId, $projectId) {
+        try {
+            $sql = "SELECT owner_id FROM projects WHERE id = :projectId";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':projectId', $projectId);
+            $stmt->execute();
+            $project = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            return $project && $project['owner_id'] == $userId;
+        } catch (PDOException $e) {
+            error_log('Error in canUserModifyProject: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function isProjectOwner($userId, $projectId) {
+        try {
+            $sql = "SELECT owner_id FROM projects WHERE id = :projectId";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':projectId', $projectId);
+            $stmt->execute();
+            $project = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            return $project && $project['owner_id'] == $userId;
+        } catch (PDOException $e) {
+            error_log('Error in isProjectOwner: ' . $e->getMessage());
+            return false;
+        }
+    }
 }
 ?>

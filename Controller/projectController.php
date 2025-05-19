@@ -7,7 +7,21 @@ require_once '../config/db.php';
 require_once '../Model/ProjectModel.php';
 require_once '../Model/TaskModel.php';
 
-// Set error handlers
+function getHttpCode($code) {
+    if (is_numeric($code)) {
+        $code = (int)$code;
+        return ($code >= 100 && $code < 600) ? $code : 500;
+    }
+    return 500;
+}
+
+function isProjectOwner($conn, $projectId, $userId) {
+    $stmt = $conn->prepare("SELECT owner_id FROM projects WHERE id = ?");
+    $stmt->execute([$projectId]);
+    $project = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $project && $project['owner_id'] == $userId;
+}
+
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
     error_log("PHP Error [$errno]: $errstr in $errfile on line $errline");
     http_response_code(500);
@@ -69,6 +83,62 @@ function isProjectMember($conn, $project, $userId) {
     return $count > 0;
 }
 
+function canUserModifyTask($conn, $userId, $taskId) {
+    try {
+        $stmt = $conn->prepare("
+            SELECT p.owner_id, t.assignee_id 
+            FROM tasks t 
+            JOIN projects p ON t.project_id = p.id 
+            WHERE t.id = :taskId
+        ");
+        $stmt->execute(['taskId' => $taskId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Allow owners and assigned users
+        return $result && ($result['owner_id'] == $userId || $result['assignee_id'] == $userId);
+    } catch (PDOException $e) {
+        error_log('Error in canUserModifyTask: ' . $e->getMessage());
+        return false;
+    }
+}
+
+function canUserAccessTask($conn, $taskId, $userId) {
+    try {
+        $stmt = $conn->prepare("
+            SELECT p.owner_id, t.project_id
+            FROM tasks t
+            JOIN projects p ON t.project_id = p.id
+            WHERE t.id = :taskId
+        ");
+        $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$result) {
+            return false;
+        }
+
+        // Check if user is project owner
+        if ($result['owner_id'] == $userId) {
+            return true;
+        }
+
+        // Check if user is assigned to the task
+        $stmt = $conn->prepare("
+            SELECT 1 FROM task_assignments 
+            WHERE task_id = :taskId AND user_id = :userId
+        ");
+        $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
+        $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->rowCount() > 0;
+    } catch (PDOException $e) {
+        error_log('Error in canUserAccessTask: ' . $e->getMessage());
+        return false;
+    }
+}
+
 try {
     if (!isset($_GET['action'])) {
         throw new Exception('Action parameter is required', 400);
@@ -85,28 +155,45 @@ try {
 
     switch ($action) {
         case 'getTasks':
-            $projectId = filter_input(INPUT_GET, 'projectId', FILTER_VALIDATE_INT) ?: null;
-            if (!$projectId) {
-                throw new Exception('Project ID is required', 400);
-            }
+            try {
+                $categoryId = filter_input(INPUT_GET, 'categoryId', FILTER_VALIDATE_INT);
+                $projectId = filter_input(INPUT_GET, 'projectId', FILTER_VALIDATE_INT);
+                $userId = $_SESSION['user_id'] ?? null;
 
-            $project = $projectModel->getById($projectId);
-            if (!$project || !isProjectMember($conn, $project, $userId)) {
-                throw new Exception('Project not found or access denied', 404);
-            }
-
-            $categoryId = filter_input(INPUT_GET, 'categoryId', FILTER_VALIDATE_INT) ?: null;
-            if ($categoryId) {
-                $category = $projectModel->getCategoryById($categoryId);
-                if (!$category || $category['project_id'] != $projectId) {
-                    throw new Exception('Invalid category for this project', 400);
+                if (!$projectId || !$userId) {
+                    throw new Exception('Invalid parameters', 400);
                 }
-                $tasks = $taskModel->getByCategory($categoryId);
-            } else {
-                $tasks = $taskModel->getByProject($projectId);
-            }
 
-            echo json_encode(['success' => true, 'tasks' => $tasks]);
+                // Get project details first for ownership check
+                $project = $projectModel->getById($projectId);
+                if (!$project) {
+                    throw new Exception('Project not found', 404);
+                }
+
+                // Check access permission
+                if (!$projectModel->canUserAccessProject($userId, $projectId)) {
+                    throw new Exception('Access denied', 403);
+                }
+
+                $tasks = $categoryId ? 
+                    $taskModel->getByCategory($categoryId) : 
+                    $taskModel->getByProject($projectId);
+                
+                echo json_encode([
+                    'success' => true,
+                    'tasks' => $tasks,
+                    'isOwner' => $project['owner_id'] == $userId
+                ]);
+                exit;
+
+            } catch (Exception $e) {
+                http_response_code(getHttpCode($e->getCode()));
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]);
+                exit;
+            }
             break;
 
         case 'getProject':
@@ -133,6 +220,11 @@ try {
             $field = filter_var($data['field'], FILTER_DEFAULT);
             $value = $data['value'];
 
+            // Add at the beginning of each modification action
+            if (!$projectModel->canUserModifyProject($userId, $projectId)) {
+                throw new Exception('Access denied. Only project owner can modify.', 403);
+            }
+
             $project = $projectModel->getById($projectId);
             if (!$project || $project['owner_id'] !== $userId) {
                 throw new Exception('Project not found or access denied', 404);
@@ -158,16 +250,38 @@ try {
             break;
 
         case 'getCategories':
-            $projectId = filter_input(INPUT_GET, 'projectId', FILTER_VALIDATE_INT) ?: null;
-            if (!$projectId) throw new Exception('Project ID is required', 400);
+            try {
+                $projectId = filter_input(INPUT_GET, 'projectId', FILTER_VALIDATE_INT);
+                if (!$projectId) {
+                    throw new Exception('Project ID is required', 400);
+                }
 
-            $project = $projectModel->getById($projectId);
-            if (!$project || !isProjectMember($conn, $project, $userId)) {
-                throw new Exception('Project not found or access denied', 404);
+                $project = $projectModel->getById($projectId);
+                if (!$project) {
+                    throw new Exception('Project not found', 404);
+                }
+
+                if (!$projectModel->canUserAccessProject($userId, $projectId)) {
+                    throw new Exception('Access denied', 403);
+                }
+
+                $categories = $projectModel->getCategories($projectId);
+                
+                echo json_encode([
+                    'success' => true,
+                    'categories' => $categories
+                ], JSON_UNESCAPED_SLASHES);
+                exit;
+
+            } catch (Exception $e) {
+                $code = getHttpCode($e->getCode());
+                http_response_code($code);
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]);
+                exit;
             }
-
-            $categories = $projectModel->getCategories($projectId);
-            echo json_encode(['success' => true, 'categories' => $categories]);
             break;
 
         case 'addCategory':
@@ -182,6 +296,11 @@ try {
             $name = filter_var(trim($data['name']), FILTER_DEFAULT);
             if (strlen($name) < 2 || strlen($name) > 50) {
                 throw new Exception('Category name must be between 2-50 characters', 400);
+            }
+
+            // Add at the beginning of each modification action
+            if (!$projectModel->canUserModifyProject($userId, $projectId)) {
+                throw new Exception('Access denied. Only project owner can modify.', 403);
             }
 
             $project = $projectModel->getById($projectId);
@@ -201,6 +320,33 @@ try {
             ]);
             break;
 
+        case 'deleteCategory':
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+
+            if (!isset($data['categoryId'])) {
+                throw new Exception('Category ID is required', 400);
+            }
+
+            $categoryId = filter_var($data['categoryId'], FILTER_VALIDATE_INT);
+            $category = $projectModel->getCategoryById($categoryId);
+            
+            if (!$category) {
+                throw new Exception('Category not found', 404);
+            }
+
+            // Check if user is project owner
+            if (!isProjectOwner($conn, $category['project_id'], $userId)) {
+                throw new Exception('Access denied. Only project owner can delete categories.', 403);
+            }
+
+            $success = $projectModel->deleteCategory($categoryId);
+            echo json_encode([
+                'success' => $success,
+                'message' => $success ? 'Category deleted successfully' : 'Failed to delete category'
+            ]);
+            break;
+
         case 'createTask':
             $json = file_get_contents('php://input');
             $data = json_decode($json, true);
@@ -213,10 +359,21 @@ try {
             }
 
             $projectId = filter_var($data['projectId'], FILTER_VALIDATE_INT);
+            
+            // Check if user is project owner
+            if (!isProjectOwner($conn, $projectId, $userId)) {
+                throw new Exception('Access denied. Only project owner can create tasks.', 403);
+            }
+
             $categoryId = filter_var($data['categoryId'], FILTER_VALIDATE_INT);
             $title = filter_var(trim($data['title']), FILTER_DEFAULT);
             if (strlen($title) < 3 || strlen($title) > 100) {
                 throw new Exception('Task title must be between 3-100 characters', 400);
+            }
+
+            // Add at the beginning of each modification action
+            if (!$projectModel->canUserModifyProject($userId, $projectId)) {
+                throw new Exception('Access denied. Only project owner can modify.', 403);
             }
 
             $project = $projectModel->getById($projectId);
@@ -343,191 +500,71 @@ try {
             ]);
             break;
 
-        case 'updateCategory':
-            $json = file_get_contents('php://input');
-            $data = json_decode($json, true);
-
-            if (!isset($data['categoryId']) || !isset($data['name'])) {
-                throw new Exception('Missing required fields', 400);
-            }
-
-            $categoryId = filter_var($data['categoryId'], FILTER_VALIDATE_INT);
-            $name = filter_var(trim($data['name']), FILTER_DEFAULT);
-            if (strlen($name) < 2 || strlen($name) > 50) {
-                throw new Exception('Category name must be between 2-50 characters', 400);
-            }
-
-            $category = $projectModel->getCategoryById($categoryId);
-            if (!$category) {
-                throw new Exception('Category not found', 404);
-            }
-
-            $project = $projectModel->getById($category['project_id']);
-            if (!$project || $project['owner_id'] !== $userId) {
-                throw new Exception('Project not found or access denied', 404);
-            }
-
-            $success = $projectModel->updateCategory($categoryId, $name);
-            echo json_encode([
-                'success' => $success,
-                'message' => $success ? 'Category updated successfully' : 'Failed to update category'
-            ]);
-            break;
-
-        case 'deleteCategory':
-            $json = file_get_contents('php://input');
-            $data = json_decode($json, true);
-
-            if (!isset($data['categoryId'])) {
-                throw new Exception('Category ID is required', 400);
-            }
-
-            $categoryId = filter_var($data['categoryId'], FILTER_VALIDATE_INT);
-            $category = $projectModel->getCategoryById($categoryId);
-            if (!$category) {
-                throw new Exception('Category not found', 404);
-            }
-
-            $project = $projectModel->getById($category['project_id']);
-            if (!$project || $project['owner_id'] !== $userId) {
-                throw new Exception('Project not found or access denied', 404);
-            }
-
-            $success = $projectModel->deleteCategory($categoryId);
-            echo json_encode([
-                'success' => $success,
-                'message' => $success ? 'Category deleted successfully' : 'Failed to delete category'
-            ]);
-            break;
-
         case 'updateTask':
             $json = file_get_contents('php://input');
             $data = json_decode($json, true);
 
-            $requiredFields = ['taskId', 'status'];
-            foreach ($requiredFields as $field) {
-                if (!isset($data[$field])) {
-                    throw new Exception("Missing required field: $field", 400);
-                }
+            if (!isset($data['taskId'])) {
+                throw new Exception('Task ID is required', 400);
             }
 
             $taskId = filter_var($data['taskId'], FILTER_VALIDATE_INT);
-            $status = $data['status'];
-            $title = isset($data['title']) ? filter_var(trim($data['title']), FILTER_DEFAULT) : null;
-            $description = isset($data['description']) ? filter_var(trim($data['description']), FILTER_DEFAULT) : null;
-            $priority = isset($data['priority']) ? $data['priority'] : null;
-            $dueDate = isset($data['due_date']) && $data['due_date'] ? $data['due_date'] : null;
-
-            $task = $taskModel->getById($taskId);
-            if (!$task) {
-                throw new Exception('Task not found', 404);
+            if (!$taskId) {
+                throw new Exception('Invalid task ID', 400);
             }
 
-            $project = $projectModel->getById($task['project_id']);
-            if (!$project || !isProjectMember($conn, $project, $userId)) {
-                throw new Exception('Project not found or access denied', 404);
+            // Check task access
+            if (!canUserAccessTask($conn, $taskId, $userId)) {
+                throw new Exception('Access denied', 403);
             }
 
-            // Only allow members to mark as done, not edit other fields
-            if ($project['owner_id'] !== $userId) {
-                if ($status !== 'done') {
-                    throw new Exception('Only the owner can change status to values other than done', 403);
-                }
-                $success = $taskModel->updateField($taskId, 'status', $status);
-                echo json_encode([
-                    'success' => $success,
-                    'message' => $success ? 'Task marked as done' : 'Failed to update task'
-                ]);
-                break;
-            }
-
-            // Owner can update all fields as before
-            $fieldsToUpdate = [];
-            if ($title !== null) {
-                if (strlen($title) < 3 || strlen($title) > 100) {
-                    throw new Exception('Task title must be between 3-100 characters', 400);
-                }
-                $fieldsToUpdate['title'] = $title;
-            }
-            if ($description !== null) {
-                if (strlen($description) > 500) {
-                    throw new Exception('Description too long (max 500 chars)', 400);
-                }
-                $fieldsToUpdate['description'] = $description;
-            }
-            if ($status !== null) {
-                if (!in_array($status, ['todo', 'progress', 'done', 'blocked'])) {
-                    throw new Exception('Invalid task status', 400);
-                }
-                $fieldsToUpdate['status'] = $status;
-            }
-            if ($priority !== null) {
-                if (!in_array($priority, ['high', 'medium', 'low'])) {
-                    throw new Exception('Invalid task priority', 400);
-                }
-                $fieldsToUpdate['priority'] = $priority;
-            }
-            if ($dueDate !== null) {
-                if ($dueDate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate)) {
-                    throw new Exception('Invalid due date format', 400);
-                }
-                $fieldsToUpdate['due_date'] = $dueDate;
-            }
-
-            $success = true;
-            foreach ($fieldsToUpdate as $field => $value) {
-                if ($value !== null && !$taskModel->updateField($taskId, $field, $value)) {
-                    $success = false;
-                    break;
-                }
-            }
-
-            if ($success) {
-                // Log activity for status and priority changes
-                if (isset($fieldsToUpdate['status']) && $task['status'] !== $status) {
-                    $taskModel->logActivity($taskId, $userId, 'status_updated', json_encode(['old_status' => $task['status'], 'new_status' => $status]));
-                }
-                if (isset($fieldsToUpdate['priority']) && $task['priority'] !== $priority) {
-                    $taskModel->logActivity($taskId, $userId, 'priority_updated', json_encode(['old_priority' => $task['priority'], 'new_priority' => $priority]));
-                }
-            }
-
-            error_log("Task updated: ID=$taskId, Project={$task['project_id']}");
-            echo json_encode([
-                'success' => $success,
-                'message' => $success ? 'Task updated successfully' : 'Failed to update task'
-            ]);
-            break;
-
-        case 'getProjectDetails':
-            $projectId = filter_input(INPUT_GET, 'projectId', FILTER_VALIDATE_INT) ?: null;
-            if (!$projectId) throw new Exception('Project ID is required', 400);
-
-            $project = $projectModel->getById($projectId);
-            if (!$project || !isProjectMember($conn, $project, $userId)) {
-                throw new Exception('Project not found or access denied', 404);
-            }
-
-            // Get all categories with their tasks
-            $categories = $projectModel->getCategories($projectId);
-            $tasks = $taskModel->getByProject($projectId);
-
-            // Organize tasks by category
-            $organizedTasks = [];
-            foreach ($tasks as $task) {
-                $organizedTasks[$task['category_id']][] = $task;
-            }
-
-            // Add tasks to their categories
-            foreach ($categories as &$category) {
-                $category['tasks'] = $organizedTasks[$category['id']] ?? [];
+            // Proceed with update
+            $success = $taskModel->updateTask($data);
+            if (!$success) {
+                throw new Exception('Failed to update task', 500);
             }
 
             echo json_encode([
                 'success' => true,
-                'project' => $project,
-                'categories' => $categories
+                'message' => 'Task updated successfully'
             ]);
+            break;
+
+        case 'getProjectDetails':
+            try {
+                $projectId = filter_input(INPUT_GET, 'projectId', FILTER_VALIDATE_INT);
+                $userId = $_SESSION['user_id'] ?? null;
+
+                if (!$projectId || !$userId) {
+                    throw new Exception('Invalid request parameters', 400);
+                }
+
+                $project = $projectModel->getById($projectId);
+                if (!$project) {
+                    throw new Exception('Project not found', 404);
+                }
+
+                $hasAccess = $projectModel->canUserAccessProject($userId, $projectId);
+                if (!$hasAccess) {
+                    throw new Exception('Access denied', 403);
+                }
+
+                echo json_encode([
+                    'success' => true,
+                    'project' => $project,
+                    'isOwner' => $project['owner_id'] == $userId
+                ], JSON_UNESCAPED_SLASHES);
+                exit;
+
+            } catch (Exception $e) {
+                $code = getHttpCode($e->getCode());
+                http_response_code($code);
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]);
+                exit;
+            }
             break;
 
         case 'getCalendarTasks':
@@ -565,25 +602,41 @@ try {
             break;
 
         case 'getAssignees':
-            $taskId = filter_input(INPUT_GET, 'taskId', FILTER_VALIDATE_INT);
-            if (!$taskId) throw new Exception('Task ID is required', 400);
-
-            $task = $taskModel->getById($taskId);
-            if (!$task) throw new Exception('Task not found', 404);
-
-            $project = $projectModel->getById($task['project_id']);
-            if (!$project || !isProjectMember($conn, $project, $userId)) {
-                throw new Exception('Project not found or access denied', 404);
-            }
-
-            $assignees = $taskModel->getAssignees($taskId);
-            // Ensure profile pictures have correct paths
-            foreach ($assignees as &$assignee) {
-                if ($assignee['profile_picture'] && !str_starts_with($assignee['profile_picture'], '../')) {
-                    $assignee['profile_picture'] = '../' . $assignee['profile_picture'];
+            try {
+                $taskId = filter_input(INPUT_GET, 'taskId', FILTER_VALIDATE_INT);
+                if (!$taskId) {
+                    throw new Exception('Task ID is required', 400);
                 }
+
+                // Get task details
+                $task = $taskModel->getById($taskId);
+                if (!$task) {
+                    throw new Exception('Task not found', 404);
+                }
+
+                // Check project access
+                $project = $projectModel->getById($task['project_id']);
+                if (!$project || !isProjectMember($conn, $project, $userId)) {
+                    throw new Exception('Access denied', 403);
+                }
+
+                // Get assignees
+                $assignees = $taskModel->getAssignees($taskId);
+                echo json_encode([
+                    'success' => true,
+                    'assignees' => $assignees
+                ]);
+                
+            } catch (Exception $e) {
+                $code = getHttpCode($e->getCode());
+                http_response_code($code);
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'code' => $code
+                ]);
+                error_log("Error getting assignees: {$e->getMessage()}");
             }
-            echo json_encode(['success' => true, 'assignees' => $assignees]);
             break;
 
         case 'updateAssignees':
@@ -639,19 +692,29 @@ try {
             break;
 
         case 'getTaskActivity':
-            $taskId = filter_input(INPUT_GET, 'taskId', FILTER_VALIDATE_INT);
-            if (!$taskId) throw new Exception('Task ID is required', 400);
+            try {
+                $taskId = filter_input(INPUT_GET, 'taskId', FILTER_VALIDATE_INT);
+                if (!$taskId) {
+                    throw new Exception('Task ID is required', 400);
+                }
 
-            $task = $taskModel->getById($taskId);
-            if (!$task) throw new Exception('Task not found', 404);
+                // Check task access
+                if (!canUserAccessTask($conn, $taskId, $userId)) {
+                    throw new Exception('Access denied', 403);
+                }
 
-            $project = $projectModel->getById($task['project_id']);
-            if (!$project || !isProjectMember($conn, $project, $userId)) {
-                throw new Exception('Project not found or access denied', 404);
+                $activity = $taskModel->getActivity($taskId);
+                echo json_encode([
+                    'success' => true,
+                    'activity' => $activity
+                ]);
+            } catch (Exception $e) {
+                http_response_code(getHttpCode($e->getCode()));
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]);
             }
-
-            $activity = $taskModel->getActivity($taskId);
-            echo json_encode(['success' => true, 'activity' => $activity]);
             break;
 
         case 'getFacilityMembers':
@@ -734,32 +797,33 @@ try {
         case 'addLink':
             $json = file_get_contents('php://input');
             $data = json_decode($json, true);
+
             if (!isset($data['taskId']) || !isset($data['url'])) {
                 throw new Exception('Missing required fields', 400);
             }
+
             $taskId = filter_var($data['taskId'], FILTER_VALIDATE_INT);
-            $url = filter_var(trim($data['url']), FILTER_SANITIZE_URL);
-            if (!$taskId || !$url || !filter_var($url, FILTER_VALIDATE_URL)) {
-                throw new Exception('Invalid task ID or URL', 400);
+            $url = filter_var($data['url'], FILTER_SANITIZE_URL);
+
+            if (!$taskId || !filter_var($url, FILTER_VALIDATE_URL)) {
+                throw new Exception('Invalid input data', 400);
             }
-            $task = $taskModel->getById($taskId);
-            if (!$task) {
-                throw new Exception('Task not found', 404);
+
+            // Check task access
+            if (!canUserAccessTask($conn, $taskId, $userId)) {
+                throw new Exception('Access denied', 403);
             }
-            $project = $projectModel->getById($task['project_id']);
-            if (!$project || !isProjectMember($conn, $project, $userId)) {
-                throw new Exception('Project not found or access denied', 404);
-            }
-            $title = isset($data['title']) ? trim($data['title']) : null;
-            $linkId = $taskModel->addLink($taskId, $url, $userId, $title);
+
+            $linkId = $taskModel->addLink($taskId, $url, $userId);
             if (!$linkId) {
                 throw new Exception('Failed to add link', 500);
             }
-            $taskModel->logActivity($taskId, $userId, 'link_added', json_encode([
-                'url' => $url,
-                'title' => $title
-            ]));
-            echo json_encode(['success' => true, 'message' => 'Link added successfully']);
+
+            echo json_encode([
+                'success' => true,
+                'linkId' => $linkId,
+                'message' => 'Link added successfully'
+            ]);
             break;
 
         case 'deleteLink':
@@ -817,27 +881,44 @@ try {
             break;
 
         case 'getCurrentUser':
-            if (!isset($_SESSION['user_id'])) {
-                throw new Exception('Unauthorized', 401);
+            try {
+                if (!isset($_SESSION['user_id'])) {
+                    throw new Exception('Unauthorized', 401);
+                }
+
+                $userId = $_SESSION['user_id'];
+                $stmt = $conn->prepare("SELECT id, name, profile_picture FROM users WHERE id = :userId");
+                $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+                $stmt->execute();
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$user) {
+                    throw new Exception('User not found', 404);
+                }
+
+                // Ensure proper profile picture path
+                if (!empty($user['profile_picture'])) {
+                    $user['profile_picture'] = str_replace('\\', '/', $user['profile_picture']);
+                    if (!str_starts_with($user['profile_picture'], '../')) {
+                        $user['profile_picture'] = '../' . $user['profile_picture'];
+                    }
+                } else {
+                    $user['profile_picture'] = '../Images/profile.PNG';
+                }
+
+                echo json_encode([
+                    'success' => true,
+                    'user' => $user
+                ], JSON_UNESCAPED_SLASHES);
+                exit;
+            } catch (Exception $e) {
+                http_response_code(getHttpCode($e->getCode()));
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]);
+                exit;
             }
-
-            $userId = $_SESSION['user_id'];
-            $stmt = $conn->prepare("SELECT id, name, profile_picture FROM users WHERE id = :userId");
-            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
-            $stmt->execute();
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$user) {
-                throw new Exception('User not found', 404);
-            }
-
-            // Set default picture if none exists
-            $user['profile_picture'] = $user['profile_picture'] ?: 'Images/profile.PNG';
-
-            echo json_encode([
-                'success' => true,
-                'user' => $user
-            ]);
             break;
 
         case 'uploadFile':
@@ -965,8 +1046,7 @@ try {
                 ]);
                 
             } catch (Exception $e) {
-                $responseCode = is_numeric($e->getCode()) && $e->getCode() >= 100 && $e->getCode() < 600 ? 
-                    (int)$e->getCode() : 500;
+                $responseCode = getHttpCode($e->getCode());
                 http_response_code($responseCode);
                 echo json_encode([
                     'success' => false,
@@ -985,8 +1065,17 @@ try {
             }
 
             $fileId = filter_var($data['fileId'], FILTER_VALIDATE_INT);
+            if (!$fileId) {
+                throw new Exception('Invalid file ID', 400);
+            }
+
             // Get file info
-            $stmt = $conn->prepare("SELECT * FROM task_attachments WHERE id = :fileId");
+            $stmt = $conn->prepare("
+                SELECT ta.*, t.project_id 
+                FROM task_attachments ta
+                JOIN tasks t ON ta.task_id = t.id
+                WHERE ta.id = :fileId
+            ");
             $stmt->bindParam(':fileId', $fileId, PDO::PARAM_INT);
             $stmt->execute();
             $file = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -995,17 +1084,15 @@ try {
                 throw new Exception('File not found', 404);
             }
 
-            // Check project ownership
-            $task = $taskModel->getById($file['task_id']);
-            $project = $projectModel->getById($task['project_id']);
-            if (!$project || $project['owner_id'] !== $userId) {
-                throw new Exception('Project not found or access denied', 404);
+            // Check task access
+            if (!canUserAccessTask($conn, $file['task_id'], $userId)) {
+                throw new Exception('Access denied', 403);
             }
 
             // Delete file from disk
             $filePath = $_SERVER['DOCUMENT_ROOT'] . '/nexora/' . $file['file_path'];
             if (file_exists($filePath)) {
-                @unlink($filePath);
+                unlink($filePath);
             }
 
             // Delete from DB
@@ -1044,7 +1131,7 @@ try {
             throw new Exception('Invalid action', 400);
     }
 } catch (Exception $e) {
-    $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
+    $code = getHttpCode($e->getCode());
     http_response_code($code);
     echo json_encode([
         'success' => false,

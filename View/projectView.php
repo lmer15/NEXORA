@@ -26,7 +26,9 @@ $project = $projectModel->getById($projectId);
 if (!$project) die('Project not found');
 
 // Check access
-if ($project['owner_id'] !== $_SESSION['user_id']) die('Access denied');
+if (!$projectModel->canUserAccessProject($_SESSION['user_id'], $projectId)) {
+    die('Access denied');
+}
 if ($project['status'] === 'archived') die('This project is archived');
 
 ?>

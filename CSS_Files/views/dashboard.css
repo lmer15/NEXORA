@@ -50,6 +50,147 @@
     box-shadow: var(--shadow-sm);
 }
 
+/* Dashboard Controls */
+.dashboard-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Search Container */
+.search-container {
+    position: relative;
+    min-width: 300px;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 10px 16px;
+    padding-left: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.search-container input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    pointer-events: none;
+}
+
+/* Filter Container */
+.filter-container {
+    position: relative;
+}
+
+.filter-toggle {
+    background: var(--white);
+    border: 1px solid var(--border);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-toggle:hover {
+    background: var(--background);
+    border-color: var(--primary);
+}
+
+.filter-toggle.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* Filter Dropdown */
+.filter-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 16px;
+    min-width: 280px;
+    display: none;
+    z-index: 1000;
+}
+
+.filter-dropdown.show {
+    display: block;
+    animation: slideIn 0.2s ease-out;
+}
+
+.filter-section {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.filter-section:last-child {
+    border-bottom: none;
+}
+
+.filter-section h4 {
+    margin: 0 0 12px 0;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 16px;
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.filter-actions button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary {
+    background: var(--background);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.btn-primary {
+    background: var(--primary);
+    border: 1px solid var(--primary);
+    color: white;
+}
+
 /* Kanban Board Styles */
 .kanban-board {
     background: var(--white);
