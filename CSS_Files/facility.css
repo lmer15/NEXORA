@@ -96,6 +96,14 @@ body {
     border: 2px solid var(--primary-light);
 }
 
+.header-right {
+    display: flex;
+    align-items: center;   
+    gap: 18px;
+    margin-left: auto;
+    height: 100%;        
+}
+
 /* Main Content Layout */
 .content {
     display: grid;
@@ -827,6 +835,96 @@ select {
     gap: 12px;
     justify-content: center;
     width: 100%;
+}
+
+/* Notification Bell Styles */
+.notification-bell-container {
+    position: relative;
+    display: flex;         /* Change from inline-block to flex */
+    align-items: center;   /* Vertically center the bell */
+    margin: 0;             /* Remove margin-right if present */
+    height: 100%;
+}
+.notification-bell {
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    font-size: 1.5rem;
+    color: #333;
+}
+.notification-count {
+    position: absolute;
+    top: 0;
+    right: -6px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    min-width: 18px;
+    text-align: center;
+    font-weight: bold;
+}
+.notification-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 48px; /* Adjust so it appears just below the bell */
+    width: 340px;
+    background: #fff;
+    border: 1px solid #eee;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border-radius: 8px;
+    z-index: 9999;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-bottom: 8px;
+}
+.notification-dropdown.active {
+    display: block;
+}
+.dropdown-header {
+    font-weight: bold;
+    padding: 14px 16px 8px 16px;
+    border-bottom: 1px solid #f2f2f2;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+.notification-list {
+    max-height: 340px;
+    overflow-y: auto;
+}
+.notification-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f2f2f2;
+    font-size: 0.97rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #fff;
+    transition: background 0.2s;
+}
+.notification-item:last-child {
+    border-bottom: none;
+}
+.notification-item:hover {
+    background: #f3f6fa;
+}
+.notification-item .icon {
+    font-size: 1.1rem;
+    margin-right: 8px;
+    color: #3b82f6;
+}
+.notification-item .time {
+    font-size: 0.85rem;
+    color: #888;
+    margin-left: auto;
+}
+.empty-state {
+    padding: 32px 0;
+    text-align: center;
+    color: #aaa;
 }
 
 /* Responsive adjustments */

@@ -44,9 +44,9 @@ class TaskModel {
             // Validate input data
             $data['project_id'] = filter_var($data['project_id'], FILTER_VALIDATE_INT);
             $data['category_id'] = filter_var($data['category_id'], FILTER_VALIDATE_INT);
-            $data['title'] = filter_var(trim($data['title']), FILTER_SANITIZE_STRING);
-            $data['description'] = isset($data['description']) ? filter_var(trim($data['description']), FILTER_SANITIZE_STRING) : '';
-            $data['status'] = filter_var($data['status'], FILTER_SANITIZE_STRING);
+            $data['title'] = filter_var(trim($data['title']), FILTER_DEFAULT);
+            $data['description'] = isset($data['description']) ? filter_var(trim($data['description']), FILTER_DEFAULT) : '';
+            $data['status'] = filter_var($data['status'], FILTER_DEFAULT);
             $data['created_by'] = filter_var($data['created_by'], FILTER_VALIDATE_INT);
     
             if (!$data['project_id'] || !$data['category_id'] || !$data['created_by']) {
@@ -267,59 +267,45 @@ class TaskModel {
         }
     }
 
-    public function updateTask(array $data) {
+    public function updateTask($taskId, $data) {
         try {
-            $requiredFields = ['taskId', 'title', 'status', 'priority'];
-            foreach ($requiredFields as $field) {
-                if (!isset($data[$field])) {
-                    throw new Exception("Missing required field: $field", 400);
+            $updateFields = [];
+            $params = [':taskId' => $taskId];
+
+            if (isset($data['title'])) {
+                $updateFields[] = 'title = :title';
+                $params[':title'] = filter_var($data['title'], FILTER_DEFAULT);
+            }
+            if (isset($data['status'])) {
+                $updateFields[] = 'status = :status';
+                $params[':status'] = filter_var($data['status'], FILTER_DEFAULT);
+            }
+            if (isset($data['priority'])) {
+                $updateFields[] = 'priority = :priority';
+                $params[':priority'] = filter_var($data['priority'], FILTER_DEFAULT);
+            }
+            if (isset($data['description'])) {
+                $updateFields[] = 'description = :description';
+                $params[':description'] = filter_var($data['description'], FILTER_DEFAULT);
+            }
+            if (isset($data['due_date'])) {
+                // Save as NULL if empty or invalid, else as YYYY-MM-DD
+                $dueDate = $data['due_date'];
+                if (!$dueDate || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate)) {
+                    $dueDate = null;
                 }
+                $updateFields[] = 'due_date = :due_date';
+                $params[':due_date'] = $dueDate;
             }
-    
-            $taskId = filter_var($data['taskId'], FILTER_VALIDATE_INT);
-            $title = filter_var(trim($data['title']), FILTER_SANITIZE_STRING);
-            $description = isset($data['description']) ? filter_var(trim($data['description']), FILTER_SANITIZE_STRING) : '';
-            $status = filter_var($data['status'], FILTER_SANITIZE_STRING);
-            $priority = filter_var($data['priority'], FILTER_SANITIZE_STRING);
-            $dueDate = isset($data['due_date']) ? $data['due_date'] : null;
-    
-            if (!$taskId || strlen($title) < 3) {
-                throw new Exception('Invalid input data', 400);
+
+            if (empty($updateFields)) {
+                return false;
             }
-    
-            $allowedStatuses = ['todo', 'progress', 'done', 'blocked'];
-            $allowedPriorities = ['high', 'medium', 'low'];
-    
-            if (!in_array($status, $allowedStatuses) || !in_array($priority, $allowedPriorities)) {
-                throw new Exception('Invalid status or priority value', 400);
-            }
-    
-            $this->conn->beginTransaction();
-    
-            $fieldsToUpdate = [
-                'title' => $title,
-                'description' => $description,
-                'status' => $status,
-                'priority' => $priority
-            ];
-    
-            if ($dueDate) {
-                $fieldsToUpdate['due_date'] = $dueDate;
-            }
-    
-            foreach ($fieldsToUpdate as $field => $value) {
-                if ($value !== null) {
-                    $stmt = $this->conn->prepare("UPDATE tasks SET $field = :value WHERE id = :taskId");
-                    $stmt->bindParam(':value', $value);
-                    $stmt->bindParam(':taskId', $taskId, PDO::PARAM_INT);
-                    $stmt->execute();
-                }
-            }
-    
-            $this->conn->commit();
-            return true;
+
+            $sql = "UPDATE tasks SET " . implode(', ', $updateFields) . ", updated_at = NOW() WHERE id = :taskId";
+            $stmt = $this->conn->prepare($sql);
+            return $stmt->execute($params);
         } catch (Exception $e) {
-            $this->conn->rollBack();
             error_log('Error updating task: ' . $e->getMessage());
             return false;
         }
@@ -562,6 +548,37 @@ class TaskModel {
             error_log('Error in canUserModifyTask: ' . $e->getMessage());
             return false;
         }
+    }
+
+    public function getTasksForUser($userId) {
+        $stmt = $this->conn->prepare("
+            SELECT t.* FROM tasks t
+            LEFT JOIN projects p ON t.project_id = p.id
+            LEFT JOIN task_assignments ta ON ta.task_id = t.id
+            WHERE p.owner_id = :userId OR ta.user_id = :userId
+            GROUP BY t.id
+        ");
+        $stmt->execute(['userId' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getRecentActivitiesForUser($userId) {
+        $stmt = $this->conn->prepare("
+            SELECT a.*, t.title as task_title FROM task_activities a
+            JOIN tasks t ON a.task_id = t.id
+            LEFT JOIN projects p ON t.project_id = p.id
+            WHERE a.user_id = :userId OR p.owner_id = :userId
+            AND a.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+            ORDER BY a.created_at DESC
+            LIMIT 30
+        ");
+        $stmt->execute(['userId' => $userId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Format description for display
+        foreach ($rows as &$row) {
+            $row['description'] = $row['description'] ?? 'Activity on task "' . $row['task_title'] . '"';
+        }
+        return $rows;
     }
 }
 ?>

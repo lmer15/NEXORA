@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 20, 2025 at 01:04 AM
+-- Generation Time: May 20, 2025 at 03:03 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -61,7 +61,9 @@ INSERT INTO `facilities` (`id`, `name`, `code`, `owner_id`, `created_at`, `updat
 (30, 'Rosalyn Harmon\'s Facility', 'JEWD8OI7', 43, '2025-04-25 09:34:49', '2025-04-27 02:11:10'),
 (31, 'Mechelle Rutledge\'s Facility', '91ZKCDMO', 44, '2025-04-25 09:37:42', '2025-04-29 07:46:47'),
 (32, 'Rhoda Christensen\'s Facility', 'BR1IVN5U', 45, '2025-04-26 11:04:13', '2025-04-26 11:04:13'),
-(33, 'Ross Erickson\'s Facility', '6SRW58SJ', 46, '2025-05-06 14:48:19', '2025-05-06 14:48:19');
+(33, 'Ross Erickson\'s Facility', '6SRW58SJ', 46, '2025-05-06 14:48:19', '2025-05-06 14:48:19'),
+(34, 'Benjamin Petersen\'s Facility', 'XNKB8CKC', 47, '2025-05-20 12:25:02', '2025-05-20 12:25:02'),
+(35, 'Riley Melton\'s Facility', '99VIIG4X', 48, '2025-05-20 12:27:55', '2025-05-20 12:27:55');
 
 -- --------------------------------------------------------
 
@@ -88,7 +90,11 @@ INSERT INTO `facility_admins` (`id`, `facility_id`, `user_id`, `assigned_by`, `a
 (16, 30, 43, 43, '2025-04-25 09:34:49'),
 (17, 31, 44, 44, '2025-04-25 09:37:42'),
 (21, 32, 45, 45, '2025-04-26 11:04:13'),
-(51, 33, 46, 46, '2025-05-06 14:48:19');
+(51, 33, 46, 46, '2025-05-06 14:48:19'),
+(52, 29, 41, 42, '2025-05-20 10:54:07'),
+(54, 34, 47, 47, '2025-05-20 12:25:02'),
+(55, 35, 48, 48, '2025-05-20 12:27:55'),
+(56, 35, 41, 48, '2025-05-20 12:41:30');
 
 -- --------------------------------------------------------
 
@@ -130,12 +136,10 @@ INSERT INTO `facility_members` (`id`, `facility_id`, `user_id`, `joined_at`) VAL
 (15, 29, 42, '2025-04-25 06:48:31'),
 (16, 30, 43, '2025-04-25 09:34:49'),
 (17, 31, 44, '2025-04-25 09:37:42'),
-(18, 28, 43, '2025-04-26 01:08:41'),
 (19, 28, 40, '2025-04-26 04:03:29'),
 (20, 28, 42, '2025-04-26 04:03:29'),
 (28, 32, 45, '2025-04-26 11:04:13'),
 (30, 32, 41, '2025-04-26 11:05:13'),
-(32, 28, 45, '2025-04-27 00:41:47'),
 (35, 27, 41, '2025-04-29 00:18:12'),
 (37, 31, 41, '2025-04-29 14:06:12'),
 (38, 30, 44, '2025-04-29 14:06:55'),
@@ -144,10 +148,16 @@ INSERT INTO `facility_members` (`id`, `facility_id`, `user_id`, `joined_at`) VAL
 (44, 33, 42, '2025-05-06 14:49:10'),
 (46, 33, 41, '2025-05-10 00:31:58'),
 (47, 29, 41, '2025-05-16 10:05:06'),
-(48, 29, 46, '2025-05-16 10:05:49'),
 (49, 29, 40, '2025-05-16 10:05:49'),
 (50, 29, 44, '2025-05-16 10:07:14'),
-(51, 29, 43, '2025-05-16 10:08:58');
+(51, 29, 43, '2025-05-16 10:08:58'),
+(52, 29, 45, '2025-05-20 06:05:31'),
+(53, 28, 44, '2025-05-20 11:08:05'),
+(54, 28, 45, '2025-05-20 11:10:55'),
+(55, 34, 47, '2025-05-20 12:25:02'),
+(56, 35, 48, '2025-05-20 12:27:55'),
+(57, 35, 41, '2025-05-20 12:40:59'),
+(58, 35, 42, '2025-05-20 12:41:15');
 
 -- --------------------------------------------------------
 
@@ -191,7 +201,7 @@ INSERT INTO `projects` (`id`, `name`, `description`, `priority`, `due_date`, `co
 (197, 'Lilah Meadowss', 'Quis qui illo sit inssss', 'low', '2025-05-15', '#4bdfdc', 'done', 42, '2025-04-27 19:10:07', 0),
 (198, 'Eveniet, autem invens.', 'ELMER RAPONNN            ', 'low', '2025-05-30', '#e0f78a', 'progress', 42, '2025-04-27 19:10:11', 0),
 (199, 'Gisela Kirklands', 'Sint impedit sunt m', 'high', '2025-05-31', '#4455e2', 'done', 42, '2025-04-27 19:10:15', 0),
-(200, 'Todd Kidd', 'Sit dolorem consequ', 'medium', '2025-05-20', '#2d2a35', 'todo', 41, '2025-04-27 19:10:44', 0),
+(200, 'Todd Kidd', 'Sit dolorem consequ', 'medium', '2025-05-20', '#2d2a35', 'progress', 41, '2025-04-27 19:10:44', 0),
 (202, 'TaShya Holden', 'Nihil esse officiis', 'high', '2025-05-05', '#690e09', 'progress', 41, '2025-04-27 19:10:51', 0),
 (203, 'Regina Stuart', 'Sed ex eveniet do a', 'low', '0000-00-00', '#97b280', 'progress', 41, '2025-04-27 19:10:55', 0),
 (204, 'Leilani Christensen', 'Quo id dolores modi', 'high', '2025-05-21', '#b10c88', 'done', 41, '2025-04-27 19:11:10', 0),
@@ -210,10 +220,10 @@ INSERT INTO `projects` (`id`, `name`, `description`, `priority`, `due_date`, `co
 (220, 'Paul Miles', 'Aute praesentium aut', 'high', '2025-11-28', '#aa403f', 'done', 42, '2025-04-29 13:33:31', 0),
 (222, 'McKenzie Newman', 'Dolore sit cum et of', 'low', '2025-06-27', '#dc4c6b', 'todo', 42, '2025-04-29 14:56:33', 0),
 (224, 'Plato Ratliff', 'Eu voluptatibus sedSGUBKRFDfgjmrftuyhfhg', 'low', '2025-05-31', '#ff96a4', 'todo', 42, '2025-04-29 14:57:05', 0),
-(225, 'Merry Christmas', 'Mollit in explicabo edkfjhnrfgoljrtgohthypk[typh', 'high', '2025-05-06', '#382a3e', 'progress', 42, '2025-04-29 14:57:36', 0),
+(225, 'Merry Christmas', 'Mollit in explicabo edkfjhnrfgoljrtgohthypk[typh', 'high', '2025-06-02', '#382a3e', 'progress', 42, '2025-04-29 14:57:36', 0),
 (227, 'Odette Loweer', 'Enim aliquip iure qu', 'medium', '2025-05-29', '#5adce0', 'todo', 42, '2025-04-30 06:49:06', 0),
 (228, 'Tobias Foley', 'Perspiciatis qui ea', 'high', '2025-06-18', '#d189b3', 'todo', 43, '2025-04-30 08:28:30', 0),
-(230, 'Sit omnis quia esse .', 'Aut tempore qui cor', 'high', '2025-05-31', '#ffffff', 'todo', 42, '2025-04-30 10:20:33', 0),
+(230, 'Sit omnis quia esse .', 'Aut tempore qui cor', 'high', '2025-07-31', '#ffffff', 'todo', 42, '2025-04-30 10:20:33', 1),
 (231, 'Matthew Larson', 'Amet neque tempor d', 'medium', '2025-05-17', '#000000', 'progress', 42, '2025-04-30 11:16:14', 0),
 (232, 'Garth Weeks', 'Vitae id numquam dol', 'low', '2025-12-25', '#f0de46', 'progress', 44, '2025-04-30 11:38:39', 1),
 (233, 'Yeo Torres', 'Minim voluptas ea od', 'high', '2025-10-29', '#db165c', 'todo', 44, '2025-04-30 13:08:20', 1),
@@ -230,7 +240,10 @@ INSERT INTO `projects` (`id`, `name`, `description`, `priority`, `due_date`, `co
 (244, 'Basil Hines', 'Iure exercitation vo', 'medium', '2025-05-24', '#53463b', 'todo', 42, '2025-05-17 15:48:08', 0),
 (245, 'Kennedy Mcclure', 'Sint vel magnam volu', 'high', '2025-05-31', '#051c98', 'done', 42, '2025-05-17 15:48:20', 0),
 (246, 'Levi Faulkner', 'Atque in nobis liber', 'low', '2025-10-24', '#99ac8a', 'todo', 41, '2025-05-18 01:00:17', 0),
-(248, 'Neve Bird', 'Doloribus obcaecati', 'high', '2025-05-22', '#8f34fa', 'todo', 41, '2025-05-19 14:29:11', 0);
+(248, 'Neve Bird', 'Doloribus obcaecati', 'high', '2025-05-22', '#8f34fa', 'todo', 41, '2025-05-19 14:29:11', 0),
+(249, 'mdgfjg', 'b,djcgjkc', 'medium', '2025-05-28', '#3b82f6', 'todo', 41, '2025-05-20 11:04:59', 0),
+(250, 'dbfdfldg', 'jchfnslf', 'low', '2025-05-29', '#f59e0b', 'done', 41, '2025-05-20 11:09:04', 0),
+(251, 'Jakeem Pennington', 'Sit ratione volupta', 'medium', '2025-05-30', '#e02b2b', 'progress', 48, '2025-05-20 12:29:06', 0);
 
 -- --------------------------------------------------------
 
@@ -253,17 +266,23 @@ CREATE TABLE `project_categories` (
 --
 
 INSERT INTO `project_categories` (`id`, `project_id`, `name`, `color`, `position`, `created_at`, `updated_at`) VALUES
-(90, 224, 'CAT1', '#3b82f6', 1, '2025-05-11 16:06:50', '2025-05-12 16:08:02'),
+(90, 224, 'CAT1FJFD', '#3b82f6', 1, '2025-05-11 16:06:50', '2025-05-20 08:05:49'),
 (91, 224, 'CAT2', '#3b82f6', 2, '2025-05-11 16:09:09', '2025-05-12 16:09:08'),
 (92, 224, 'CAT3', '#3b82f6', 3, '2025-05-11 16:12:44', '2025-05-12 16:09:53'),
 (93, 224, 'CAT4', '#3b82f6', 4, '2025-05-12 15:47:05', '2025-05-12 16:09:57'),
 (96, 224, 'GHGF', '#3b82f6', 5, '2025-05-12 16:14:03', '2025-05-12 16:14:03'),
 (97, 191, 'gkjntfg', '#3b82f6', 1, '2025-05-16 07:36:41', '2025-05-16 07:36:41'),
 (98, 224, 'sfdgdf', '#3b82f6', 6, '2025-05-16 12:11:58', '2025-05-16 12:11:58'),
-(102, 225, 'thdrt', '#3b82f6', 1, '2025-05-18 01:08:54', '2025-05-18 01:08:54'),
 (103, 202, 'DESGDF', '#3b82f6', 1, '2025-05-19 14:06:53', '2025-05-19 14:06:53'),
 (104, 200, 'FTHHTG', '#3b82f6', 1, '2025-05-19 14:26:35', '2025-05-19 14:26:35'),
-(105, 204, 'FDHG', '#3b82f6', 1, '2025-05-19 15:28:28', '2025-05-19 15:28:28');
+(105, 204, 'FDHG', '#3b82f6', 1, '2025-05-19 15:28:28', '2025-05-19 15:28:28'),
+(107, 231, 'hbjkvbf vkf', '#3b82f6', 1, '2025-05-20 05:17:27', '2025-05-20 05:17:29'),
+(109, 197, 'NV FV', '#3b82f6', 1, '2025-05-20 05:33:10', '2025-05-20 05:33:10'),
+(112, 225, 'urgrbdf', '#3b82f6', 1, '2025-05-20 08:45:37', '2025-05-20 08:45:37'),
+(113, 230, 'ignkjfg', '#3b82f6', 1, '2025-05-20 09:24:14', '2025-05-20 09:24:14'),
+(114, 244, 'kldmvf', '#3b82f6', 1, '2025-05-20 09:38:10', '2025-05-20 09:38:10'),
+(115, 203, 'fknvgxdgl', '#3b82f6', 1, '2025-05-20 11:07:19', '2025-05-20 11:07:19'),
+(116, 251, 'CATEGORY 1', '#3b82f6', 1, '2025-05-20 12:34:22', '2025-05-20 12:34:22');
 
 -- --------------------------------------------------------
 
@@ -329,28 +348,38 @@ CREATE TABLE `tasks` (
 
 INSERT INTO `tasks` (`id`, `category_id`, `project_id`, `title`, `description`, `status`, `priority`, `due_date`, `assignee_id`, `position`, `created_by`, `created_at`, `updated_at`) VALUES
 (96, 93, 224, 'TASK G', 'fgxgfh', 'done', 'high', '2025-05-30', NULL, 2, 42, '2025-05-11 16:06:53', '2025-05-19 17:56:31'),
-(97, 90, 224, 'TASK D', '<p>sfgfgnh</p>', 'todo', 'medium', '2025-05-30', NULL, 2, 42, '2025-05-11 16:07:12', '2025-05-16 10:46:20'),
-(98, 91, 224, 'TASK E', '<p>rytrhytr</p>', 'blocked', 'medium', '2025-05-31', NULL, 2, 42, '2025-05-11 16:08:07', '2025-05-19 14:32:52'),
+(97, 90, 224, 'TASK D', '<p>sfgfgnh</p>', 'todo', 'medium', '2025-05-30', NULL, 2, 42, '2025-05-11 16:07:12', '2025-05-20 09:53:25'),
+(98, 91, 224, 'TASK E', '<p>rytrhytr</p>', 'blocked', 'medium', '2025-05-31', NULL, 2, 42, '2025-05-11 16:08:07', '2025-05-20 10:01:31'),
 (99, 91, 224, 'TASK C', '', 'todo', 'medium', '2025-05-31', NULL, 3, 42, '2025-05-11 16:08:12', '2025-05-12 19:14:47'),
 (100, 92, 224, 'TASK I', '<p>SDFSHDJGF</p>', 'todo', 'medium', '2025-05-31', NULL, 3, 42, '2025-05-11 16:09:13', '2025-05-16 12:06:43'),
-(101, 91, 224, 'TASK C', '<p>EFHSTRY</p>', 'todo', 'high', '2025-05-24', NULL, 1, 42, '2025-05-11 16:09:17', '2025-05-17 14:56:37'),
+(101, 91, 224, 'TASK C', '<p>EFHSTRY</p>', 'todo', 'high', '2025-05-24', NULL, 1, 42, '2025-05-11 16:09:17', '2025-05-20 11:48:39'),
 (102, 96, 224, 'TASK H', '<p><br></p>', 'done', 'high', '2025-06-06', NULL, 2, 42, '2025-05-11 16:12:08', '2025-05-16 12:37:40'),
-(103, 90, 224, 'TASK A', 'DGHXHdsfdsFGTR', 'done', 'medium', '2025-04-25', NULL, 1, 42, '2025-05-12 10:07:48', '2025-05-19 17:17:27'),
+(103, 90, 224, 'TASK A', '<p>DGHXHdsfdsFGTR</p>', 'done', 'medium', '2025-04-25', NULL, 1, 42, '2025-05-12 10:07:48', '2025-05-20 11:48:53'),
 (104, 92, 224, 'TASK F', '<p>SDGGH</p>', 'progress', 'medium', '2025-05-24', NULL, 1, 42, '2025-05-12 10:07:50', '2025-05-16 12:39:18'),
 (105, 90, 224, 'TASK B', 'VFBHGF', 'done', 'low', '2025-05-31', NULL, 3, 42, '2025-05-12 10:07:51', '2025-05-19 17:08:53'),
 (106, 92, 224, 'TASK K', '', 'todo', 'low', '2025-05-14', NULL, 2, 42, '2025-05-12 10:08:55', '2025-05-16 12:06:43'),
 (107, 93, 224, 'TASK J', 'FRBHDKLBMHJFGERYERYERYERYERYERYERYERYERYERYERYERYERYERYERY', 'done', 'low', '2025-05-24', NULL, 1, 42, '2025-05-12 10:08:57', '2025-05-19 17:26:39'),
 (108, 97, 191, 'refttrn', '<p><strong>srdy</strong></p>', 'todo', 'medium', NULL, NULL, 1, 43, '2025-05-16 07:36:44', '2025-05-16 07:37:33'),
-(109, 98, 224, 'rtytes', 'deffdvffgjhgggfktghreof', 'progress', 'high', '2025-05-20', NULL, 1, 42, '2025-05-16 12:12:14', '2025-05-19 17:58:13'),
+(109, 98, 224, 'rtytes', '<p>deffdvffgjhgggfktghreof</p>', 'progress', 'low', '2025-05-20', NULL, 1, 42, '2025-05-16 12:12:14', '2025-05-20 07:07:42'),
 (110, 98, 224, 'tryyuj', '<p><br></p>', 'todo', 'medium', '2025-05-24', NULL, 2, 42, '2025-05-16 12:12:16', '2025-05-16 12:35:41'),
 (112, 96, 224, 'tyuyr', '', 'todo', 'medium', '2025-06-07', NULL, 1, 42, '2025-05-16 12:12:22', '2025-05-19 17:26:37'),
 (113, 96, 224, 'tggh', '<p><br></p>', 'todo', 'medium', '2025-05-27', NULL, 3, 42, '2025-05-16 12:12:32', '2025-05-16 12:37:46'),
 (114, 93, 224, 'retg', '', 'todo', 'medium', '2025-05-24', NULL, 3, 42, '2025-05-16 12:12:35', '2025-05-19 17:26:40'),
-(115, 98, 224, 'Project Management System | Role of the Userstytryuty', 'retgertygytyrjhf', 'progress', 'low', '2025-05-31', NULL, 3, 42, '2025-05-16 12:35:35', '2025-05-19 17:04:28'),
-(119, 102, 225, 'reegsrfgdUYG', '', 'done', 'high', '2025-05-31', NULL, 1, 42, '2025-05-18 01:08:56', '2025-05-19 17:05:15'),
-(120, 103, 202, 'RGF', '', 'todo', 'low', NULL, NULL, 1, 41, '2025-05-19 14:06:55', '2025-05-19 17:05:50'),
-(121, 104, 200, 'HRTYHGT', '<p><br></p>', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-19 14:26:41', '2025-05-19 15:12:25'),
-(126, 105, 204, 'TGDRFT', '<p><br></p>', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-19 15:29:06', '2025-05-19 15:29:09');
+(115, 98, 224, 'Project Management System | Role of the Userstytryuty', '<p>retgertygytyrjhf</p>', 'progress', 'low', '2025-05-31', NULL, 3, 42, '2025-05-16 12:35:35', '2025-05-20 09:53:05'),
+(120, 103, 202, 'RGF', '', 'todo', 'low', NULL, NULL, 1, 41, '2025-05-19 14:06:55', '2025-05-20 09:57:36'),
+(121, 104, 200, 'HRTYHGT', '<p><br></p>', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-19 14:26:41', '2025-05-20 11:06:39'),
+(126, 105, 204, 'TGDRFT', '<p><br></p>', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-19 15:29:06', '2025-05-19 15:29:09'),
+(127, 103, 202, 'FJNG', '<p><br></p>', 'done', 'low', NULL, NULL, 0, 42, '2025-05-20 05:33:02', '2025-05-20 12:53:57'),
+(128, 109, 197, 'SNVGG', '<p>NBG</p><p><br></p>', 'progress', 'low', '2025-05-24', NULL, 0, 42, '2025-05-20 05:33:12', '2025-05-20 09:51:51'),
+(131, 103, 202, 'RH\\', '<p><br></p>', 'done', 'low', NULL, NULL, 0, 42, '2025-05-20 06:03:34', '2025-05-20 12:54:03'),
+(135, 107, 231, 'kjdfgdfb', '<p><br></p>', 'todo', 'low', '0000-00-00', NULL, 1, 42, '2025-05-20 07:30:32', '2025-05-20 07:30:37'),
+(138, 103, 202, 'EFCHBDF', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-20 07:48:57', '2025-05-20 08:46:04'),
+(141, 112, 225, 'rht', '<p><br></p>', 'progress', 'high', '2025-05-31', NULL, 1, 42, '2025-05-20 08:45:38', '2025-05-20 08:45:51'),
+(142, 113, 230, 'njkcffj f', '<p><br></p>', 'done', 'medium', NULL, NULL, 1, 42, '2025-05-20 09:24:17', '2025-05-20 09:24:24'),
+(143, 113, 230, 'kdvgnhg', '', 'todo', 'medium', NULL, NULL, 2, 42, '2025-05-20 09:24:20', '2025-05-20 09:24:20'),
+(144, 114, 244, 'dklffg', '<p><br></p>', 'todo', 'medium', '2025-05-30', NULL, 1, 42, '2025-05-20 09:38:12', '2025-05-20 11:30:56'),
+(145, 115, 203, 'sfngdbgnxgf', '<p>dvfmggfhghgh</p>', 'todo', 'medium', NULL, NULL, 1, 41, '2025-05-20 11:07:22', '2025-05-20 11:31:14'),
+(147, 116, 251, 'TASK 1', '<p><br></p>', 'progress', 'medium', NULL, NULL, 1, 48, '2025-05-20 12:34:33', '2025-05-20 12:42:40');
 
 -- --------------------------------------------------------
 
@@ -598,7 +627,65 @@ INSERT INTO `task_activities` (`id`, `task_id`, `user_id`, `action`, `details`, 
 (359, 109, 42, 'assignee_added', '{\"user_id\":46}', '2025-05-19 17:51:16'),
 (360, 109, 42, 'assignee_removed', '{\"user_id\":\"46\"}', '2025-05-19 17:51:17'),
 (361, 109, 42, 'comment_added', NULL, '2025-05-19 17:58:03'),
-(362, 119, 42, 'assignee_added', '{\"user_id\":43}', '2025-05-19 18:43:26');
+(362, 119, 42, 'assignee_added', '{\"user_id\":43}', '2025-05-19 18:43:26'),
+(363, 119, 42, 'assignee_added', '{\"user_id\":44}', '2025-05-20 05:04:05'),
+(364, 120, 42, 'comment_added', NULL, '2025-05-20 05:12:09'),
+(365, 120, 42, 'comment_added', NULL, '2025-05-20 05:17:44'),
+(366, 120, 42, 'file_uploaded', '{\"file_name\":\"PRE-EMPLOYMENT ORIENTATION SEMINAR.pdf\",\"file_size\":27153}', '2025-05-20 05:17:56'),
+(367, 119, 42, 'assignee_added', '{\"user_id\":46}', '2025-05-20 05:22:39'),
+(368, 119, 42, 'assignee_removed', '{\"user_id\":44}', '2025-05-20 05:22:46'),
+(369, 119, 42, 'file_uploaded', '{\"file_name\":\"PRE-EMPLOYMENT ORIENTATION SEMINAR.pdf\",\"file_size\":27153}', '2025-05-20 05:23:26'),
+(370, 119, 42, 'comment_added', NULL, '2025-05-20 05:32:08'),
+(371, 128, 42, 'assignee_added', '{\"user_id\":40}', '2025-05-20 05:33:27'),
+(372, 119, 42, 'comment_added', NULL, '2025-05-20 05:48:27'),
+(373, 130, 42, 'assignee_added', '{\"user_id\":41}', '2025-05-20 05:49:37'),
+(374, 132, 42, 'assignee_added', '{\"user_id\":41}', '2025-05-20 06:06:49'),
+(375, 127, 42, 'comment_added', NULL, '2025-05-20 06:17:19'),
+(376, 127, 42, 'file_uploaded', '{\"file_name\":\"GENERAL OBJECTIVES SYSTEM.docx\",\"file_size\":15535}', '2025-05-20 06:17:33'),
+(377, 127, 42, 'file_uploaded', '{\"file_name\":\"485792175_625255977053335_2578855129816868084_n.jpg\",\"file_size\":327463}', '2025-05-20 06:25:47'),
+(378, 132, 42, 'assignee_added', '{\"user_id\":44}', '2025-05-20 06:49:13'),
+(379, 132, 42, 'comment_added', NULL, '2025-05-20 06:49:33'),
+(380, 132, 42, 'assignee_added', '{\"user_id\":40}', '2025-05-20 06:49:42'),
+(381, 132, 42, 'comment_added', NULL, '2025-05-20 07:00:32'),
+(382, 132, 42, 'assignee_added', '{\"user_id\":43}', '2025-05-20 07:00:43'),
+(383, 132, 42, 'assignee_removed', '{\"user_id\":44}', '2025-05-20 07:00:46'),
+(384, 132, 42, 'assignee_removed', '{\"user_id\":43}', '2025-05-20 07:00:48'),
+(385, 127, 42, 'file_uploaded', '{\"file_name\":\"COVER PAGE.pdf\",\"file_size\":105924}', '2025-05-20 07:01:23'),
+(386, 130, 42, 'comment_added', NULL, '2025-05-20 07:01:45'),
+(387, 133, 42, 'comment_added', NULL, '2025-05-20 07:05:02'),
+(388, 133, 42, 'assignee_added', '{\"user_id\":41}', '2025-05-20 07:05:06'),
+(389, 134, 42, 'assignee_added', '{\"user_id\":43}', '2025-05-20 07:18:59'),
+(390, 134, 42, 'assignee_added', '{\"user_id\":41}', '2025-05-20 07:32:33'),
+(391, 134, 42, 'comment_added', NULL, '2025-05-20 07:42:32'),
+(392, 137, 42, 'assignee_added', '{\"user_id\":41}', '2025-05-20 07:46:50'),
+(393, 127, 42, 'comment_added', NULL, '2025-05-20 07:53:15'),
+(394, 127, 42, 'comment_added', NULL, '2025-05-20 07:53:20'),
+(395, 120, 42, 'comment_added', NULL, '2025-05-20 08:04:27'),
+(396, 128, 42, 'file_uploaded', '{\"file_name\":\"PRE-EMPLOYMENT ORIENTATION SEMINAR.pdf\",\"file_size\":27153}', '2025-05-20 08:04:47'),
+(397, 128, 42, 'comment_added', NULL, '2025-05-20 08:04:57'),
+(398, 134, 42, 'comment_added', NULL, '2025-05-20 08:16:38'),
+(399, 119, 42, 'assignee_removed', '{\"user_id\":41}', '2025-05-20 08:45:08'),
+(400, 119, 42, 'assignee_removed', '{\"user_id\":43}', '2025-05-20 08:45:08'),
+(401, 119, 42, 'assignee_removed', '{\"user_id\":46}', '2025-05-20 08:45:09'),
+(402, 141, 42, 'assignee_added', '{\"user_id\":44}', '2025-05-20 08:45:47'),
+(403, 131, 42, 'comment_added', NULL, '2025-05-20 09:57:43'),
+(404, 131, 42, 'comment_added', NULL, '2025-05-20 09:59:02'),
+(405, 145, 41, 'assignee_added', '{\"user_id\":42}', '2025-05-20 11:11:22'),
+(406, 145, 41, 'assignee_added', '{\"user_id\":40}', '2025-05-20 11:11:24'),
+(407, 145, 41, 'assignee_removed', '{\"user_id\":42}', '2025-05-20 11:11:26'),
+(408, 145, 41, 'assignee_removed', '{\"user_id\":40}', '2025-05-20 11:11:27'),
+(409, 145, 41, 'assignee_added', '{\"user_id\":42}', '2025-05-20 11:11:29'),
+(410, 145, 41, 'assignee_added', '{\"user_id\":40}', '2025-05-20 11:11:32'),
+(411, 103, 41, 'comment_added', NULL, '2025-05-20 11:13:01'),
+(412, 144, 42, 'comment_added', NULL, '2025-05-20 11:17:37'),
+(413, 144, 42, 'file_uploaded', '{\"file_name\":\"4283bc95771e3cb1372d537a2c9fa9a1.jpg\",\"file_size\":111072}', '2025-05-20 11:17:47'),
+(414, 103, 41, 'comment_added', NULL, '2025-05-20 11:23:42'),
+(415, 144, 42, 'assignee_added', '{\"user_id\":40}', '2025-05-20 11:30:45'),
+(416, 145, 42, 'comment_added', NULL, '2025-05-20 11:31:21'),
+(417, 147, 48, 'comment_added', NULL, '2025-05-20 12:39:44'),
+(418, 147, 48, 'file_uploaded', '{\"file_name\":\"471763516_1499031758151863_5981848480296269758_n.jpg\",\"file_size\":397488}', '2025-05-20 12:39:58'),
+(419, 147, 48, 'assignee_added', '{\"user_id\":41}', '2025-05-20 12:42:48'),
+(420, 147, 48, 'assignee_added', '{\"user_id\":42}', '2025-05-20 12:42:57');
 
 -- --------------------------------------------------------
 
@@ -645,10 +732,22 @@ INSERT INTO `task_assignments` (`id`, `task_id`, `user_id`, `assigned_at`) VALUE
 (50, 99, 40, '2025-05-17 13:37:32'),
 (52, 98, 40, '2025-05-17 15:13:11'),
 (54, 117, 42, '2025-05-18 00:42:21'),
-(55, 119, 41, '2025-05-18 01:09:00'),
 (58, 120, 42, '2025-05-19 15:11:11'),
 (61, 109, 43, '2025-05-19 17:22:17'),
-(63, 119, 43, '2025-05-19 18:43:26');
+(66, 128, 40, '2025-05-20 05:33:27'),
+(67, 130, 41, '2025-05-20 05:49:37'),
+(68, 132, 41, '2025-05-20 06:06:49'),
+(70, 132, 40, '2025-05-20 06:49:42'),
+(72, 133, 41, '2025-05-20 07:05:06'),
+(73, 134, 43, '2025-05-20 07:18:59'),
+(74, 134, 41, '2025-05-20 07:32:33'),
+(75, 137, 41, '2025-05-20 07:46:50'),
+(76, 141, 44, '2025-05-20 08:45:47'),
+(79, 145, 42, '2025-05-20 11:11:29'),
+(80, 145, 40, '2025-05-20 11:11:32'),
+(81, 144, 40, '2025-05-20 11:30:45'),
+(82, 147, 41, '2025-05-20 12:42:48'),
+(83, 147, 42, '2025-05-20 12:42:57');
 
 -- --------------------------------------------------------
 
@@ -678,9 +777,13 @@ INSERT INTO `task_attachments` (`id`, `task_id`, `uploaded_by`, `file_name`, `fi
 (8, 103, 42, 'Operations Memo.docx', 'uploads/tasks/task_103_6826f9a988fbe.docx', 70223, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '2025-05-16 08:39:05'),
 (10, 109, 42, 'PRODUCT INVENTORY.docx', 'uploads/tasks/task_109_68272cf2643da.docx', 217552, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '2025-05-16 12:17:54'),
 (11, 109, 42, 'Operations Memo.docx', 'uploads/tasks/task_109_68272d03b3b7c.docx', 70223, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '2025-05-16 12:18:11'),
-(18, 120, 42, 'CONTRACT OF REGULAR EMPLOYEES.docx', 'uploads/tasks/task_120_682b4fbfe0665.docx', 22813, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '2025-05-19 15:35:27'),
 (19, 120, 42, 'CONTRACT FOR PROBATIONARY EMPLOYEES.pdf', 'uploads/tasks/task_120_682b61fb05d3a.pdf', 150089, 'application/pdf', '2025-05-19 16:53:15'),
-(20, 119, 42, 'CONTRACT OF REGULAR EMPLOYEES.pdf', 'uploads/tasks/task_119_682b64ba4dfd2.pdf', 119894, 'application/pdf', '2025-05-19 17:04:58');
+(23, 127, 42, 'GENERAL OBJECTIVES SYSTEM.docx', 'uploads/tasks/task_127_682c1e7d71f96.docx', 15535, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '2025-05-20 06:17:33'),
+(24, 127, 42, '485792175_625255977053335_2578855129816868084_n.jpg', 'uploads/tasks/task_127_682c206bd1761.jpg', 327463, 'image/jpeg', '2025-05-20 06:25:47'),
+(25, 127, 42, 'COVER PAGE.pdf', 'uploads/tasks/task_127_682c28c386145.pdf', 105924, 'application/pdf', '2025-05-20 07:01:23'),
+(26, 128, 42, 'PRE-EMPLOYMENT ORIENTATION SEMINAR.pdf', 'uploads/tasks/task_128_682c379f945cb.pdf', 27153, 'application/pdf', '2025-05-20 08:04:47'),
+(27, 144, 42, '4283bc95771e3cb1372d537a2c9fa9a1.jpg', 'uploads/tasks/task_144_682c64db3dad9.jpg', 111072, 'image/jpeg', '2025-05-20 11:17:47'),
+(28, 147, 48, '471763516_1499031758151863_5981848480296269758_n.jpg', 'uploads/tasks/task_147_682c781ebfe81.jpg', 397488, 'image/jpeg', '2025-05-20 12:39:58');
 
 -- --------------------------------------------------------
 
@@ -723,13 +826,25 @@ INSERT INTO `task_comments` (`id`, `task_id`, `user_id`, `content`, `created_at`
 (60, 115, 42, 'fdkuh', '2025-05-17 09:01:39', '2025-05-17 09:01:39'),
 (61, 114, 42, 'GGHG', '2025-05-17 15:30:41', '2025-05-17 15:30:41'),
 (62, 109, 42, 'rg', '2025-05-19 12:07:16', '2025-05-19 12:07:16'),
-(63, 119, 42, 'yhgfj', '2025-05-19 13:45:42', '2025-05-19 13:45:42'),
 (64, 121, 41, 'RFHFFRG', '2025-05-19 14:26:55', '2025-05-19 14:26:55'),
 (65, 121, 41, 'RETFE', '2025-05-19 15:12:32', '2025-05-19 15:12:32'),
 (66, 126, 41, 'RFGHXFTG', '2025-05-19 15:29:30', '2025-05-19 15:29:30'),
-(67, 119, 42, 'SSDFG', '2025-05-19 17:04:53', '2025-05-19 17:04:53'),
 (68, 120, 41, 'RFHDETF', '2025-05-19 17:09:58', '2025-05-19 17:09:58'),
-(69, 109, 42, 'dfhfg', '2025-05-19 17:58:03', '2025-05-19 17:58:03');
+(69, 109, 42, 'dfhfg', '2025-05-19 17:58:03', '2025-05-19 17:58:03'),
+(70, 120, 42, 'BFKG', '2025-05-20 05:12:09', '2025-05-20 05:12:09'),
+(71, 120, 42, 'fkbjfd', '2025-05-20 05:17:44', '2025-05-20 05:17:44'),
+(74, 127, 42, 'EBRKBTJ', '2025-05-20 06:17:19', '2025-05-20 06:17:19'),
+(80, 127, 42, 'UIRHTSUR', '2025-05-20 07:53:15', '2025-05-20 07:53:15'),
+(81, 127, 42, 'YWEJFGIUR', '2025-05-20 07:53:20', '2025-05-20 07:53:20'),
+(82, 120, 42, 'UIRURHGRUI', '2025-05-20 08:04:27', '2025-05-20 08:04:27'),
+(83, 128, 42, 'FHBGFGD', '2025-05-20 08:04:57', '2025-05-20 08:04:57'),
+(85, 131, 42, 'fbjvgsrkg', '2025-05-20 09:57:43', '2025-05-20 09:57:43'),
+(86, 131, 42, 'gfufhfgigjhlg', '2025-05-20 09:59:02', '2025-05-20 09:59:02'),
+(87, 103, 41, 'jondggf', '2025-05-20 11:13:01', '2025-05-20 11:13:01'),
+(88, 144, 42, 'yuawrgeuibt\\', '2025-05-20 11:17:37', '2025-05-20 11:17:37'),
+(89, 103, 41, 'AMAMAMAMMAMAMAMA', '2025-05-20 11:23:42', '2025-05-20 11:23:42'),
+(90, 145, 42, 'kjdfndxf', '2025-05-20 11:31:21', '2025-05-20 11:31:21'),
+(91, 147, 48, 'RHYTBRTKJ', '2025-05-20 12:39:44', '2025-05-20 12:39:44');
 
 -- --------------------------------------------------------
 
@@ -759,8 +874,8 @@ INSERT INTO `task_links` (`id`, `task_id`, `url`, `created_by`, `created_at`) VA
 (14, 103, 'https://www.toolify.ai/alternative/videmak-research-ai', 42, '2025-05-16 09:06:41'),
 (15, 103, 'http://localhost/nexora/View/facility.php', 42, '2025-05-16 09:35:44'),
 (21, 121, 'http://localhost/nexora/View/facility.php', 41, '2025-05-19 14:27:07'),
-(23, 119, 'https://en.wikipedia.org/wiki/Party-list_representation_in_the_House_of_Representatives_of_the_Philippines', 42, '2025-05-19 17:05:03'),
-(24, 109, 'https://www.facebook.com/TMtambayan/', 42, '2025-05-19 17:22:27');
+(24, 109, 'https://www.facebook.com/TMtambayan/', 42, '2025-05-19 17:22:27'),
+(26, 128, 'https://docs.google.com/forms/d/1gYL4-ELtZh9hEq5pKOxfJHfwXrVfG7c87zUlYHlGZ4k/edit?pli=1#responses', 42, '2025-05-20 08:04:52');
 
 -- --------------------------------------------------------
 
@@ -790,7 +905,9 @@ INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `updated_a
 (43, 'Rosalyn Harmon', 'dimeto@mailinator.com', '$2y$10$tmRp4fhAUdkWN6L0C3.3yu6KiRI7KWgxm232P.etGSyGCW3GH.FGS', '2025-04-25 09:34:49', '2025-05-16 07:37:09', 'uploads/profile_pictures/user_43_1747381029.jpg', 30),
 (44, 'Mechelle Rutledge', 'kykebe@mailinator.com', '$2y$10$t8pFlZLsBvsn6FPAB56M7uK3ZjC/2dbMaAXWrGFp5fmdfbkTrWt/K', '2025-04-25 09:37:42', '2025-04-29 14:06:30', 'uploads/profile_pictures/user_44_1745935590.jpg', 31),
 (45, 'Rhoda Christensen', 'gona@mailinator.com', '$2y$10$h4omxnZkMkasb3ajpCwAieK4ABMCMXw.5H20Wn8m1.WhAjw9xSmoW', '2025-04-26 11:04:13', '2025-04-26 11:04:26', 'Images/profile.PNG', 32),
-(46, 'Ross Erickson', 'ceto@mailinator.com', '$2y$10$OyPdLjYcAB3ErOjnRD6/Y.EUtnWAApmngEPB5abeQcxC517atMVvS', '2025-05-06 14:48:19', '2025-05-06 14:49:04', 'Images/profile.PNG', 33);
+(46, 'Ross Erickson', 'ceto@mailinator.com', '$2y$10$OyPdLjYcAB3ErOjnRD6/Y.EUtnWAApmngEPB5abeQcxC517atMVvS', '2025-05-06 14:48:19', '2025-05-06 14:49:04', 'Images/profile.PNG', 33),
+(47, 'Benjamin Petersen', 'rovijec@mailinator.com', '$2y$10$jNWzX3C.v.SCL.4d2LOwK.HTXdR1wfiFcWeqhOerykIBXbagt7Y0.', '2025-05-20 12:25:02', '2025-05-20 12:25:02', 'Images/profile.PNG', NULL),
+(48, 'Riley Melton', 'gini@mailinator.com', '$2y$10$NXeELfUSj6ZPJFWjQ9pGpe/dhrWVfx.iALv.IiXlPj4RJeAu6XGWy', '2025-05-20 12:27:55', '2025-05-20 12:40:37', 'Images/profile.PNG', 35);
 
 --
 -- Indexes for dumped tables
@@ -939,13 +1056,13 @@ ALTER TABLE `email_confirmations`
 -- AUTO_INCREMENT for table `facilities`
 --
 ALTER TABLE `facilities`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT for table `facility_admins`
 --
 ALTER TABLE `facility_admins`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT for table `facility_invitations`
@@ -957,19 +1074,19 @@ ALTER TABLE `facility_invitations`
 -- AUTO_INCREMENT for table `facility_members`
 --
 ALTER TABLE `facility_members`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
 
 --
 -- AUTO_INCREMENT for table `projects`
 --
 ALTER TABLE `projects`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=249;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=252;
 
 --
 -- AUTO_INCREMENT for table `project_categories`
 --
 ALTER TABLE `project_categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=106;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=117;
 
 --
 -- AUTO_INCREMENT for table `remember_tokens`
@@ -987,43 +1104,43 @@ ALTER TABLE `security_questions`
 -- AUTO_INCREMENT for table `tasks`
 --
 ALTER TABLE `tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=127;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=148;
 
 --
 -- AUTO_INCREMENT for table `task_activities`
 --
 ALTER TABLE `task_activities`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=363;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=421;
 
 --
 -- AUTO_INCREMENT for table `task_assignments`
 --
 ALTER TABLE `task_assignments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=84;
 
 --
 -- AUTO_INCREMENT for table `task_attachments`
 --
 ALTER TABLE `task_attachments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `task_comments`
 --
 ALTER TABLE `task_comments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=92;
 
 --
 -- AUTO_INCREMENT for table `task_links`
 --
 ALTER TABLE `task_links`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
 -- Constraints for dumped tables

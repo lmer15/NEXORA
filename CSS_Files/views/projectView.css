@@ -2737,6 +2737,7 @@
     display: inline-block;
 }
 
+
 @media (max-width: 900px) {
     .view-toolbar {
         flex-direction: column;

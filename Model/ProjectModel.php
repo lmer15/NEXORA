@@ -252,5 +252,18 @@ class ProjectModel {
             return false;
         }
     }
+
+    public function getProjectsForUser($userId) {
+        $stmt = $this->conn->prepare("
+            SELECT * FROM projects 
+            WHERE owner_id = :userId OR id IN (
+                SELECT t.project_id FROM tasks t
+                JOIN task_assignments ta ON ta.task_id = t.id
+                WHERE ta.user_id = :userId
+            )
+        ");
+        $stmt->execute(['userId' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

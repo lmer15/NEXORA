@@ -62,9 +62,10 @@ if ($project['status'] === 'archived') die('This project is archived');
                 <div class="project-due-date">
                     <i class="far fa-calendar-alt" aria-hidden="true"></i>
                     <input type="text" class="date-picker" 
-                           value="<?= date('M j, Y', strtotime($project['due_date'])) ?>" 
-                           aria-label="Project Due Date">
+                        value="<?= date('M j, Y', strtotime($project['due_date'])) ?>" 
+                        aria-label="Project Due Date">
                 </div>
+                <input type="hidden" id="projectDueDateValue" value="<?= htmlspecialchars($project['due_date']) ?>">
                 <span class="project-priority <?= htmlspecialchars($project['priority']) ?>" role="status">
                     <?= ucfirst(htmlspecialchars($project['priority'])) ?>
                 </span>

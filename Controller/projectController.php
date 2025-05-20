@@ -76,7 +76,7 @@ function isProjectMember($conn, $project, $userId) {
         return false;
     }
     if ($project['owner_id'] == $userId) return true;
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM task_assignees ta JOIN tasks t ON ta.task_id = t.id WHERE t.project_id = :projectId AND ta.user_id = :userId");
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM task_assignments ta JOIN tasks t ON ta.task_id = t.id WHERE t.project_id = :projectId AND ta.user_id = :userId");
     $stmt->execute([':projectId' => $project['id'], ':userId' => $userId]);
     $count = $stmt->fetchColumn();
     error_log("isProjectMember: user $userId, project {$project['id']}, count=$count");
@@ -351,56 +351,38 @@ try {
             $json = file_get_contents('php://input');
             $data = json_decode($json, true);
 
-            $requiredFields = ['projectId', 'categoryId', 'title'];
-            foreach ($requiredFields as $field) {
-                if (!isset($data[$field])) {
-                    throw new Exception("Missing required field: $field", 400);
-                }
+            if (!isset($data['projectId']) || !isset($data['categoryId']) || !isset($data['title'])) {
+                throw new Exception('Missing required fields', 400);
             }
 
             $projectId = filter_var($data['projectId'], FILTER_VALIDATE_INT);
-            
-            // Check if user is project owner
-            if (!isProjectOwner($conn, $projectId, $userId)) {
-                throw new Exception('Access denied. Only project owner can create tasks.', 403);
-            }
-
             $categoryId = filter_var($data['categoryId'], FILTER_VALIDATE_INT);
-            $title = filter_var(trim($data['title']), FILTER_DEFAULT);
-            if (strlen($title) < 3 || strlen($title) > 100) {
-                throw new Exception('Task title must be between 3-100 characters', 400);
-            }
-
-            // Add at the beginning of each modification action
-            if (!$projectModel->canUserModifyProject($userId, $projectId)) {
-                throw new Exception('Access denied. Only project owner can modify.', 403);
-            }
-
+            
+            // Get project details
             $project = $projectModel->getById($projectId);
-            if (!$project || $project['owner_id'] !== $userId) {
-                throw new Exception('Project not found or access denied', 404);
+            if (!$project) {
+                throw new Exception('Project not found', 404);
             }
 
+            // Check if user is owner or assignee
+            if (!$projectModel->canUserAccessProject($userId, $projectId)) {
+                throw new Exception('Access denied', 403);
+            }
+
+            // Verify category belongs to project
             $category = $projectModel->getCategoryById($categoryId);
             if (!$category || $category['project_id'] != $projectId) {
-                throw new Exception('Invalid category for this project', 400);
+                throw new Exception('Invalid category', 400);
             }
-
-            $description = isset($data['description']) ? filter_var(trim($data['description']), FILTER_DEFAULT) : '';
-            if (strlen($description) > 500) {
-                throw new Exception('Description too long (max 500 chars)', 400);
-            }
-
-            $status = isset($data['status']) && in_array($data['status'], ['todo', 'progress', 'done', 'blocked'])
-                ? $data['status']
-                : 'todo';
 
             $taskData = [
                 'project_id' => $projectId,
                 'category_id' => $categoryId,
-                'title' => $title,
-                'description' => $description,
-                'status' => $status,
+                'title' => filter_var(trim($data['title']), FILTER_SANITIZE_FULL_SPECIAL_CHARS),
+                'description' => isset($data['description']) ? 
+                    filter_var(trim($data['description']), FILTER_SANITIZE_FULL_SPECIAL_CHARS) : '',
+                'status' => 'todo',
+                'priority' => isset($data['priority']) ? $data['priority'] : 'low',
                 'created_by' => $userId
             ];
 
@@ -409,11 +391,13 @@ try {
                 throw new Exception('Failed to create task', 500);
             }
 
-            error_log("Task created: ID=$taskId, Project=$projectId, Category=$categoryId");
+            // Get the created task data
+            $newTask = $taskModel->getById($taskId);
+
             echo json_encode([
                 'success' => true,
-                'taskId' => $taskId,
-                'message' => 'Task created successfully'
+                'message' => 'Task created successfully',
+                'task' => $newTask
             ]);
             break;
 
@@ -501,33 +485,56 @@ try {
             break;
 
         case 'updateTask':
-            $json = file_get_contents('php://input');
-            $data = json_decode($json, true);
+            $data = json_decode(file_get_contents('php://input'), true);
 
             if (!isset($data['taskId'])) {
-                throw new Exception('Task ID is required', 400);
+                throw new Exception('Task ID is required');
             }
 
             $taskId = filter_var($data['taskId'], FILTER_VALIDATE_INT);
             if (!$taskId) {
-                throw new Exception('Invalid task ID', 400);
+                throw new Exception('Invalid task ID');
+            }
+            $task = $taskModel->getById($taskId);
+            if (!$task) {
+                throw new Exception('Task not found', 404);
+            }
+            $project = $projectModel->getById($task['project_id']);
+            if (!$project) {
+                throw new Exception('Project not found', 404);
+            }
+            $updateData = [];
+            if (isset($data['title'])) {
+                $updateData['title'] = filter_var($data['title'], FILTER_DEFAULT);
+            }
+            if (isset($data['status'])) {
+                $updateData['status'] = filter_var($data['status'], FILTER_DEFAULT);
+            }
+            if (isset($data['priority'])) {
+                $updateData['priority'] = filter_var($data['priority'], FILTER_DEFAULT);
+            }
+            if (isset($data['description'])) {
+                $updateData['description'] = filter_var($data['description'], FILTER_DEFAULT);
+            }
+            if (isset($data['due_date']) && $data['due_date'] && $project['due_date'] && $project['due_date'] !== '0000-00-00') {
+                if (strtotime($data['due_date']) > strtotime($project['due_date'])) {
+                    throw new Exception('Task due date cannot exceed the project due date (' . $project['due_date'] . ').');
+                }
             }
 
-            // Check task access
-            if (!canUserAccessTask($conn, $taskId, $userId)) {
-                throw new Exception('Access denied', 403);
-            }
+            // Update task in database
+            $success = $taskModel->updateTask($taskId, $updateData);
 
-            // Proceed with update
-            $success = $taskModel->updateTask($data);
-            if (!$success) {
-                throw new Exception('Failed to update task', 500);
+            if ($success) {
+                $updatedTask = $taskModel->getById($taskId);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Task updated successfully',
+                    'task' => $updatedTask
+                ]);
+            } else {
+                throw new Exception('Failed to update task');
             }
-
-            echo json_encode([
-                'success' => true,
-                'message' => 'Task updated successfully'
-            ]);
             break;
 
         case 'getProjectDetails':
@@ -915,7 +922,8 @@ try {
                 http_response_code(getHttpCode($e->getCode()));
                 echo json_encode([
                     'success' => false,
-                    'message' => $e->getMessage()
+                    'message' => $e->getMessage(),
+                    'code' => $responseCode
                 ]);
                 exit;
             }
@@ -1126,6 +1134,116 @@ try {
             
             echo json_encode(['success' => true, 'files' => $files]);
             break;
+
+        case 'updateCategory':
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
+
+            if (!isset($data['categoryId']) || !isset($data['name'])) {
+                throw new Exception('Missing required fields', 400);
+            }
+
+            $categoryId = filter_var($data['categoryId'], FILTER_VALIDATE_INT);
+            $name = filter_var(trim($data['name']), FILTER_DEFAULT);
+
+            $category = $projectModel->getCategoryById($categoryId);
+            if (!$category) {
+                throw new Exception('Category not found', 404);
+            }
+
+            // Only project owner can update category
+            if (!isProjectOwner($conn, $category['project_id'], $userId)) {
+                throw new Exception('Access denied. Only project owner can update categories.', 403);
+            }
+
+            $success = $projectModel->updateCategory($categoryId, $name);
+            echo json_encode([
+                'success' => $success,
+                'message' => $success ? 'Category name updated' : 'Failed to update category name'
+            ]);
+            break;
+
+        case 'getNotifications':
+            $userId = $_SESSION['user_id'];
+            $notifications = [];
+
+            // --- Project due date reminders ---
+            $projects = $projectModel->getProjectsForUser($userId);
+            foreach ($projects as $project) {
+                if ($project['due_date'] && $project['due_date'] !== '0000-00-00') {
+                    $diff = strtotime($project['due_date']) - strtotime(date('Y-m-d'));
+                    $days = floor($diff / 86400);
+                    if ($days === 0) {
+                        $notifications[] = [
+                            'icon' => 'calendar-day',
+                            'message' => "Project <b>{$project['name']}</b> is due today!",
+                            'time' => $project['due_date']
+                        ];
+                    } elseif ($days === 1) {
+                        $notifications[] = [
+                            'icon' => 'calendar-day',
+                            'message' => "Project <b>{$project['name']}</b> is due tomorrow!",
+                            'time' => $project['due_date']
+                        ];
+                    } elseif ($days < 0) {
+                        $notifications[] = [
+                            'icon' => 'calendar-times',
+                            'message' => "Project <b>{$project['name']}</b> is overdue!",
+                            'time' => $project['due_date']
+                        ];
+                    }
+                }
+            }
+
+            // --- Task due date reminders (owner or assignee) ---
+            $tasks = $taskModel->getTasksForUser($userId);
+            foreach ($tasks as $task) {
+                if ($task['due_date'] && $task['due_date'] !== '0000-00-00') {
+                    $diff = strtotime($task['due_date']) - strtotime(date('Y-m-d'));
+                    $days = floor($diff / 86400);
+                    if ($days === 0) {
+                        $notifications[] = [
+                            'icon' => 'calendar-day',
+                            'message' => "Task <b>{$task['title']}</b> is due today!",
+                            'time' => $task['due_date']
+                        ];
+                    } elseif ($days === 1) {
+                        $notifications[] = [
+                            'icon' => 'calendar-day',
+                            'message' => "Task <b>{$task['title']}</b> is due tomorrow!",
+                            'time' => $task['due_date']
+                        ];
+                    } elseif ($days < 0) {
+                        $notifications[] = [
+                            'icon' => 'calendar-times',
+                            'message' => "Task <b>{$task['title']}</b> is overdue!",
+                            'time' => $task['due_date']
+                        ];
+                    }
+                }
+            }
+
+            // --- Recent activity logs (last 24h) ---
+            $activities = $taskModel->getRecentActivitiesForUser($userId);
+            foreach ($activities as $activity) {
+                $notifications[] = [
+                    'icon' => 'history',
+                    'message' => $activity['description'],
+                    'time' => $activity['created_at']
+                ];
+            }
+
+            // Sort notifications by time, newest first
+            usort($notifications, function($a, $b) {
+                return strtotime($b['time']) - strtotime($a['time']);
+            });
+
+            echo json_encode([
+                'success' => true,
+                'notifications' => $notifications,
+                'unreadCount' => count($notifications)
+            ]);
+            exit;
 
         default:
             throw new Exception('Invalid action', 400);

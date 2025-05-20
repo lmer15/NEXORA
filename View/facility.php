@@ -30,16 +30,30 @@ if (!isset($_SESSION['user_id'])) {
                 <span class="logo-text">NEXORA</span>
             </div>
 
-            <div class="profile" id="profileDropdown">
-                <div class="profile-info">
-                    <div class="profile-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'user_name'); ?></div>
-                    <div class="profile-role"><?php echo htmlspecialchars($_SESSION['role'] ?? 'Owner'); ?></div>
+            <div class="header-right">
+                <div class="notification-bell-container">
+                    <button id="notificationBell" class="notification-bell" aria-label="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span id="notificationCount" class="notification-count" style="display:none;">0</span>
+                    </button>
+                    <div id="notificationDropdown" class="notification-dropdown">
+                        <div class="dropdown-header">Notifications</div>
+                        <div id="notificationList" class="notification-list">
+                            <div class="empty-state">No notifications</div>
+                        </div>
+                    </div>
                 </div>
-                <img src="<?php echo '../' . htmlspecialchars($_SESSION['profile_picture'] ?? 'Images/profile.PNG'); ?>" alt="Profile picture" class="profile-pic">
-                <div class="profile-dropdown-menu">
-                    <a href="#" class="dropdown-item"><i class="fas fa-user"></i> Profile</a>
-                    <a href="#" class="dropdown-item"><i class="fas fa-cog"></i> Settings</a>
-                    <a href="../Controller/logout.php" class="dropdown-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <div class="profile" id="profileDropdown">
+                    <div class="profile-info">
+                        <div class="profile-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'user_name'); ?></div>
+                        <div class="profile-role"><?php echo htmlspecialchars($_SESSION['role'] ?? 'Owner'); ?></div>
+                    </div>
+                    <img src="<?php echo '../' . htmlspecialchars($_SESSION['profile_picture'] ?? 'Images/profile.PNG'); ?>" alt="Profile picture" class="profile-pic">
+                    <div class="profile-dropdown-menu">
+                        <a href="#" class="dropdown-item"><i class="fas fa-user"></i> Profile</a>
+                        <a href="#" class="dropdown-item"><i class="fas fa-cog"></i> Settings</a>
+                        <a href="../Controller/logout.php" class="dropdown-item"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
                 </div>
             </div>
         </header>
@@ -313,19 +327,19 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
             </div>
         </div>
-    </div>
 
-    <script src="../JSFolder/facility.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        flatpickr("#projectDueDate", {
-            dateFormat: "Y-m-d",
-            minDate: "today",
-            allowInput: true,
-            defaultDate: new Date().fp_incr(7) 
+        <script src="../JSFolder/facility.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            flatpickr("#projectDueDate", {
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                allowInput: true,
+                defaultDate: new Date().fp_incr(7) 
+            });
         });
-    });
-    </script>
+        </script>
+    </div>
 </body>
 </html>

@@ -26,6 +26,63 @@ function escapeHtml(unsafe) {
 document.addEventListener("DOMContentLoaded", function () {
     initMainApp();
 
+    const bell = document.getElementById('notificationBell');
+    const dropdown = document.getElementById('notificationDropdown');
+    const notificationList = document.getElementById('notificationList');
+    const notificationCount = document.getElementById('notificationCount');
+
+    // Toggle dropdown
+    bell?.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('active');
+        if (dropdown.classList.contains('active')) {
+            loadNotifications();
+        }
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target) && e.target !== bell) {
+            dropdown.classList.remove('active');
+        }
+    });
+
+    // Load notifications (fetch from backend)
+    async function loadNotifications() {
+        try {
+            const response = await fetch('../Controller/projectController.php?action=getNotifications');
+            const data = await response.json();
+            if (data.success && data.notifications.length) {
+                notificationList.innerHTML = data.notifications.map(n => `
+                    <div class="notification-item">
+                        <span class="icon"><i class="fas fa-${n.icon || 'bell'}"></i></span>
+                        <span>${n.message}</span>
+                        <span class="time">${formatTimeAgo(n.time)}</span>
+                    </div>
+                `).join('');
+                notificationCount.style.display = '';
+                notificationCount.textContent = data.unreadCount || data.notifications.length;
+            } else {
+                notificationList.innerHTML = `<div class="empty-state">No notifications</div>`;
+                notificationCount.style.display = 'none';
+            }
+        } catch (error) {
+            notificationList.innerHTML = `<div class="empty-state">Failed to load notifications</div>`;
+            notificationCount.style.display = 'none';
+        }
+    }
+
+    // Helper for time ago
+    function formatTimeAgo(timestamp) {
+        const now = new Date();
+        const date = new Date(timestamp);
+        const seconds = Math.floor((now - date) / 1000);
+        if (seconds < 60) return 'just now';
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+        if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
     
     function setupProjectFilters() {
         const filterToggle = document.getElementById('filterToggle');
@@ -2012,9 +2069,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const textColor = getTextColorForBackground(project.color);
             const secondaryTextColor = textColor === '#333' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.85)';
             const iconColor = textColor === '#333' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.8)';
-        
-            const totalTasks = project.total_tasks || 0;
-            const doneTasks = project.done_tasks || 0;
+                
+            const totalTasks = Number(project.total_tasks) || 0;
+            const doneTasks = Number(project.done_tasks) || 0;
             const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
             element.innerHTML = `
@@ -2042,11 +2099,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div class="task-meta">
                     <div class="task-due-date" style="color: ${secondaryTextColor}">
                         <i class="far fa-calendar-alt" style="color: ${iconColor}"></i>
-                        Due: ${new Date(project.due_date).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric', 
-                            year: 'numeric' 
-                        })}
+                        Due: ${project.due_date && project.due_date !== '0000-00-00'
+                            ? new Date(project.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                            : 'No due date'}
                     </div>
                     <p class="task-description" style="color: ${secondaryTextColor}">${escapeHtml(truncateText(project.description, 100))}</p>
                 </div>
@@ -2727,36 +2782,102 @@ document.addEventListener("DOMContentLoaded", function () {
                 `;
             });
         }
-        
+                
         function updateUIBasedOnPermissions(isOwner) {
-            const elements = {
-                projectControls: '.project-controls .btn:not(.comment-btn):not(.attachment-btn)',
-                categoryControls: '.category-controls',
-                taskControls: '.task-controls:not(.status-control):not(.comment-control):not(.attachment-control)',
-                deleteButtons: '.delete-project, .archive-project',
-                dragHandles: '.task-card',
-                editProjectDetails: '.project-title[contenteditable], .project-description[contenteditable], .edit-description-btn, .project-due-date input, .project-status-select',
-                addCategoryBtn: '.add-category-btn',
-                addTaskBtn: '.add-task-btn'
+            const ownerOnlyElements = {
+                buttons: [
+                    '.add-category-btn',
+                    '.delete-category-btn',
+                    '.add-task-btn',
+                    '.edit-category-name',
+                    '.delete-category',
+                    '.category-actions',
+                    '.btn-delete-task',
+                    '.edit-task-btn',
+                    '.task-actions'
+                ],
+                editables: [
+                    '.category-name',
+                    '.project-title',
+                    '.project-description',
+                    '#taskTitle',
+                    '#taskDescription',
+                    '#taskDueDate',
+                    '#taskStatus',
+                    '#taskPriority'
+                ],
+                draggables: [
+                    '.task-card'
+                ],
+                inputs: [
+                    '.priority-option',
+                    '.status-select',
+                    '.btn-add-assignee'
+                ]
             };
 
-            Object.entries(elements).forEach(([key, selector]) => {
-                document.querySelectorAll(selector).forEach(el => {
-                    if (!isOwner) {
-                        if (key === 'dragHandles') {
-                            el.draggable = false;
-                        } else {
-                            el.style.display = 'none';
-                        }
-                    }
-                });
-            });
-
-            // Disable editing for non-owners
             if (!isOwner) {
-                document.querySelector('.project-title').removeAttribute('contenteditable');
-                document.querySelector('.project-description').removeAttribute('contenteditable');
+                // Hide owner-only buttons
+                ownerOnlyElements.buttons.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => {
+                        el.style.display = 'none';
+                    });
+                });
+
+                // Disable editable elements
+                ownerOnlyElements.editables.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => {
+                        if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+                            el.disabled = true;
+                        } else {
+                            el.removeAttribute('contenteditable');
+                        }
+                    });
+                });
+
+                // Disable inputs
+                ownerOnlyElements.inputs.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => {
+                        el.disabled = true;
+                    });
+                });
+
+                // Disable dragging for tasks
+                ownerOnlyElements.draggables.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => {
+                        el.draggable = false;
+                        el.classList.remove('draggable');
+                    });
+                });
+
+                // Disable Quill editor if it exists
+                if (window.quill) {
+                    window.quill.disable();
+                }
+
+                // Remove add category/task forms and modals
+                document.querySelectorAll('.add-task-form, .category-modal-overlay').forEach(el => {
+                    el.remove();
+                });
+            } else {
+                // Enable all elements for owner
+                ownerOnlyElements.editables.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => {
+                        if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+                            el.disabled = false;
+                        }
+                    });
+                });
+
+                // Enable Quill editor if it exists
+                if (window.quill) {
+                    window.quill.enable();
+                }
             }
+
+            // Update view class on body
+            document.body.classList.toggle('is-owner', isOwner);
+            document.body.classList.toggle('is-assignee', !isOwner);
         }
 
         function initProjectView(projectId) {
@@ -2889,6 +3010,92 @@ document.addEventListener("DOMContentLoaded", function () {
                     eventListeners = [];
                 }
                 
+                function initializeQuill() {
+                    const descriptionDisplay = panel.querySelector('#descriptionDisplay');
+                    const descriptionEditor = panel.querySelector('#taskDescriptionEditor');
+                    
+                    if (!descriptionDisplay || !descriptionEditor) {
+                        console.error('Required elements not found for Quill initialization');
+                        return;
+                    }
+
+                    try {
+                        quill = new Quill('#taskDescriptionEditor', {
+                            theme: 'snow',
+                            placeholder: 'Add a detailed description...',
+                            modules: {
+                                toolbar: [
+                                    ['bold', 'italic', 'underline'],
+                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                    ['link'],
+                                    ['clean']
+                                ]
+                            }
+                        });
+
+                        // Set up click handler for description display
+                        descriptionDisplay.addEventListener('click', (e) => {
+                            if (!isOwner) return;
+                            e.stopPropagation();
+                            showEditor();
+                        });
+
+                        // Add change handler
+                        quill.on('text-change', debounce(() => {
+                            if (quill.getLength() > 1 && isOwner) {
+                                saveTaskChanges();
+                            }
+                        }, 1000));
+
+                        // Hide editor initially
+                        descriptionEditor.style.display = 'none';
+                        const quillToolbar = panel.querySelector('.ql-toolbar');
+                        if (quillToolbar) quillToolbar.style.display = 'none';
+                        
+                    } catch (error) {
+                        console.error('Error initializing Quill:', error);
+                        // Fallback to textarea if Quill fails
+                        descriptionEditor.innerHTML = `
+                            <textarea class="fallback-description-editor" 
+                                    placeholder="Add a detailed description..."></textarea>
+                        `;
+                    }
+                }
+
+                function showEditor() {
+                    const descriptionDisplay = panel.querySelector('#descriptionDisplay');
+                    const descriptionEditor = panel.querySelector('#taskDescriptionEditor');
+                    const quillToolbar = panel.querySelector('.ql-toolbar');
+                    
+                    descriptionDisplay.style.display = 'none';
+                    descriptionEditor.style.display = 'block';
+                    
+                    if (quillToolbar) {
+                        quillToolbar.style.display = 'block';
+                        quillToolbar.style.visibility = 'visible';
+                    }
+                    
+                    if (quill) {
+                        quill.enable(true);
+                        quill.focus();
+                    } else if (panel.querySelector('.fallback-description-editor')) {
+                        panel.querySelector('.fallback-description-editor').focus();
+                    }
+                }
+
+                function hideEditor() {
+                    const descriptionDisplay = panel.querySelector('#descriptionDisplay');
+                    const descriptionEditor = panel.querySelector('#taskDescriptionEditor');
+                    const quillToolbar = panel.querySelector('.ql-toolbar');
+                    
+                    descriptionDisplay.style.display = 'block';
+                    descriptionEditor.style.display = 'none';
+                    
+                    if (quillToolbar) {
+                        quillToolbar.style.display = 'none';
+                    }
+                }
+
                 async function fetchCurrentUser() {
                     try {
                         const response = await fetch('../Controller/projectController.php?action=getCurrentUser');
@@ -2917,7 +3124,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 function initializePanel() {
                     if (isInitialized) return;
-                    
+
+                    const isOwner = currentTaskData?.isOwner || document.body.dataset.userRole === 'admin';
                     panel = document.createElement('div');
                     panel.className = 'task-detail-panel';
                     panel.innerHTML = `
@@ -2945,8 +3153,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                         <h3>Description</h3>
                                     </div>
                                     <div class="description-container">
+                                        <div id="descriptionDisplay" class="description-display"></div>
                                         <div id="taskDescriptionEditor" class="description-editor"></div>
-                                        <div class="description-display" id="descriptionDisplay"></div>
                                     </div>
                                 </div>
                                 
@@ -3081,38 +3289,44 @@ document.addEventListener("DOMContentLoaded", function () {
                     
                     // Initialize Quill editor
                     try {
-                        quill = new Quill('#taskDescriptionEditor', {
-                            theme: 'snow',
-                            placeholder: 'Add a detailed description...',
-                            modules: {
-                                toolbar: [
-                                    ['bold', 'italic', 'underline'],
-                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                    ['link'],
-                                    ['clean']
-                                ]
+                            const descriptionDisplay = panel.querySelector('#descriptionDisplay');
+                            const descriptionEditor = panel.querySelector('#taskDescriptionEditor');
+                            
+                            if (!descriptionDisplay || !descriptionEditor) {
+                                throw new Error('Required elements not found');
                             }
-                        });
 
-                        descriptionDisplay.addEventListener('click', (e) => {
-                            if (!isOwner) return;
-                            e.stopPropagation();
-                            showEditor();
-                        });
-                        quill.on('text-change', () => {
-                            if (quill.getLength() > 1) {
-                                saveTaskChanges();
-                            }
-                        });
-                        quill.on('selection-change', (range) => {
-                            if (range) {
-                                descriptionDisplay.innerHTML = quill.root.innerHTML;
-                            }
-                        });
+                            quill = new Quill('#taskDescriptionEditor', {
+                                theme: 'snow',
+                                placeholder: 'Add a detailed description...',
+                                modules: {
+                                    toolbar: [
+                                        ['bold', 'italic', 'underline'],
+                                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                        ['link'],
+                                        ['clean']
+                                    ]
+                                }
+                            });
+                            descriptionDisplay.addEventListener('click', (e) => {
+                                        if (!isOwner) return;
+                                        e.stopPropagation();
+                                        showEditor();
+                                    });
 
-                    } catch (error) {
-                        console.error('Error initializing Quill:', error);
-                    }
+                                    // Add change handler
+                                    quill.on('text-change', debounce(() => {
+                                        if (quill.getLength() > 1 && isOwner) {
+                                            saveTaskChanges();
+                                        }
+                                    }, 1000));
+
+                                } catch (error) {
+                                    console.error('Error initializing Quill:', error);
+                                    // Add more detailed error information
+                                    console.error('Panel structure:', panel.innerHTML);
+                                    throw error;
+                        }
                     
                     // Initialize date picker
                     try {
@@ -3231,19 +3445,24 @@ document.addEventListener("DOMContentLoaded", function () {
                             quill.on('text-change', quillChangeHandler);
                         }
                         
-                        // Priority selector
+                        //Priority change
                         panel.querySelectorAll('.priority-option').forEach(btn => {
                             const priorityHandler = () => {
                                 panel.querySelectorAll('.priority-option').forEach(b => b.classList.remove('active'));
                                 btn.classList.add('active');
                                 document.getElementById('taskPriority').value = btn.dataset.priority;
+                                
+                                // Immediate visual feedback
+                                const taskCard = document.querySelector(`.task-card[data-task-id="${currentTaskId}"]`);
+                                if (taskCard) {
+                                    taskCard.classList.remove('high', 'medium', 'low');
+                                    taskCard.classList.add(btn.dataset.priority);
+                                }
+                                
                                 saveTaskChanges();
                             };
                             
                             btn.addEventListener('click', priorityHandler);
-                            eventListeners.push(
-                                { element: btn, type: 'click', handler: priorityHandler }
-                            );
                         });
                         
                         // Status change
@@ -3691,39 +3910,80 @@ document.addEventListener("DOMContentLoaded", function () {
                 async function saveTaskChanges() {
                     if (!currentTaskId) return;
 
-                    const titleInput = panel.querySelector('#taskTitle');
-                    const statusSelect = panel.querySelector('#taskStatus');
-                    const priorityInput = panel.querySelector('#taskPriority');
-                    const description = quill ? quill.root.innerHTML : '';
-
                     try {
-                        const response = await fetch('../Controller/taskController.php?action=updateTask', {
+                        const dueDateInput = panel.querySelector('#taskDueDate');
+                        let dueDateValue = dueDateInput?.value || null;
+                        let projectDueDate = null;
+                        const projectDueDateInput = document.getElementById('projectDueDateValue');
+                        if (projectDueDateInput) {
+                            projectDueDate = projectDueDateInput.value;
+                        } else {
+                            // Fallback: try to get from .project-due-date text
+                            const projectDueDateText = document.querySelector('.project-due-date')?.textContent;
+                            if (projectDueDateText) {
+                                // Try to parse date from text like "Due: May 30, 2025"
+                                const match = projectDueDateText.match(/Due:\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})/);
+                                if (match) {
+                                    projectDueDate = new Date(match[1]);
+                                    // Format as YYYY-MM-DD
+                                    projectDueDate = projectDueDate instanceof Date && !isNaN(projectDueDate)
+                                        ? projectDueDate.toISOString().slice(0, 10)
+                                        : null;
+                                }
+                            }
+                        }
+
+                        // Validate: Task due date must not exceed project due date
+                        if (dueDateValue && projectDueDate) {
+                            // Normalize both to YYYY-MM-DD
+                            const taskDue = new Date(dueDateValue);
+                            const projectDue = new Date(projectDueDate);
+                            if (
+                                !isNaN(taskDue.getTime()) &&
+                                !isNaN(projectDue.getTime()) &&
+                                taskDue > projectDue
+                            ) {
+                                showErrorNotification('Task due date cannot exceed the project due date (' + projectDueDate + ').');
+                                dueDateInput.focus();
+                                return;
+                            }
+                        }
+
+                        const taskData = {
+                            taskId: currentTaskId,
+                            title: panel.querySelector('#taskTitle').value.trim(),
+                            description: quill.root.innerHTML,
+                            status: panel.querySelector('#taskStatus').value,
+                            priority: panel.querySelector('.priority-option.active')?.dataset.priority ||
+                                document.getElementById('taskPriority').value || 'low',
+                            due_date: dueDateValue
+                        };
+
+                        if (!taskData.title || taskData.title.length < 3) {
+                            showErrorNotification('Task title must be at least 3 characters');
+                            return;
+                        }
+
+                        const response = await fetch('../Controller/projectController.php?action=updateTask', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
                             },
-                            body: JSON.stringify({
-                                taskId: currentTaskId,
-                                title: titleInput.value,
-                                status: statusSelect.value,
-                                priority: priorityInput.value,
-                                description: description
-                            })
+                            body: JSON.stringify(taskData)
                         });
 
-                        if (!response.ok) throw new Error('Failed to update task');
                         const data = await response.json();
-
-                        if (data.success) {
-                            updateLastUpdated();
-                            updateTaskCardUI(data.task);
-                        } else {
+                        if (!data.success) {
                             throw new Error(data.message || 'Failed to update task');
                         }
+
+                        updateLastUpdated();
+                        loadActivityLog();
+                        loadCategories(); // Refresh the task list
                     } catch (error) {
-                        console.error('Error saving task changes:', error);
-                        showErrorNotification(error.message);
+                        console.error('Error saving task:', error);
+                        showErrorNotification('Failed to save task. Please try again.');
                     }
                 }
             
@@ -4150,8 +4410,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     }
                 }
+
                 function updateTaskCardUI(task) {
-                    // Find the task card in the UI and update its appearance
                     const taskCard = document.querySelector(`.task-card[data-task-id="${task.id}"]`);
                     if (!taskCard) return;
                     
@@ -4200,7 +4460,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     
                     currentTaskData = task;
                     currentTaskId = task.id;
-                    const isOwner = task.isOwner; 
+                    const isOwner = task.isOwner || document.body.dataset.isOwner === 'true'; 
                     
                     if (!isInitialized) {
                         initializePanel();
@@ -4241,64 +4501,24 @@ document.addEventListener("DOMContentLoaded", function () {
                     const descriptionDisplay = panel.querySelector('#descriptionDisplay');
                     const descriptionEditor = panel.querySelector('#taskDescriptionEditor');
                     const quillToolbar = panel.querySelector('.ql-toolbar');
-
-                    // First, ensure proper initialization of Quill
-                    if (!quill && descriptionEditor) {
-                        try {
-                            quill = new Quill('#taskDescriptionEditor', {
-                                theme: 'snow',
-                                placeholder: 'Add a detailed description...',
-                                modules: {
-                                    toolbar: [
-                                        ['bold', 'italic', 'underline'],
-                                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                        ['link'],
-                                        ['clean']
-                                    ]
-                                }
-                            });
-
-                            // Add change handler
-                            quill.on('text-change', debounce(() => {
-                                if (currentTaskId) {
-                                    saveTaskChanges();
-                                }
-                            }, 1000));
-                        } catch (error) {
-                            console.error('Error initializing Quill:', error);
-                        }
-                    }
-
-                    // Set content and display state
+                    
                     if (quill) {
-                        quill.enable(isOwner);
                         quill.root.innerHTML = task.description || '';
+                        descriptionDisplay.innerHTML = task.description || '<span class="empty-description">Add a description</span>';
+                    } else if (panel.querySelector('.fallback-description-editor')) {
+                        panel.querySelector('.fallback-description-editor').value = task.description || '';
+                        descriptionDisplay.innerHTML = task.description || '<span class="empty-description">Add a description</span>';
                     }
-
-                    descriptionDisplay.innerHTML = task.description || '<span class="empty-description">Add a description</span>';
-                    descriptionDisplay.style.display = 'block';
-                    descriptionEditor.style.display = 'none';
-                    if (quillToolbar) quillToolbar.style.display = 'none';
 
                     if (isOwner) {
                         descriptionDisplay.style.cursor = 'pointer';
-                        const showEditor = () => {
-                            descriptionDisplay.style.display = 'none';
-                            descriptionEditor.style.display = 'block';
-                            if (quillToolbar) {
-                                quillToolbar.style.display = 'block';
-                                quillToolbar.style.visibility = 'visible';
-                            }
-                            if (quill) {
-                                quill.enable(true);
-                                quill.focus();
-                            }
-                        };
-
                         descriptionDisplay.onclick = (e) => {
                             e.stopPropagation();
                             showEditor();
                         };
+                    } else {
+                        descriptionDisplay.style.cursor = 'default';
+                        descriptionDisplay.onclick = null;
                     }
 
                     // Set priority
@@ -4411,6 +4631,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             throw new Error(data.message || 'Failed to load project');
                         }
                         
+                        // Update the dataset attribute for isOwner
+                        document.body.dataset.isOwner = data.isOwner ? 'true' : 'false';
+                        
                         updateProjectUI(data.project);
                         updateUIBasedOnPermissions(data.isOwner);
                     })
@@ -4473,38 +4696,36 @@ document.addEventListener("DOMContentLoaded", function () {
             function renderCategories(categories) {
                 if (!categoriesContainer) return;
 
-                // Remove all category columns and add button
                 document.querySelectorAll('.category-column').forEach(el => el.remove());
                 const existingAddBtn = categoriesContainer.querySelector('.add-category-btn');
                 if (existingAddBtn) existingAddBtn.remove();
 
-                // Add the add-category button FIRST (to the left)
-                const addBtn = document.createElement('button');
-                addBtn.className = 'add-category-btn';
-                addBtn.innerHTML = '<i class="fas fa-plus"></i>';
-                addBtn.title = 'Add Category';
+                // Get user permissions
+                const isOwner = document.body.dataset.isOwner === 'true';
 
-                addBtn.addEventListener('mouseover', () => {
-                    addBtn.style.transform = 'translateY(-2px)';
-                    addBtn.style.boxShadow = 'var(--shadow-hover)';
-                });
+                // Only add the add-category button if user is owner
+                if (isOwner) {
+                    const addBtn = document.createElement('button');
+                    addBtn.className = 'add-category-btn';
+                    addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+                    addBtn.title = 'Add Category';
+                    addBtn.addEventListener('click', showCategoryModal);
+                    categoriesContainer.prepend(addBtn);
+                }
 
-                addBtn.addEventListener('mouseout', () => {
-                    addBtn.style.transform = '';
-                    addBtn.style.boxShadow = 'var(--shadow)';
-                });
-
-                addBtn.addEventListener('click', showCategoryModal);
-                categoriesContainer.prepend(addBtn);
-
-                // Render categories, inserting each after the add button (so new ones appear leftmost)
+                // Render categories
                 categories.forEach(category => {
                     const categoryColumn = document.createElement('div');
                     categoryColumn.className = 'category-column';
                     categoryColumn.dataset.categoryId = category.id;
+
+                    // Only make name editable if owner
+                    const nameEditable = isOwner ? 'contenteditable="true"' : '';
+
                     categoryColumn.innerHTML = `
                         <div class="category-header" style="border-color: ${category.color || '#6c757d'}">
-                            <h3 contenteditable="true" class="editable-category-name">${escapeHtml(category.name)}</h3>
+                            <h3 ${nameEditable} class="category-name">${escapeHtml(category.name)}</h3>
+                            ${isOwner ? `
                             <div class="category-actions">
                                 <button class="btn-icon add-task-btn" title="Add Task">
                                     <i class="fas fa-plus"></i>
@@ -4513,6 +4734,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
+                            ` : ''}
                         </div>
                         <div class="category-task-list" data-sortable-initialized="false">
                             <div class="empty-state">
@@ -4522,138 +4744,141 @@ document.addEventListener("DOMContentLoaded", function () {
                         </div>
                     `;
 
-                    // Insert after the add button (which is always first child)
-                    categoriesContainer.insertBefore(categoryColumn, categoriesContainer.children[1] || null);
+                    // Insert the category column
+                    categoriesContainer.appendChild(categoryColumn);
 
-                    const categoryNameEl = categoryColumn.querySelector('.editable-category-name');
-                    let isEditing = false;
-                    let originalName = category.name;
+                    // Only set up editing and actions for owners
+                    if (isOwner) {
+                        const categoryNameEl = categoryColumn.querySelector('.category-name');
+                        let isEditing = false;
+                        let originalName = category.name;
 
-                    categoryNameEl.addEventListener('focus', () => {
-                        isEditing = true;
-                        originalName = categoryNameEl.textContent;
-                        categoryNameEl.classList.add('editing');
-                    });
+                        categoryNameEl.addEventListener('focus', () => {
+                            isEditing = true;
+                            originalName = categoryNameEl.textContent;
+                            categoryNameEl.classList.add('editing');
+                        });
 
-                    categoryNameEl.addEventListener('blur', async () => {
-                        if (!isEditing) return;
-                        isEditing = false;
-                        categoryNameEl.classList.remove('editing');
+                        categoryNameEl.addEventListener('blur', async () => {
+                            if (!isEditing) return;
+                            isEditing = false;
+                            categoryNameEl.classList.remove('editing');
 
-                        const newName = categoryNameEl.textContent.trim();
-                        if (!newName) {
-                            categoryNameEl.textContent = originalName;
-                            return;
-                        }
-
-                        if (newName !== originalName) {
-                            try {
-                                const response = await fetch('../Controller/projectController.php?action=updateCategory', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                                    },
-                                    body: JSON.stringify({
-                                        categoryId: category.id,
-                                        name: newName
-                                    })
-                                });
-
-                                const data = await response.json();
-                                if (data.success) {
-                                    category.name = newName;
-                                    showSuccessNotification('Category name updated');
-                                } else {
-                                    throw new Error(data.message || 'Failed to update category name');
-                                }
-                            } catch (error) {
-                                console.error('Error updating category name:', error);
-                                showErrorNotification(error.message);
+                            const newName = categoryNameEl.textContent.trim();
+                            if (!newName) {
                                 categoryNameEl.textContent = originalName;
+                                return;
                             }
-                        }
-                    });
 
-                    categoryNameEl.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            categoryNameEl.blur();
-                        }
-                    });
+                            if (newName !== originalName) {
+                                try {
+                                    const response = await fetch('../Controller/projectController.php?action=updateCategory', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                                        },
+                                        body: JSON.stringify({
+                                            categoryId: category.id,
+                                            name: newName
+                                        })
+                                    });
 
-                    const addTaskBtn = categoryColumn.querySelector('.add-task-btn');
-                    addTaskBtn.addEventListener('click', () => {
-                        const taskList = categoryColumn.querySelector('.category-task-list');
-                        const addTaskForm = document.createElement('div');
-                        addTaskForm.className = 'add-task-form active';
-                        addTaskForm.innerHTML = `
-                            <input type="text" class="add-task-input" placeholder="Enter a title for this task...">
-                            <div class="add-task-actions">
-                                <button type="button" class="add-task-btn">Add Task</button>
-                                <button type="button" class="cancel-add-task">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        `;
-
-                        taskList.appendChild(addTaskForm);
-                        updateEmptyState(taskList);
-
-                        const input = addTaskForm.querySelector('.add-task-input');
-                        const saveBtn = addTaskForm.querySelector('.add-task-btn');
-                        const cancelBtn = addTaskForm.querySelector('.cancel-add-task');
-
-                        setTimeout(() => input.focus(), 10);
-
-                        saveBtn.addEventListener('click', async () => {
-                            const title = input.value.trim();
-                            if (!title) return;
-
-                            try {
-                                const response = await fetch('../Controller/projectController.php?action=createTask', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                                    },
-                                    body: JSON.stringify({
-                                        projectId: projectId,
-                                        categoryId: category.id,
-                                        title: title,
-                                        status: 'todo'
-                                    })
-                                });
-
-                                const data = await response.json();
-                                if (data.success) {
-                                    loadTasksForCategory(category.id);
-                                    addTaskForm.remove();
-                                    updateEmptyState(taskList);
-                                } else {
-                                    throw new Error(data.message || 'Failed to create task');
+                                    const data = await response.json();
+                                    if (data.success) {
+                                        category.name = newName;
+                                        showSuccessNotification('Category name updated');
+                                    } else {
+                                        throw new Error(data.message || 'Failed to update category name');
+                                    }
+                                } catch (error) {
+                                    console.error('Error updating category name:', error);
+                                    showErrorNotification(error.message);
+                                    categoryNameEl.textContent = originalName;
                                 }
-                            } catch (error) {
-                                console.error('Error creating task:', error);
-                                showErrorNotification(error.message);
                             }
                         });
 
-                        cancelBtn.addEventListener('click', () => {
-                            addTaskForm.remove();
-                            updateEmptyState(taskList);
-                        });
-
-                        input.addEventListener('keydown', (e) => {
+                        categoryNameEl.addEventListener('keydown', (e) => {
                             if (e.key === 'Enter') {
-                                saveBtn.click();
+                                e.preventDefault();
+                                categoryNameEl.blur();
                             }
                         });
-                    });
 
-                    categoryColumn.querySelector('.delete-category-btn').addEventListener('click', () => {
-                        deleteCategory(category.id);
-                    });
+                        const addTaskBtn = categoryColumn.querySelector('.add-task-btn');
+                        addTaskBtn.addEventListener('click', () => {
+                            const taskList = categoryColumn.querySelector('.category-task-list');
+                            const addTaskForm = document.createElement('div');
+                            addTaskForm.className = 'add-task-form active';
+                            addTaskForm.innerHTML = `
+                                <input type="text" class="add-task-input" placeholder="Enter a title for this task...">
+                                <div class="add-task-actions">
+                                    <button type="button" class="add-task-btn">Add Task</button>
+                                    <button type="button" class="cancel-add-task">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            `;
+
+                            taskList.appendChild(addTaskForm);
+                            updateEmptyState(taskList);
+
+                            const input = addTaskForm.querySelector('.add-task-input');
+                            const saveBtn = addTaskForm.querySelector('.add-task-btn');
+                            const cancelBtn = addTaskForm.querySelector('.cancel-add-task');
+
+                            setTimeout(() => input.focus(), 10);
+
+                            saveBtn.addEventListener('click', async () => {
+                                const title = input.value.trim();
+                                if (!title) return;
+
+                                try {
+                                    const response = await fetch('../Controller/projectController.php?action=createTask', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                                        },
+                                        body: JSON.stringify({
+                                            projectId: projectId,
+                                            categoryId: category.id,
+                                            title: title,
+                                            status: 'todo'
+                                        })
+                                    });
+
+                                    const data = await response.json();
+                                    if (data.success) {
+                                        loadTasksForCategory(category.id);
+                                        addTaskForm.remove();
+                                        updateEmptyState(taskList);
+                                    } else {
+                                        throw new Error(data.message || 'Failed to create task');
+                                    }
+                                } catch (error) {
+                                    console.error('Error creating task:', error);
+                                    showErrorNotification(error.message);
+                                }
+                            });
+
+                            cancelBtn.addEventListener('click', () => {
+                                addTaskForm.remove();
+                                updateEmptyState(taskList);
+                            });
+
+                            input.addEventListener('keydown', (e) => {
+                                if (e.key === 'Enter') {
+                                    saveBtn.click();
+                                }
+                            });
+                        });
+
+                        categoryColumn.querySelector('.delete-category-btn').addEventListener('click', () => {
+                            deleteCategory(category.id);
+                        });
+                    }
 
                     const taskList = categoryColumn.querySelector('.category-task-list');
                     updateEmptyState(taskList);
@@ -4662,7 +4887,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         loadTasksForCategory(category.id);
                     }
 
-                    initializeSortable(categoryColumn.querySelector('.category-task-list'));
+                    // Only initialize sortable for owners
+                    if (isOwner) {
+                        initializeSortable(categoryColumn.querySelector('.category-task-list'));
+                    }
                 });
             }
             
@@ -4723,29 +4951,30 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
+                const isOwner = document.body.dataset.isOwner === 'true';
+
                 tasks.forEach(task => {
-                    const dueDate = task.due_date ? new Date(task.due_date) : null;
-                    const today = new Date();
+                    let dueDate = task.due_date ? new Date(task.due_date) : null;
+                    let today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    
                     let daysLeft = '';
                     if (dueDate) {
                         const diffTime = dueDate - today;
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        
-                    if (diffDays === 0) {
-                        daysLeft = 'Today';
-                    } else if (diffDays < 0) {
-                        daysLeft = `${Math.abs(diffDays)} ${Math.abs(diffDays) === 1 ? 'day' : 'days'} overdue`;
-                    } else {
-                        daysLeft = `${diffDays} ${diffDays === 1 ? 'day' : 'days'} left`;
-                    }
+                        if (diffDays === 0) {
+                            daysLeft = 'Today';
+                        } else if (diffDays < 0) {
+                            daysLeft = `${Math.abs(diffDays)} ${Math.abs(diffDays) === 1 ? 'day' : 'days'} overdue`;
+                        } else {
+                            daysLeft = `${diffDays} ${diffDays === 1 ? 'day' : 'days'} left`;
+                        }
                     }
 
                     const taskCard = document.createElement('div');
                     taskCard.className = `task-card ${task.priority || 'low'} ${task.status || 'todo'}`;
                     taskCard.dataset.taskId = task.id;
-                    taskCard.draggable = true;
+                    taskCard.draggable = isOwner; // Only draggable for owners
+                    
                     taskCard.innerHTML = `
                         <div class="task-content">
                             <h4>${escapeHtml(task.title)}</h4>
@@ -4774,6 +5003,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 </div>
                             </div>
                         </div>
+                        ${isOwner ? `
                         <div class="task-actions">
                             <button class="btn-icon edit-task-btn" title="Edit Task">
                                 <i class="fas fa-edit"></i>
@@ -4782,41 +5012,43 @@ document.addEventListener("DOMContentLoaded", function () {
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
+                        ` : ''}
                     `;
 
-                    taskCard.addEventListener('dragstart', () => {
-                        taskCard.classList.add('dragging');
-                    });
+                    if (isOwner) {
+                        taskCard.addEventListener('dragstart', () => {
+                            taskCard.classList.add('dragging');
+                        });
 
-                    taskCard.addEventListener('dragend', () => {
-                        taskCard.classList.remove('dragging');
-                        updateEmptyState(taskList);
-                    });
+                        taskCard.addEventListener('dragend', () => {
+                            taskCard.classList.remove('dragging');
+                            updateEmptyState(taskList);
+                        });
+
+                        taskCard.querySelector('.edit-task-btn').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            taskDetailPanel.show(task);
+                        });
+
+                        taskCard.querySelector('.delete-task-btn').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            deleteTask(task.id, categoryId);
+                        });
+                    }
 
                     taskList.appendChild(taskCard);
 
                     taskCard.addEventListener('click', (e) => {
-                        if (
+                        if (isOwner && (
                             e.target.closest('.edit-task-btn') ||
                             e.target.closest('.delete-task-btn') ||
                             e.target.closest('.task-actions')
-                        ) {
+                        )) {
                             return;
                         }
-                        // Your function to open the task panel, e.g.:
                         if (typeof taskDetailPanel?.show === 'function') {
                             taskDetailPanel.show(task);
                         }
-                    });
-
-                    taskCard.querySelector('.edit-task-btn').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        taskDetailPanel.show(task);
-                    });
-
-                    taskCard.querySelector('.delete-task-btn').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        deleteTask(task.id, categoryId);
                     });
                 });
 
@@ -5533,5 +5765,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
+    setInterval(loadNotifications, 120000);
 });
 
