@@ -105,7 +105,7 @@
   <section id="how-it-works" class="how-it-works">
     <div class="container">
       <div class="section-header">
-        <h2>Get Started in 3 Simple Steps</h2>
+        <h2>Get Started in 4 Simple Steps</h2>
         <p>Begin managing your projects with ease in just a few minutes.</p>
       </div>
       <div class="steps">

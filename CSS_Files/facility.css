@@ -29,18 +29,26 @@ body {
 .logo-container {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 12px;
+    padding: 8px 24px 8px 12px;
 }
 
 .logo-container img {
     height: 40px;
     width: auto;
+    display: block;
+    margin: 0;
 }
 
 .logo-text {
-    font-weight: 600;
-    color: var(--secondary);
-    font-size: 1.2rem;
+    font-weight: 500;
+    color: #06a566;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    font-family: 'Poppins', sans-serif;
+    opacity: 0.85;
 }
 
 .searchbar {

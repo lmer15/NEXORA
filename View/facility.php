@@ -66,19 +66,19 @@ if (!isset($_SESSION['user_id'])) {
                         <li class="nav-item active" data-view="dashboard">
                             <div class="nav-item-left">
                                 <i class="fa-solid fa-table-columns"></i>
-                                <span class="nav-item-text">Facility Dashboards</span>
+                                <span class="nav-item-text">Dashboards</span>
                             </div>
                         </li>
                         <li class="nav-item" data-view="members">
                             <div class="nav-item-left">
                                 <i class="fa-solid fa-users"></i>
-                                <span class="nav-item-text">Facility Members</span>
+                                <span class="nav-item-text">Members</span>
                             </div>
                         </li>
                         <li class="nav-item" data-view="settings">
                             <div class="nav-item-left">
                                 <i class="fa-solid fa-gear"></i>
-                                <span class="nav-item-text">Facility Settings</span>
+                                <span class="nav-item-text">Settings</span>
                             </div>
                         </li>
                         <li class="nav-item" data-view="archived-projects">
